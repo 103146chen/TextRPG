@@ -2,6 +2,7 @@
 id: scene_08
 title: 第八章 · 回家
 background: home_interior.png
+bgm: bgm_despair.mp3
 next: scene_09
 ---
 

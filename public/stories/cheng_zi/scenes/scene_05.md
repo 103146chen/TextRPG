@@ -2,6 +2,7 @@
 id: scene_05
 title: 第五章 · 借錢
 background: home_interior.png
+bgm: bgm_police_tension.mp3
 next: scene_06
 ---
 

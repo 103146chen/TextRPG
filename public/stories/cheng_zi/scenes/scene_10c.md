@@ -2,6 +2,7 @@
 id: scene_10c
 title: 結局 · 沉入酒甕
 background: night_path.png
+bgm: bgm_ending_hollow.mp3
 ---
 
 你笑了。

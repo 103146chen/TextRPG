@@ -2,6 +2,7 @@
 id: scene_10d
 title: 結局 · 啞口的人
 background: home_interior.png
+bgm: bgm_ending_hollow.mp3
 ---
 
 你回到房間裡，坐下來。

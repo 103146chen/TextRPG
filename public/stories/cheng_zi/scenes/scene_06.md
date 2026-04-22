@@ -2,6 +2,7 @@
 id: scene_06
 title: 第六章 · 生意不壞
 background: market_morning.png
+bgm: bgm_police_tension.mp3
 next: scene_07
 ---
 

@@ -2,6 +2,7 @@
 id: scene_10e
 title: 結局 · 離鄉的人
 background: night_path.png
+bgm: bgm_ending_hollow.mp3
 ---
 
 你把包袱收拾好，動作很輕。

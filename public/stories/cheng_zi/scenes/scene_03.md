@@ -2,6 +2,7 @@
 id: scene_03
 title: 第三章 · 成家
 background: home_interior.png
+bgm: bgm_rural_morning.mp3
 next: scene_04
 ---
 

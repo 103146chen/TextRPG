@@ -2,6 +2,7 @@
 id: scene_09
 title: 第九章 · 除夕
 background: market_morning.png
+bgm: bgm_despair.mp3
 next: scene_10
 ---
 

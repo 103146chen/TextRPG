@@ -2,6 +2,7 @@
 id: scene_01
 title: 第一章 · 苦瓜的根
 background: village_dawn.png
+bgm: bgm_rural_morning.mp3
 next: scene_02
 ---
 

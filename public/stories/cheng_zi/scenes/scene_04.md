@@ -2,6 +2,7 @@
 id: scene_04
 title: 第四章 · 病
 background: home_interior.png
+bgm: bgm_market_lively.mp3
 next: scene_05
 ---
 

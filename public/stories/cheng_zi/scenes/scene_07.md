@@ -2,6 +2,7 @@
 id: scene_07
 title: 第七章 · 那桿秤仔
 background: market_morning.png
+bgm: bgm_despair.mp3
 next: scene_08
 ---
 

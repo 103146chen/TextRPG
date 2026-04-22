@@ -14,10 +14,10 @@
 
 | 檔案名稱 | 場景描述 | AI 生圖提示詞 (Prompt) |
 | :--- | :--- | :--- |
-| **village_dawn.svg** | **清晨村莊**<br>日治時期的台灣農村，清晨微霧，有著老舊的土角厝與泥土路，氛圍寧靜略帶清苦。 | `realistic watercolor painting, traditional media, Taiwanese rural village during Japanese colonial period, dawn, misty, old mud-brick farmhouses, dirt road, highly detailed, atmospheric lighting, masterpiece --ar 16:9` |
-| **home_interior.svg** | **住家內部**<br>貧苦農家的土角厝內部，光線昏暗，只有簡陋的老舊木製家具，雖然窮困但收拾得乾淨。 | `realistic watercolor painting, traditional media, interior of an impoverished Taiwanese farmhouse during Japanese colonial period, mud walls, dim lighting, old wooden furniture, poor but tidy, expressive brushstrokes, masterpiece --ar 16:9` |
-| **market_morning.svg**| **早市**<br>日治時期的台灣傳統早市，人潮擁擠，有老舊的攤販，晨光灑落，帶有生活氣息。 | `realistic watercolor painting, traditional media, Taiwanese traditional morning market during Japanese colonial period, crowded, old stalls, sunlight, lively atmosphere, highly detailed --ar 16:9` |
-| **night_path.svg** | **夜晚小路**<br>夜晚的農村泥土小徑，只有微弱的月光，周圍昏暗，氛圍壓抑且帶有不安感。 | `realistic watercolor painting, traditional media, dark rural dirt path at night, Taiwanese village, dim moonlight, ominous and spooky atmosphere, highly detailed --ar 16:9` |
+| **village_dawn.png** | **清晨村莊**<br>日治時期的台灣農村，清晨微霧，有著老舊的土角厝與泥土路，氛圍寧靜略帶清苦。 | `realistic watercolor painting, traditional media, Taiwanese rural village during Japanese colonial period, dawn, misty, old mud-brick farmhouses, dirt road, highly detailed, atmospheric lighting, masterpiece --ar 16:9` |
+| **home_interior.png** | **住家內部**<br>貧苦農家的土角厝內部，光線昏暗，只有簡陋的老舊木製家具，雖然窮困但收拾得乾淨。 | `realistic watercolor painting, traditional media, interior of an impoverished Taiwanese farmhouse during Japanese colonial period, mud walls, dim lighting, old wooden furniture, poor but tidy, expressive brushstrokes, masterpiece --ar 16:9` |
+| **market_morning.png**| **早市**<br>日治時期的台灣傳統早市，人潮擁擠，有老舊的攤販，晨光灑落，帶有生活氣息。 | `realistic watercolor painting, traditional media, Taiwanese traditional morning market during Japanese colonial period, crowded, old stalls, sunlight, lively atmosphere, highly detailed --ar 16:9` |
+| **night_path.png** | **夜晚小路**<br>夜晚的農村泥土小徑，只有微弱的月光，周圍昏暗，氛圍壓抑且帶有不安感。 | `realistic watercolor painting, traditional media, dark rural dirt path at night, Taiwanese village, dim moonlight, ominous and spooky atmosphere, highly detailed --ar 16:9` |
 
 ---
 

@@ -2,6 +2,7 @@
 id: scene_02
 title: 第二章 · 少年的路
 background: village_dawn.png
+bgm: bgm_rural_morning.mp3
 next: scene_03
 ---
 

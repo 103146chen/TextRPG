@@ -2,6 +2,7 @@
 id: scene_10b
 title: 結局 · 日復一日
 background: market_morning.png
+bgm: bgm_ending_hollow.mp3
 ---
 
 你把手裡握著的東西，放了回去。

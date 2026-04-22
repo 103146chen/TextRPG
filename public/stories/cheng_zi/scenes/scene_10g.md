@@ -2,6 +2,7 @@
 id: scene_10g
 title: 結局 · 無人知曉的凍死
 background: night_path.png
+bgm: bgm_ending_tragic.mp3
 ---
 
 你走到河邊。

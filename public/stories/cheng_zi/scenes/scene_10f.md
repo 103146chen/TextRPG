@@ -2,6 +2,7 @@
 id: scene_10f
 title: 結局 · 半途而廢的反抗
 background: night_path.png
+bgm: bgm_ending_tragic.mp3
 ---
 
 你走出去了。

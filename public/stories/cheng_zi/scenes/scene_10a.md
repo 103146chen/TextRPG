@@ -2,6 +2,7 @@
 id: scene_10a
 title: 結局 · 同歸於盡
 background: night_path.png
+bgm: bgm_ending_tragic.mp3
 ---
 
 元旦，參的家裡，忽然譁然，發生一陣叫喊、哀鳴、啼哭。

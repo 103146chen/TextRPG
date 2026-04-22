@@ -9,10 +9,10 @@
     "得參": {
       "default": "dechan_normal.png",
       "emotions": {
-        "normal": "dechan_normal.svg",
-        "tired": "dechan_tired.svg",
-        "angry": "dechan_angry.svg",
-        "despair": "dechan_despair.svg"
+        "normal": "dechan_normal.png",
+        "tired": "dechan_tired.png",
+        "angry": "dechan_angry.png",
+        "despair": "dechan_despair.png"
       }
     },
     "母親": {
