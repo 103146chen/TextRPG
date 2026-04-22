@@ -1,0 +1,81 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 700" width="100%" height="100%">
+  <defs>
+    <linearGradient id="hair1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a2820"/>
+      <stop offset="100%" stop-color="#1a1108"/>
+    </linearGradient>
+    <linearGradient id="skin1" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fce8d6"/>
+      <stop offset="100%" stop-color="#f0cfa8"/>
+    </linearGradient>
+    <linearGradient id="sweater1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8d4a8"/>
+      <stop offset="100%" stop-color="#b8996a"/>
+    </linearGradient>
+    <linearGradient id="skirt1" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a3a2e"/>
+      <stop offset="100%" stop-color="#2a1f18"/>
+    </linearGradient>
+    <radialGradient id="blush1" cx="0.5" cy="0.5" r="0.5">
+      <stop offset="0%" stop-color="#e8a0a8" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#e8a0a8" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <!-- 身體：針織衫 -->
+  <path d="M 70 340 Q 80 310 110 300 L 190 300 Q 220 310 230 340 L 245 540 Q 240 560 220 565 L 80 565 Q 60 560 55 540 Z" fill="url(#sweater1)" stroke="#8a6e48" stroke-width="1.5"/>
+
+  <!-- 針織衫紋理 -->
+  <g stroke="#a8885a" stroke-width="0.6" fill="none" opacity="0.5">
+    <line x1="90" y1="340" x2="90" y2="560"/>
+    <line x1="120" y1="340" x2="120" y2="560"/>
+    <line x1="150" y1="340" x2="150" y2="560"/>
+    <line x1="180" y1="340" x2="180" y2="560"/>
+    <line x1="210" y1="340" x2="210" y2="560"/>
+  </g>
+
+  <!-- 裙子 -->
+  <path d="M 70 540 L 240 540 L 250 680 L 60 680 Z" fill="url(#skirt1)" stroke="#1a120a" stroke-width="1"/>
+
+  <!-- 脖子 -->
+  <path d="M 130 260 L 170 260 L 172 310 L 128 310 Z" fill="url(#skin1)"/>
+
+  <!-- 臉 -->
+  <ellipse cx="150" cy="190" rx="62" ry="78" fill="url(#skin1)" stroke="#d4a880" stroke-width="0.8"/>
+
+  <!-- 後頭髮 -->
+  <path d="M 88 180 Q 82 130 110 95 Q 150 70 190 95 Q 218 130 212 180 L 215 250 L 205 260 L 205 220 Q 195 235 178 240 L 150 245 L 122 240 Q 105 235 95 220 L 95 260 L 85 250 Z" fill="url(#hair1)"/>
+
+  <!-- 瀏海 -->
+  <path d="M 98 140 Q 110 105 150 105 Q 190 105 202 140 Q 200 165 185 170 Q 175 145 150 145 Q 125 145 115 170 Q 100 165 98 140 Z" fill="url(#hair1)"/>
+
+  <!-- 側邊髮絲 -->
+  <path d="M 92 170 Q 88 210 94 255 L 102 255 Q 98 210 102 170 Z" fill="url(#hair1)"/>
+  <path d="M 208 170 Q 212 210 206 255 L 198 255 Q 202 210 198 170 Z" fill="url(#hair1)"/>
+
+  <!-- 眉毛 -->
+  <path d="M 118 170 Q 128 167 138 170" stroke="#2a1808" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M 162 170 Q 172 167 182 170" stroke="#2a1808" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- 眼睛 -->
+  <ellipse cx="128" cy="195" rx="9" ry="11" fill="#fff"/>
+  <ellipse cx="172" cy="195" rx="9" ry="11" fill="#fff"/>
+  <ellipse cx="128" cy="196" rx="7" ry="9" fill="#5a3e2a"/>
+  <ellipse cx="172" cy="196" rx="7" ry="9" fill="#5a3e2a"/>
+  <circle cx="128" cy="194" r="2.5" fill="#fff" opacity="0.9"/>
+  <circle cx="172" cy="194" r="2.5" fill="#fff" opacity="0.9"/>
+
+  <!-- 眼皮上緣 -->
+  <path d="M 120 188 Q 128 184 136 188" stroke="#2a1808" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M 164 188 Q 172 184 180 188" stroke="#2a1808" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- 鼻子 -->
+  <path d="M 148 215 Q 150 225 152 215" stroke="#c89878" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+
+  <!-- 嘴巴 -->
+  <path d="M 142 237 Q 150 240 158 237" stroke="#a04048" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- 腮紅 -->
+  <ellipse cx="115" cy="215" rx="12" ry="6" fill="url(#blush1)"/>
+  <ellipse cx="185" cy="215" rx="12" ry="6" fill="url(#blush1)"/>
+</svg>

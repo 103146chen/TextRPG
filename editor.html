@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>織夢劇本編輯器</title>
+  <link rel="stylesheet" href="./src/editor/styles/editor.css" />
+</head>
+<body>
+  <div id="editor-app">
+    <!-- 工具列 -->
+    <div class="toolbar">
+      <div class="title">織夢編輯器</div>
+      <button id="btn-open" class="tb-btn">開啟專案</button>
+      <button id="btn-new" class="tb-btn">新專案</button>
+      <button id="btn-story-settings" class="tb-btn" title="故事設定（角色、結局、起始場景）">⚙ 故事</button>
+      <span id="project-name" class="project-name">(未開啟)</span>
+      <span id="dirty-indicator" class="dirty-indicator" style="display:none">有未儲存變更</span>
+      <div class="view-switcher">
+        <button id="view-scene" class="view-btn active">場景</button>
+        <button id="view-graph" class="view-btn">流程圖</button>
+      </div>
+      <div class="spacer"></div>
+      <button id="btn-undo" class="tb-btn" title="復原 (Ctrl+Z)">↶ 復原</button>
+      <button id="btn-redo" class="tb-btn" title="重做 (Ctrl+Shift+Z)">↷ 重做</button>
+      <button id="btn-save" class="tb-btn primary" title="儲存 (Ctrl+S)">儲存</button>
+    </div>
+
+    <!-- 左側邊欄 -->
+    <aside class="sidebar">
+      <div class="sidebar-section sidebar-scenes">
+        <div class="sidebar-section-header">
+          <span id="scene-count">場景</span>
+          <div style="display:flex;gap:4px">
+            <button id="btn-new-scene" title="新增場景">+ 新場景</button>
+            <button id="btn-delete-scene" title="刪除目前場景">刪除</button>
+          </div>
+        </div>
+        <ul id="scene-list" class="scene-list"></ul>
+      </div>
+      <div class="sidebar-side-tabs">
+        <button class="side-tab active" data-target="lint-panel">問題</button>
+        <button class="side-tab" data-target="flag-panel">Flags</button>
+      </div>
+      <div class="sidebar-section">
+        <div id="lint-panel" class="side-panel"></div>
+        <div id="flag-panel" class="side-panel" style="display:none"></div>
+      </div>
+    </aside>
+
+    <!-- 主內容區 -->
+    <main class="main">
+      <div id="main-content" style="flex:1;display:flex;flex-direction:column;overflow:hidden;"></div>
+      <div id="graph-content" style="flex:1;display:none;overflow:hidden;background:#1a1d23;"></div>
+    </main>
+  </div>
+
+  <script type="module" src="./src/editor/main.js"></script>
+</body>
+</html>

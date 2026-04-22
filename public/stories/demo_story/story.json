@@ -1,0 +1,48 @@
+{
+  "id": "demo_story",
+  "title": "雨後的書店",
+  "subtitle": "a short visual novel",
+  "author": "示範劇本",
+  "version": "1.0.0",
+  "start": "01_prologue",
+  "characters": {
+    "小鈴": {
+      "default": "ling_normal.svg",
+      "emotions": {
+        "normal": "ling_normal.svg",
+        "smile": "ling_smile.svg",
+        "shy": "ling_shy.svg",
+        "sad": "ling_sad.svg"
+      }
+    },
+    "店長": {
+      "default": "owner_normal.svg",
+      "emotions": {
+        "normal": "owner_normal.svg",
+        "smile": "owner_smile.svg"
+      }
+    }
+  },
+  "endings": [
+    {
+      "id": "ending_connection",
+      "title": "再次相遇",
+      "description": "你選擇了交出雨傘，也交出了第二次見面的可能。"
+    },
+    {
+      "id": "ending_books",
+      "title": "書頁之間",
+      "description": "文字本身就足以構成一段關係。你們之間有了共通的語言。"
+    },
+    {
+      "id": "ending_solitude",
+      "title": "獨自的午後",
+      "description": "有些相遇只是擦肩。你走進雨裡，她留在書店裡。"
+    },
+    {
+      "id": "ending_warmth",
+      "title": "共撐一傘",
+      "description": "世界上所有的偶然都暗中有伏筆。你們在傘下走了很遠。"
+    }
+  ]
+}

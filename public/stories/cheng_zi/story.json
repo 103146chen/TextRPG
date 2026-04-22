@@ -1,0 +1,91 @@
+﻿{
+  "id": "cheng_zi",
+  "title": "一桿秤仔",
+  "subtitle": "改編自賴和同名小說",
+  "author": "教學劇本",
+  "version": "1.0.0",
+  "start": "scene_01",
+  "characters": {
+    "得參": {
+      "default": "dechan_normal.png",
+      "emotions": {
+        "normal": "dechan_normal.svg",
+        "tired": "dechan_tired.svg",
+        "angry": "dechan_angry.svg",
+        "despair": "dechan_despair.svg"
+      }
+    },
+    "母親": {
+      "default": "mother_normal.png",
+      "emotions": {
+        "normal": "mother_normal.png",
+        "worried": "mother_worried.png"
+      }
+    },
+    "妻子": {
+      "default": "wife_normal.png",
+      "emotions": {
+        "normal": "wife_normal.png",
+        "worried": "wife_worried.png",
+        "crying": "wife_crying.png"
+      }
+    },
+    "巡查": {
+      "default": "patrol_normal.png",
+      "emotions": {
+        "normal": "patrol_normal.png",
+        "angry": "patrol_angry.png",
+        "cold": "patrol_cold.png"
+      }
+    },
+    "頭家": {
+      "default": "boss_normal.png",
+      "emotions": {
+        "normal": "boss_normal.png"
+      }
+    },
+    "老頭": {
+      "default": "old_man.png",
+      "emotions": {
+        "normal": "old_man.png"
+      }
+    }
+  },
+  "endings": [
+    {
+      "id": "ending_同歸於盡",
+      "title": "同歸於盡",
+      "description": "你選擇了賴和筆下的結局。除夕夜，你與那巡查一同倒下，成為這塊土地上一個不會被遺忘的名字。但你的母親、妻子和孩子，將要如何活下去？"
+    },
+    {
+      "id": "ending_苟活",
+      "title": "日復一日",
+      "description": "你咬牙吞下所有屈辱，繼續擺攤、繼續被刁難、繼續活著。有時夜深時你會想：這樣還算是「活著」嗎？還是只是尚未死去？"
+    },
+    {
+      "id": "ending_沉淪",
+      "title": "沉入酒甕",
+      "description": "你把罰金的痛、秤仔被沒收的恥、妻兒挨餓的愧，全都泡進了廉價的米酒裡。你還活著，但已經不是那個秦得參了。"
+    },
+    {
+      "id": "ending_失語",
+      "title": "啞口的人",
+      "description": "你從那日起不再開口。市場上人們說秦得參瘋了。你不瘋，你只是再也沒有話可以說給這個世界聽。"
+    },
+    {
+      "id": "ending_逃亡",
+      "title": "離鄉的人",
+      "description": "你拋下了母親、妻子和孩子，隻身逃到了不知名的角落。從此沒有人再聽過秦得參的名字。沒有同歸於盡，沒有壯烈，只有一個消失在殖民地邊緣的影子。"
+    },
+    {
+      "id": "ending_半途",
+      "title": "半途而廢的反抗",
+      "description": "你提早動手了，但動手的不是巡查，是一個無辜的路人。你被當成瘋子抓走、判刑。這場反抗沒有對象，也沒有意義。"
+    },
+    {
+      "id": "ending_無聲",
+      "title": "無人知曉的凍死",
+      "description": "除夕夜，你沒有同歸於盡，也沒有回家。你在河邊坐了一整夜，隔天被人發現時，身子已經僵了。沒有人知道你為什麼死，連你自己都說不清楚。"
+    }
+  ]
+}

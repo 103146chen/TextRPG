@@ -1,0 +1,237 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="wall" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5a4530"/>
+      <stop offset="100%" stop-color="#2a1f14"/>
+    </linearGradient>
+    <linearGradient id="floor" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a2818"/>
+      <stop offset="100%" stop-color="#1a1008"/>
+    </linearGradient>
+    <linearGradient id="shelf" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a3222"/>
+      <stop offset="100%" stop-color="#2a1808"/>
+    </linearGradient>
+    <radialGradient id="lightSrc" cx="0.5" cy="0" r="0.8">
+      <stop offset="0%" stop-color="#ffd090" stop-opacity="0.6"/>
+      <stop offset="100%" stop-color="#ffd090" stop-opacity="0"/>
+    </radialGradient>
+    <linearGradient id="book" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#8a4030"/>
+      <stop offset="100%" stop-color="#5a2818"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 牆面 -->
+  <rect width="1600" height="700" fill="url(#wall)"/>
+
+  <!-- 地板 -->
+  <rect y="700" width="1600" height="200" fill="url(#floor)"/>
+
+  <!-- 木板地板紋理 -->
+  <g stroke="#1a1008" stroke-width="1" opacity="0.6">
+    <line x1="0" y1="750" x2="1600" y2="750"/>
+    <line x1="0" y1="800" x2="1600" y2="800"/>
+    <line x1="0" y1="850" x2="1600" y2="850"/>
+  </g>
+
+  <!-- 暖光光暈 -->
+  <ellipse cx="800" cy="100" rx="900" ry="400" fill="url(#lightSrc)"/>
+
+  <!-- 左側書架 -->
+  <g>
+    <rect x="30" y="100" width="280" height="600" fill="url(#shelf)" stroke="#1a1008" stroke-width="2"/>
+    <!-- 層板 -->
+    <line x1="30" y1="200" x2="310" y2="200" stroke="#1a1008" stroke-width="3"/>
+    <line x1="30" y1="320" x2="310" y2="320" stroke="#1a1008" stroke-width="3"/>
+    <line x1="30" y1="440" x2="310" y2="440" stroke="#1a1008" stroke-width="3"/>
+    <line x1="30" y1="560" x2="310" y2="560" stroke="#1a1008" stroke-width="3"/>
+    <line x1="30" y1="680" x2="310" y2="680" stroke="#1a1008" stroke-width="3"/>
+
+    <!-- 書本（隨機顏色） -->
+    <g>
+      <rect x="45" y="115" width="20" height="80" fill="#6a3022"/>
+      <rect x="67" y="110" width="22" height="85" fill="#4a5a68"/>
+      <rect x="91" y="118" width="18" height="77" fill="#8a6040"/>
+      <rect x="111" y="108" width="24" height="87" fill="#5a4030"/>
+      <rect x="137" y="115" width="20" height="80" fill="#3a5048"/>
+      <rect x="159" y="112" width="22" height="83" fill="#6a5030"/>
+      <rect x="183" y="118" width="18" height="77" fill="#502830"/>
+      <rect x="203" y="110" width="24" height="85" fill="#4a3820"/>
+      <rect x="229" y="115" width="20" height="80" fill="#6a4228"/>
+      <rect x="251" y="112" width="22" height="83" fill="#3a4a5a"/>
+      <rect x="275" y="118" width="20" height="77" fill="#7a5030"/>
+    </g>
+    <g>
+      <rect x="45" y="215" width="22" height="100" fill="#4a3020"/>
+      <rect x="69" y="220" width="20" height="95" fill="#5a2818"/>
+      <rect x="91" y="210" width="24" height="105" fill="#3a4850"/>
+      <rect x="117" y="218" width="20" height="97" fill="#6a4030"/>
+      <rect x="139" y="215" width="22" height="100" fill="#4a5060"/>
+      <rect x="163" y="212" width="20" height="103" fill="#7a5028"/>
+      <rect x="185" y="218" width="24" height="97" fill="#5a3828"/>
+      <rect x="211" y="215" width="22" height="100" fill="#3a5848"/>
+      <rect x="235" y="210" width="20" height="105" fill="#6a4830"/>
+      <rect x="257" y="218" width="22" height="97" fill="#504028"/>
+      <rect x="281" y="215" width="18" height="100" fill="#7a4028"/>
+    </g>
+    <g>
+      <rect x="45" y="335" width="20" height="100" fill="#5a3830"/>
+      <rect x="67" y="340" width="22" height="95" fill="#4a4a60"/>
+      <rect x="91" y="330" width="24" height="105" fill="#6a4828"/>
+      <rect x="117" y="338" width="20" height="97" fill="#3a5048"/>
+      <rect x="139" y="335" width="22" height="100" fill="#5a2828"/>
+      <rect x="163" y="332" width="20" height="103" fill="#4a3020"/>
+      <rect x="185" y="338" width="24" height="97" fill="#6a5030"/>
+      <rect x="211" y="335" width="22" height="100" fill="#3a4858"/>
+      <rect x="235" y="330" width="20" height="105" fill="#5a3828"/>
+      <rect x="257" y="338" width="22" height="97" fill="#4a5030"/>
+      <rect x="281" y="335" width="18" height="100" fill="#7a4830"/>
+    </g>
+    <g>
+      <rect x="45" y="455" width="24" height="100" fill="#4a3020"/>
+      <rect x="71" y="460" width="20" height="95" fill="#5a4228"/>
+      <rect x="93" y="450" width="22" height="105" fill="#3a4850"/>
+      <rect x="117" y="458" width="20" height="97" fill="#6a3020"/>
+      <rect x="139" y="455" width="22" height="100" fill="#4a5060"/>
+      <rect x="163" y="452" width="24" height="103" fill="#5a3828"/>
+      <rect x="189" y="458" width="20" height="97" fill="#7a4028"/>
+      <rect x="211" y="455" width="22" height="100" fill="#3a5040"/>
+      <rect x="235" y="450" width="20" height="105" fill="#6a4028"/>
+      <rect x="257" y="458" width="22" height="97" fill="#4a3828"/>
+      <rect x="281" y="455" width="18" height="100" fill="#5a2830"/>
+    </g>
+    <g>
+      <rect x="45" y="575" width="22" height="100" fill="#6a4030"/>
+      <rect x="69" y="580" width="20" height="95" fill="#3a4858"/>
+      <rect x="91" y="570" width="24" height="105" fill="#5a3020"/>
+      <rect x="117" y="578" width="20" height="97" fill="#4a4828"/>
+      <rect x="139" y="575" width="22" height="100" fill="#7a4828"/>
+      <rect x="163" y="572" width="20" height="103" fill="#3a4050"/>
+      <rect x="185" y="578" width="24" height="97" fill="#5a3828"/>
+      <rect x="211" y="575" width="22" height="100" fill="#6a4028"/>
+      <rect x="235" y="570" width="20" height="105" fill="#4a3030"/>
+      <rect x="257" y="578" width="22" height="97" fill="#5a4830"/>
+      <rect x="281" y="575" width="18" height="100" fill="#3a4030"/>
+    </g>
+  </g>
+
+  <!-- 右側書架 -->
+  <g>
+    <rect x="1290" y="100" width="280" height="600" fill="url(#shelf)" stroke="#1a1008" stroke-width="2"/>
+    <line x1="1290" y1="200" x2="1570" y2="200" stroke="#1a1008" stroke-width="3"/>
+    <line x1="1290" y1="320" x2="1570" y2="320" stroke="#1a1008" stroke-width="3"/>
+    <line x1="1290" y1="440" x2="1570" y2="440" stroke="#1a1008" stroke-width="3"/>
+    <line x1="1290" y1="560" x2="1570" y2="560" stroke="#1a1008" stroke-width="3"/>
+
+    <g>
+      <rect x="1305" y="115" width="22" height="80" fill="#5a3030"/>
+      <rect x="1329" y="110" width="20" height="85" fill="#4a5060"/>
+      <rect x="1351" y="118" width="24" height="77" fill="#7a5028"/>
+      <rect x="1377" y="108" width="20" height="87" fill="#3a4050"/>
+      <rect x="1399" y="115" width="22" height="80" fill="#6a4030"/>
+      <rect x="1423" y="112" width="20" height="83" fill="#5a3020"/>
+      <rect x="1445" y="118" width="24" height="77" fill="#4a5830"/>
+      <rect x="1471" y="110" width="22" height="85" fill="#7a4028"/>
+      <rect x="1495" y="115" width="20" height="80" fill="#4a3020"/>
+      <rect x="1517" y="112" width="22" height="83" fill="#6a4830"/>
+      <rect x="1541" y="118" width="20" height="77" fill="#3a4048"/>
+    </g>
+    <g>
+      <rect x="1305" y="215" width="20" height="100" fill="#4a3828"/>
+      <rect x="1327" y="220" width="24" height="95" fill="#6a3028"/>
+      <rect x="1353" y="210" width="22" height="105" fill="#3a5048"/>
+      <rect x="1377" y="218" width="20" height="97" fill="#5a4030"/>
+      <rect x="1399" y="215" width="22" height="100" fill="#7a4830"/>
+      <rect x="1423" y="212" width="24" height="103" fill="#4a3050"/>
+      <rect x="1449" y="218" width="20" height="97" fill="#6a4028"/>
+      <rect x="1471" y="215" width="22" height="100" fill="#3a4838"/>
+      <rect x="1495" y="210" width="20" height="105" fill="#5a2830"/>
+      <rect x="1517" y="218" width="22" height="97" fill="#4a5030"/>
+      <rect x="1541" y="215" width="18" height="100" fill="#6a4828"/>
+    </g>
+    <g>
+      <rect x="1305" y="335" width="22" height="100" fill="#5a3830"/>
+      <rect x="1329" y="340" width="20" height="95" fill="#4a4a60"/>
+      <rect x="1351" y="330" width="24" height="105" fill="#6a4828"/>
+      <rect x="1377" y="338" width="20" height="97" fill="#3a5048"/>
+      <rect x="1399" y="335" width="22" height="100" fill="#5a2828"/>
+      <rect x="1423" y="332" width="20" height="103" fill="#4a3020"/>
+      <rect x="1445" y="338" width="24" height="97" fill="#6a5030"/>
+      <rect x="1471" y="335" width="22" height="100" fill="#3a4858"/>
+      <rect x="1495" y="330" width="20" height="105" fill="#5a3828"/>
+      <rect x="1517" y="338" width="22" height="97" fill="#4a5030"/>
+      <rect x="1541" y="335" width="18" height="100" fill="#7a4830"/>
+    </g>
+    <g>
+      <rect x="1305" y="455" width="24" height="100" fill="#5a3020"/>
+      <rect x="1331" y="460" width="20" height="95" fill="#4a4028"/>
+      <rect x="1353" y="450" width="22" height="105" fill="#6a3030"/>
+      <rect x="1377" y="458" width="20" height="97" fill="#3a4858"/>
+      <rect x="1399" y="455" width="22" height="100" fill="#7a4028"/>
+      <rect x="1423" y="452" width="24" height="103" fill="#5a3828"/>
+      <rect x="1449" y="458" width="20" height="97" fill="#4a3020"/>
+      <rect x="1471" y="455" width="22" height="100" fill="#6a4830"/>
+      <rect x="1495" y="450" width="20" height="105" fill="#3a5040"/>
+      <rect x="1517" y="458" width="22" height="97" fill="#5a2830"/>
+      <rect x="1541" y="455" width="18" height="100" fill="#4a5030"/>
+    </g>
+    <g>
+      <rect x="1305" y="575" width="22" height="100" fill="#4a3030"/>
+      <rect x="1329" y="580" width="24" height="95" fill="#6a4028"/>
+      <rect x="1355" y="570" width="20" height="105" fill="#3a4848"/>
+      <rect x="1377" y="578" width="22" height="97" fill="#5a3020"/>
+      <rect x="1401" y="575" width="20" height="100" fill="#4a5060"/>
+      <rect x="1423" y="572" width="24" height="103" fill="#7a4830"/>
+      <rect x="1449" y="578" width="20" height="97" fill="#5a3028"/>
+      <rect x="1471" y="575" width="22" height="100" fill="#3a5040"/>
+      <rect x="1495" y="570" width="20" height="105" fill="#6a4028"/>
+      <rect x="1517" y="578" width="22" height="97" fill="#4a3828"/>
+      <rect x="1541" y="575" width="18" height="100" fill="#5a2828"/>
+    </g>
+  </g>
+
+  <!-- 中央空間：窗戶 -->
+  <g>
+    <rect x="620" y="180" width="360" height="320" fill="#6a7585" opacity="0.4" stroke="#2a1808" stroke-width="4"/>
+    <line x1="800" y1="180" x2="800" y2="500" stroke="#2a1808" stroke-width="4"/>
+    <line x1="620" y1="340" x2="980" y2="340" stroke="#2a1808" stroke-width="4"/>
+
+    <!-- 窗外雨絲 -->
+    <g stroke="#a8b0c0" stroke-width="0.6" opacity="0.5">
+      <line x1="650" y1="190" x2="640" y2="240"/>
+      <line x1="700" y1="200" x2="690" y2="250"/>
+      <line x1="750" y1="185" x2="740" y2="235"/>
+      <line x1="650" y1="350" x2="640" y2="400"/>
+      <line x1="720" y1="360" x2="710" y2="410"/>
+      <line x1="770" y1="370" x2="760" y2="420"/>
+      <line x1="820" y1="200" x2="810" y2="250"/>
+      <line x1="880" y1="190" x2="870" y2="240"/>
+      <line x1="930" y1="210" x2="920" y2="260"/>
+      <line x1="830" y1="360" x2="820" y2="410"/>
+      <line x1="900" y1="380" x2="890" y2="430"/>
+      <line x1="950" y1="360" x2="940" y2="410"/>
+    </g>
+  </g>
+
+  <!-- 吊燈 -->
+  <g>
+    <line x1="400" y1="0" x2="400" y2="80" stroke="#1a1008" stroke-width="2"/>
+    <circle cx="400" cy="100" r="20" fill="#d4a060" opacity="0.8"/>
+    <circle cx="400" cy="100" r="30" fill="#ffd090" opacity="0.3"/>
+    <line x1="1200" y1="0" x2="1200" y2="80" stroke="#1a1008" stroke-width="2"/>
+    <circle cx="1200" cy="100" r="20" fill="#d4a060" opacity="0.8"/>
+    <circle cx="1200" cy="100" r="30" fill="#ffd090" opacity="0.3"/>
+  </g>
+
+  <!-- 地板上的燈影 -->
+  <ellipse cx="400" cy="720" rx="150" ry="20" fill="#ffd090" opacity="0.1"/>
+  <ellipse cx="1200" cy="720" rx="150" ry="20" fill="#ffd090" opacity="0.1"/>
+
+  <!-- 閱讀區桌子（遠處剪影） -->
+  <g opacity="0.6">
+    <rect x="500" y="620" width="180" height="20" fill="#2a1808"/>
+    <rect x="510" y="640" width="20" height="60" fill="#1a1008"/>
+    <rect x="650" y="640" width="20" height="60" fill="#1a1008"/>
+  </g>
+</svg>

@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>織夢</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&family=Klee+One:wght@400;600&family=Shippori+Mincho:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/styles/main.css" />
+</head>
+<body>
+  <div id="app">
+    <!-- 標題畫面 -->
+    <div id="title-screen" class="screen">
+      <div class="title-bg"></div>
+      <div class="title-content">
+        <h1 class="game-title">織夢</h1>
+        <p class="game-subtitle">— 一個文字冒險引擎 —</p>
+        <nav class="title-menu">
+          <button class="title-btn" data-action="start">開始新故事</button>
+          <button class="title-btn" data-action="load">讀取進度</button>
+          <button class="title-btn" data-action="gallery">結局圖鑑</button>
+          <button class="title-btn" data-action="about">關於</button>
+        </nav>
+        <p class="title-footer">按任意鍵或點擊繼續</p>
+      </div>
+    </div>
+
+    <!-- 遊戲畫面 -->
+    <div id="game-screen" class="screen hidden">
+      <div id="background-layer" class="bg-layer"></div>
+      <div id="character-layer" class="char-layer">
+        <div class="char-slot" data-slot="left"></div>
+        <div class="char-slot" data-slot="center"></div>
+        <div class="char-slot" data-slot="right"></div>
+      </div>
+
+      <div id="text-container" class="text-container">
+        <div id="speaker-name" class="speaker-name"></div>
+        <div id="text-box" class="text-box">
+          <div id="text-content" class="text-content"></div>
+          <span id="text-indicator" class="text-indicator">▼</span>
+        </div>
+      </div>
+
+      <div id="choice-container" class="choice-container hidden"></div>
+
+      <div class="game-controls">
+        <button class="ctrl-btn" data-ctrl="auto" title="自動播放">自動</button>
+        <button class="ctrl-btn" data-ctrl="skip" title="跳過">跳過</button>
+        <button class="ctrl-btn" data-ctrl="back" title="回溯">回溯</button>
+        <button class="ctrl-btn" data-ctrl="save" title="儲存">存檔</button>
+        <button class="ctrl-btn" data-ctrl="load" title="讀取">讀檔</button>
+        <button class="ctrl-btn" data-ctrl="title" title="回主選單">主選單</button>
+      </div>
+    </div>
+
+    <!-- 存讀檔畫面 -->
+    <div id="save-screen" class="screen hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h2 id="save-title">存檔</h2>
+          <button class="close-btn" data-close>×</button>
+        </div>
+        <div id="save-slots" class="save-slots"></div>
+      </div>
+    </div>
+
+    <!-- 圖鑑畫面 -->
+    <div id="gallery-screen" class="screen hidden">
+      <div class="modal gallery-modal">
+        <div class="modal-header">
+          <h2>結局圖鑑</h2>
+          <button class="close-btn" data-close>×</button>
+        </div>
+        <div id="gallery-grid" class="gallery-grid"></div>
+      </div>
+    </div>
+
+    <!-- 關於畫面 -->
+    <div id="about-screen" class="screen hidden">
+      <div class="modal">
+        <div class="modal-header">
+          <h2>關於</h2>
+          <button class="close-btn" data-close>×</button>
+        </div>
+        <div class="about-content">
+          <p><strong>織夢</strong>是一個開源的文字冒險引擎。</p>
+          <p>所有劇本都以 Markdown 格式儲存於 <code>public/stories/</code>，你可以自由創作屬於自己的故事。</p>
+          <p>支援多結局、存讀檔、回溯、立繪、BGM 等經典 GalGame 功能。</p>
+          <p class="muted">全部在瀏覽器本地執行，無需後端伺服器。</p>
+        </div>
+      </div>
+    </div>
+
+    <!-- 載入中畫面 -->
+    <div id="loading-screen" class="screen hidden">
+      <div class="loader">
+        <div class="loader-ring"></div>
+        <p class="loader-text">載入中…</p>
+      </div>
+    </div>
+  </div>
+
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>

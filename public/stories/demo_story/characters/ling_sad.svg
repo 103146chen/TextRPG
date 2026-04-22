@@ -1,0 +1,59 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 300 700" width="100%" height="100%">
+  <defs>
+    <linearGradient id="hair4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#3a2820"/>
+      <stop offset="100%" stop-color="#1a1108"/>
+    </linearGradient>
+    <linearGradient id="skin4" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fce8d6"/>
+      <stop offset="100%" stop-color="#f0cfa8"/>
+    </linearGradient>
+    <linearGradient id="sweater4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8d4a8"/>
+      <stop offset="100%" stop-color="#b8996a"/>
+    </linearGradient>
+    <linearGradient id="skirt4" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#4a3a2e"/>
+      <stop offset="100%" stop-color="#2a1f18"/>
+    </linearGradient>
+  </defs>
+
+  <path d="M 70 340 Q 80 310 110 300 L 190 300 Q 220 310 230 340 L 245 540 Q 240 560 220 565 L 80 565 Q 60 560 55 540 Z" fill="url(#sweater4)" stroke="#8a6e48" stroke-width="1.5"/>
+  <g stroke="#a8885a" stroke-width="0.6" fill="none" opacity="0.5">
+    <line x1="90" y1="340" x2="90" y2="560"/>
+    <line x1="120" y1="340" x2="120" y2="560"/>
+    <line x1="150" y1="340" x2="150" y2="560"/>
+    <line x1="180" y1="340" x2="180" y2="560"/>
+    <line x1="210" y1="340" x2="210" y2="560"/>
+  </g>
+  <path d="M 70 540 L 240 540 L 250 680 L 60 680 Z" fill="url(#skirt4)" stroke="#1a120a" stroke-width="1"/>
+  <path d="M 130 260 L 170 260 L 172 310 L 128 310 Z" fill="url(#skin4)"/>
+  <ellipse cx="150" cy="190" rx="62" ry="78" fill="url(#skin4)" stroke="#d4a880" stroke-width="0.8"/>
+  <path d="M 88 180 Q 82 130 110 95 Q 150 70 190 95 Q 218 130 212 180 L 215 250 L 205 260 L 205 220 Q 195 235 178 240 L 150 245 L 122 240 Q 105 235 95 220 L 95 260 L 85 250 Z" fill="url(#hair4)"/>
+  <path d="M 98 140 Q 110 105 150 105 Q 190 105 202 140 Q 200 165 185 170 Q 175 145 150 145 Q 125 145 115 170 Q 100 165 98 140 Z" fill="url(#hair4)"/>
+  <path d="M 92 170 Q 88 210 94 255 L 102 255 Q 98 210 102 170 Z" fill="url(#hair4)"/>
+  <path d="M 208 170 Q 212 210 206 255 L 198 255 Q 202 210 198 170 Z" fill="url(#hair4)"/>
+
+  <!-- 難過眉毛：八字形 -->
+  <path d="M 118 167 Q 128 173 138 175" stroke="#2a1808" stroke-width="2" fill="none" stroke-linecap="round"/>
+  <path d="M 162 175 Q 172 173 182 167" stroke="#2a1808" stroke-width="2" fill="none" stroke-linecap="round"/>
+
+  <!-- 難過眼睛 -->
+  <ellipse cx="128" cy="198" rx="9" ry="10" fill="#fff"/>
+  <ellipse cx="172" cy="198" rx="9" ry="10" fill="#fff"/>
+  <ellipse cx="128" cy="200" rx="7" ry="8" fill="#5a3e2a"/>
+  <ellipse cx="172" cy="200" rx="7" ry="8" fill="#5a3e2a"/>
+  <circle cx="128" cy="200" r="3" fill="#fff" opacity="0.7"/>
+  <circle cx="172" cy="200" r="3" fill="#fff" opacity="0.7"/>
+  <path d="M 120 192 Q 128 188 136 192" stroke="#2a1808" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M 164 192 Q 172 188 180 192" stroke="#2a1808" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- 眼尾淚光 -->
+  <ellipse cx="120" cy="208" rx="2" ry="3" fill="#a8d0e0" opacity="0.6"/>
+
+  <!-- 鼻子 -->
+  <path d="M 148 215 Q 150 225 152 215" stroke="#c89878" stroke-width="1.2" fill="none" stroke-linecap="round"/>
+
+  <!-- 難過嘴巴 -->
+  <path d="M 142 240 Q 150 236 158 240" stroke="#a04048" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+</svg>

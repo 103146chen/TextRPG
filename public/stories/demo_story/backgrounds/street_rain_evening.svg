@@ -1,0 +1,133 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1600 900" width="100%" height="100%" preserveAspectRatio="xMidYMid slice">
+  <defs>
+    <linearGradient id="esky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a2040"/>
+      <stop offset="40%" stop-color="#4a3050"/>
+      <stop offset="70%" stop-color="#7a4858"/>
+      <stop offset="100%" stop-color="#a85858"/>
+    </linearGradient>
+    <linearGradient id="eground" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#2a1820"/>
+      <stop offset="100%" stop-color="#0a0408"/>
+    </linearGradient>
+    <radialGradient id="streetlamp" cx="0.5" cy="0" r="0.5">
+      <stop offset="0%" stop-color="#ffd090" stop-opacity="0.9"/>
+      <stop offset="100%" stop-color="#ffd090" stop-opacity="0"/>
+    </radialGradient>
+  </defs>
+
+  <rect width="1600" height="600" fill="url(#esky)"/>
+
+  <!-- 遠處建築（傍晚剪影，有燈光） -->
+  <g>
+    <rect x="0" y="300" width="280" height="300" fill="#1a1020" opacity="0.9"/>
+    <rect x="260" y="280" width="220" height="320" fill="#181020" opacity="0.92"/>
+    <rect x="460" y="320" width="180" height="280" fill="#140818" opacity="0.95"/>
+    <rect x="620" y="260" width="240" height="340" fill="#1a1020" opacity="0.9"/>
+    <rect x="840" y="290" width="200" height="310" fill="#181020" opacity="0.92"/>
+    <rect x="1020" y="310" width="220" height="290" fill="#140818" opacity="0.95"/>
+    <rect x="1220" y="270" width="260" height="330" fill="#1a1020" opacity="0.9"/>
+    <rect x="1460" y="300" width="140" height="300" fill="#181020" opacity="0.92"/>
+  </g>
+
+  <!-- 建築窗戶燈光 -->
+  <g fill="#ffd090" opacity="0.6">
+    <rect x="50" y="380" width="8" height="12"/>
+    <rect x="80" y="410" width="8" height="12"/>
+    <rect x="110" y="390" width="8" height="12"/>
+    <rect x="160" y="430" width="8" height="12"/>
+    <rect x="200" y="400" width="8" height="12"/>
+    <rect x="290" y="370" width="8" height="12"/>
+    <rect x="340" y="400" width="8" height="12"/>
+    <rect x="390" y="420" width="8" height="12"/>
+    <rect x="490" y="380" width="8" height="12"/>
+    <rect x="540" y="430" width="8" height="12"/>
+    <rect x="650" y="340" width="8" height="12"/>
+    <rect x="700" y="380" width="8" height="12"/>
+    <rect x="750" y="420" width="8" height="12"/>
+    <rect x="800" y="360" width="8" height="12"/>
+    <rect x="870" y="370" width="8" height="12"/>
+    <rect x="920" y="400" width="8" height="12"/>
+    <rect x="970" y="440" width="8" height="12"/>
+    <rect x="1050" y="380" width="8" height="12"/>
+    <rect x="1100" y="420" width="8" height="12"/>
+    <rect x="1150" y="390" width="8" height="12"/>
+    <rect x="1250" y="350" width="8" height="12"/>
+    <rect x="1300" y="400" width="8" height="12"/>
+    <rect x="1380" y="420" width="8" height="12"/>
+    <rect x="1450" y="360" width="8" height="12"/>
+    <rect x="1500" y="430" width="8" height="12"/>
+  </g>
+
+  <!-- 地面 -->
+  <rect y="600" width="1600" height="300" fill="url(#eground)"/>
+
+  <!-- 街燈 -->
+  <g>
+    <rect x="398" y="500" width="4" height="200" fill="#1a0e08"/>
+    <circle cx="400" cy="500" r="12" fill="#ffd090"/>
+    <ellipse cx="400" cy="500" rx="60" ry="80" fill="url(#streetlamp)"/>
+    <ellipse cx="400" cy="750" rx="120" ry="30" fill="#ffd090" opacity="0.15"/>
+  </g>
+  <g>
+    <rect x="1198" y="500" width="4" height="200" fill="#1a0e08"/>
+    <circle cx="1200" cy="500" r="12" fill="#ffd090"/>
+    <ellipse cx="1200" cy="500" rx="60" ry="80" fill="url(#streetlamp)"/>
+    <ellipse cx="1200" cy="750" rx="120" ry="30" fill="#ffd090" opacity="0.15"/>
+  </g>
+
+  <!-- 地面積水反射 -->
+  <ellipse cx="300" cy="780" rx="200" ry="18" fill="#a85858" opacity="0.15"/>
+  <ellipse cx="800" cy="810" rx="250" ry="20" fill="#7a4858" opacity="0.12"/>
+  <ellipse cx="1300" cy="790" rx="220" ry="18" fill="#a85858" opacity="0.15"/>
+
+  <!-- 雨絲 -->
+  <g stroke="#d4a8a0" stroke-width="0.8" opacity="0.35">
+    <line x1="100" y1="0" x2="85" y2="60"/>
+    <line x1="180" y1="20" x2="165" y2="80"/>
+    <line x1="260" y1="0" x2="245" y2="60"/>
+    <line x1="340" y1="30" x2="325" y2="90"/>
+    <line x1="420" y1="10" x2="405" y2="70"/>
+    <line x1="500" y1="40" x2="485" y2="100"/>
+    <line x1="580" y1="0" x2="565" y2="60"/>
+    <line x1="660" y1="20" x2="645" y2="80"/>
+    <line x1="740" y1="50" x2="725" y2="110"/>
+    <line x1="820" y1="10" x2="805" y2="70"/>
+    <line x1="900" y1="30" x2="885" y2="90"/>
+    <line x1="980" y1="0" x2="965" y2="60"/>
+    <line x1="1060" y1="40" x2="1045" y2="100"/>
+    <line x1="1140" y1="20" x2="1125" y2="80"/>
+    <line x1="1220" y1="0" x2="1205" y2="60"/>
+    <line x1="1300" y1="30" x2="1285" y2="90"/>
+    <line x1="1380" y1="10" x2="1365" y2="70"/>
+    <line x1="1460" y1="40" x2="1445" y2="100"/>
+    <line x1="130" y1="150" x2="115" y2="210"/>
+    <line x1="210" y1="170" x2="195" y2="230"/>
+    <line x1="290" y1="150" x2="275" y2="210"/>
+    <line x1="370" y1="190" x2="355" y2="250"/>
+    <line x1="450" y1="160" x2="435" y2="220"/>
+    <line x1="530" y1="200" x2="515" y2="260"/>
+    <line x1="610" y1="150" x2="595" y2="210"/>
+    <line x1="690" y1="180" x2="675" y2="240"/>
+    <line x1="770" y1="200" x2="755" y2="260"/>
+    <line x1="850" y1="170" x2="835" y2="230"/>
+    <line x1="930" y1="190" x2="915" y2="250"/>
+    <line x1="1010" y1="150" x2="995" y2="210"/>
+    <line x1="1090" y1="200" x2="1075" y2="260"/>
+    <line x1="1170" y1="170" x2="1155" y2="230"/>
+    <line x1="1250" y1="150" x2="1235" y2="210"/>
+    <line x1="1330" y1="180" x2="1315" y2="240"/>
+    <line x1="1410" y1="160" x2="1395" y2="220"/>
+    <line x1="80" y1="350" x2="65" y2="410"/>
+    <line x1="240" y1="320" x2="225" y2="380"/>
+    <line x1="550" y1="340" x2="535" y2="400"/>
+    <line x1="900" y1="320" x2="885" y2="380"/>
+    <line x1="1250" y1="340" x2="1235" y2="400"/>
+    <line x1="150" y1="550" x2="135" y2="610"/>
+    <line x1="550" y1="560" x2="535" y2="620"/>
+    <line x1="950" y1="580" x2="935" y2="640"/>
+    <line x1="1350" y1="560" x2="1335" y2="620"/>
+  </g>
+
+  <rect width="1600" height="900" fill="#2a1820" opacity="0.1"/>
+</svg>

@@ -1,0 +1,67 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 700" width="100%" height="100%">
+  <defs>
+    <linearGradient id="ohair" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5a4838"/>
+      <stop offset="100%" stop-color="#2a1f18"/>
+    </linearGradient>
+    <linearGradient id="oskin" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#e8d0b0"/>
+      <stop offset="100%" stop-color="#c8a888"/>
+    </linearGradient>
+    <linearGradient id="oshirt" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#e8e4d8"/>
+      <stop offset="100%" stop-color="#b8b0a0"/>
+    </linearGradient>
+    <linearGradient id="oapron" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0%" stop-color="#5a4030"/>
+      <stop offset="100%" stop-color="#3a2818"/>
+    </linearGradient>
+  </defs>
+
+  <!-- 身體 -->
+  <path d="M 70 340 Q 80 310 120 300 L 200 300 Q 240 310 250 340 L 260 560 L 60 560 Z" fill="url(#oshirt)" stroke="#8a8070" stroke-width="1.5"/>
+
+  <!-- 圍裙 -->
+  <path d="M 100 340 L 220 340 L 230 580 L 90 580 Z" fill="url(#oapron)" stroke="#1a0e08" stroke-width="1"/>
+
+  <!-- 圍裙帶 -->
+  <path d="M 100 340 L 130 310 M 220 340 L 190 310" stroke="#3a2818" stroke-width="4" fill="none" stroke-linecap="round"/>
+
+  <!-- 圍裙口袋 -->
+  <rect x="135" y="430" width="50" height="40" fill="none" stroke="#2a1808" stroke-width="1" rx="2"/>
+
+  <!-- 褲子 -->
+  <path d="M 90 560 L 230 560 L 240 680 L 80 680 Z" fill="#2a2218" stroke="#1a1108" stroke-width="1"/>
+
+  <!-- 脖子 -->
+  <path d="M 140 260 L 180 260 L 182 310 L 138 310 Z" fill="url(#oskin)"/>
+
+  <!-- 臉（較方） -->
+  <path d="M 95 180 Q 95 130 120 105 Q 160 90 200 105 Q 225 130 225 180 Q 225 240 195 260 L 125 260 Q 95 240 95 180 Z" fill="url(#oskin)" stroke="#a88868" stroke-width="0.8"/>
+
+  <!-- 頭髮（短髮） -->
+  <path d="M 95 140 Q 90 105 125 85 Q 160 75 195 85 Q 230 105 225 140 L 225 170 Q 215 150 200 148 Q 180 140 160 140 Q 140 140 120 148 Q 105 150 95 170 Z" fill="url(#ohair)"/>
+
+  <!-- 眉毛 -->
+  <path d="M 120 160 Q 133 157 145 161" stroke="#1a0e08" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+  <path d="M 175 161 Q 187 157 200 160" stroke="#1a0e08" stroke-width="2.5" fill="none" stroke-linecap="round"/>
+
+  <!-- 眼鏡 -->
+  <circle cx="132" cy="188" r="18" fill="#fff" fill-opacity="0.15" stroke="#2a1808" stroke-width="2"/>
+  <circle cx="188" cy="188" r="18" fill="#fff" fill-opacity="0.15" stroke="#2a1808" stroke-width="2"/>
+  <line x1="150" y1="188" x2="170" y2="188" stroke="#2a1808" stroke-width="2"/>
+
+  <!-- 眼睛 -->
+  <ellipse cx="132" cy="190" rx="6" ry="4" fill="#3a2818"/>
+  <ellipse cx="188" cy="190" rx="6" ry="4" fill="#3a2818"/>
+
+  <!-- 鼻子 -->
+  <path d="M 158 205 Q 160 220 162 205" stroke="#a88868" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+  <path d="M 155 225 Q 160 228 165 225" stroke="#a88868" stroke-width="1" fill="none"/>
+
+  <!-- 嘴巴 -->
+  <path d="M 148 240 Q 160 242 172 240" stroke="#806048" stroke-width="1.5" fill="none" stroke-linecap="round"/>
+
+  <!-- 鬍渣陰影 -->
+  <ellipse cx="160" cy="248" rx="28" ry="6" fill="#a88868" opacity="0.25"/>
+</svg>
