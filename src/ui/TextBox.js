@@ -48,37 +48,12 @@ export class TextBox {
       };
       typeNext();
 
-      // 允許「點擊立即完成並前進」（一次點擊 = 跳完打字 + 前進）
-      this.skipToEnd = () => {
-        this.clearTimers();
-        this.contentEl.innerHTML = chars
-          .map(c => `<span class="char" style="opacity:1">${this.#escape(c)}</span>`)
-          .join("");
-        this.isTyping = false;
-        this.indicatorEl.classList.add("show");
-        this.onTypingComplete = resolve;
-      };
     });
   }
 
-  /**
-   * 玩家點擊：
-   *   打字中 → 立即跳完並前進（一次點擊，不需要第二次）
-   *   打字已完成 → 直接前進
-   * 返回 true 時呼叫者應呼叫 engine.advance()
-   */
   handleClick() {
-    if (this.isTyping && this.skipToEnd) {
-      // 跳完打字，立即也 resolve（一次點擊前進）
-      this.skipToEnd();
-      if (this.onTypingComplete) {
-        const cb = this.onTypingComplete;
-        this.onTypingComplete = null;
-        this.indicatorEl.classList.remove("show");
-        cb();
-        return true;
-      }
-      return false;
+    if (this.isTyping) {
+      return false; // 文字還沒跑完，點擊無效
     }
     if (this.onTypingComplete) {
       const cb = this.onTypingComplete;
@@ -88,6 +63,13 @@ export class TextBox {
       return true;
     }
     return false;
+  }
+
+  changeFontSize(delta) {
+    // 預設字體大小大約為 20px，可以在 main.css 確認
+    const currentSize = parseFloat(window.getComputedStyle(this.contentEl).fontSize) || 20;
+    const newSize = Math.max(14, Math.min(48, currentSize + delta));
+    this.contentEl.style.fontSize = `${newSize}px`;
   }
 
   clearTimers() {

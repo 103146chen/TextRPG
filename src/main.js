@@ -43,8 +43,6 @@ let audio = null;
 let engine = null;
 
 let saveMode = "save"; // "save" | "load"
-let autoPlay = false;
-let autoPlayTimer = null;
 
 // =====================================================
 // 場景切換動畫
@@ -99,18 +97,9 @@ async function handleText(speaker, text, state) {
   else characterLayer.clearSpeaking();
   await textBox.showText(speaker, text);
 
-  // 自動播放
-  if (autoPlay) {
-    autoPlayTimer = setTimeout(() => {
-      if (autoPlay && textBox.handleClick()) {
-        setTimeout(() => engine.advance(), 0);
-      }
-    }, 1500);
-  }
 }
 
 async function handleChoice(options) {
-  cancelAutoPlay();
   const idx = await choiceMenu.show(options);
   engine.selectChoice(idx);
 }
@@ -207,17 +196,9 @@ function setupGameClicks() {
 
     const advanced = textBox.handleClick();
     if (advanced) {
-      cancelAutoPlay();
       setTimeout(() => engine.advance(), 0);
     }
   });
-}
-
-function cancelAutoPlay() {
-  if (autoPlayTimer) {
-    clearTimeout(autoPlayTimer);
-    autoPlayTimer = null;
-  }
 }
 
 // =====================================================
@@ -229,35 +210,24 @@ function setupGameControls() {
       e.stopPropagation();
       const ctrl = btn.dataset.ctrl;
       switch (ctrl) {
-        case "auto":
-          autoPlay = !autoPlay;
-          btn.classList.toggle("active", autoPlay);
-          if (autoPlay) textBox.handleClick();
+        case "font-plus":
+          textBox.changeFontSize(2);
           break;
-        case "skip":
-          // 快速前進 5 次
-          for (let i = 0; i < 5; i++) {
-            textBox.handleClick();
-            await new Promise(r => setTimeout(r, 50));
-            await engine.advance();
-          }
+        case "font-minus":
+          textBox.changeFontSize(-2);
           break;
         case "back":
-          cancelAutoPlay();
           if (engine.canRollback()) {
             await engine.rollback();
           }
           break;
         case "save":
-          cancelAutoPlay();
           openSaveScreen("save");
           break;
         case "load":
-          cancelAutoPlay();
           openSaveScreen("load");
           break;
         case "title":
-          cancelAutoPlay();
           goToTitle();
           break;
       }
