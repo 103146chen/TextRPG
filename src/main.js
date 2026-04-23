@@ -11,11 +11,11 @@ import { CharacterLayer, BackgroundLayer } from "./ui/CharacterLayer.js";
 import { AudioManager } from "./ui/AudioManager.js";
 
 // 設定：目前的劇本路徑
-// 可以透過 URL 參數 ?story=xxx 切換，例如 index.html?story=demo_story
-// 預設載入秦得參劇本
+// 需透過 URL 參數 ?story=xxx 指定，例如 index.html?story=demo_story
+// 若未指定，顯示提示畫面
 const urlParams = new URLSearchParams(window.location.search);
-const STORY_ID = urlParams.get("story") || "cheng_zi";
-const STORY_PATH = `./public/stories/${STORY_ID}`;
+const STORY_ID = urlParams.get("story") || null;
+const STORY_PATH = STORY_ID ? `./public/stories/${STORY_ID}` : null;
 
 // =====================================================
 // DOM 引用
@@ -29,6 +29,7 @@ const screens = {
   gallery: $("#gallery-screen"),
   about: $("#about-screen"),
   loading: $("#loading-screen"),
+  noStory: $("#no-story-screen"),
 };
 
 const textBox = new TextBox({
@@ -405,6 +406,12 @@ function escapeHtml(s) {
 // 啟動
 // =====================================================
 (async function main() {
+  // 若未指定故事，顯示提示畫面
+  if (!STORY_ID) {
+    showScreen("noStory");
+    return;
+  }
+
   try {
     await initEngine();
     setupTitleMenu();

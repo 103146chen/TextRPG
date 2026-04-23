@@ -31,6 +31,9 @@
   /* 尺寸 */
   --textbox-height: 30vh;
   --textbox-padding: 2.2rem 3rem;
+
+  /* 立繪底部偏移：讓立繪腳部大約對齊文字框上緣（稍微遮住一點更自然） */
+  --char-bottom-offset: 26vh;
 }
 
 * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -216,7 +219,7 @@ html, body {
 
 .char-slot {
   position: absolute;
-  bottom: 0;
+  bottom: var(--char-bottom-offset);
   width: 40%;
   height: 85%;
   display: flex;
@@ -748,10 +751,105 @@ html, body {
 /* 響應式 */
 @media (max-width: 768px) {
   .text-content { font-size: 1.05rem; line-height: 1.9; }
-  :root { --textbox-padding: 1.5rem 1.5rem; --textbox-height: 35vh; }
+  :root { --textbox-padding: 1.5rem 1.5rem; --textbox-height: 35vh; --char-bottom-offset: 32vh; }
   .ctrl-btn { font-size: 0.75rem; padding: 0.3rem 0.6rem; }
   .title-btn { min-width: 220px; padding: 0.7rem 2rem; }
   .game-title { letter-spacing: 0.5rem; }
+}
+
+/* ============================================
+   未指定故事畫面
+   ============================================ */
+
+#no-story-screen {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: radial-gradient(ellipse at center, #2a2118 0%, #0f0b07 100%);
+}
+
+.no-story-bg {
+  position: absolute;
+  inset: 0;
+  background-image:
+    radial-gradient(circle at 25% 40%, rgba(212, 134, 156, 0.07) 0%, transparent 45%),
+    radial-gradient(circle at 75% 60%, rgba(201, 164, 94, 0.05) 0%, transparent 45%);
+  pointer-events: none;
+}
+
+.no-story-content {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 2rem;
+  animation: titleFade 1.5s ease-out;
+}
+
+.no-story-icon {
+  font-size: 3rem;
+  color: var(--gold);
+  margin-bottom: 1.5rem;
+  opacity: 0.7;
+  animation: pulse 3s ease-in-out infinite;
+}
+
+.no-story-title {
+  font-family: var(--font-title);
+  font-size: clamp(3rem, 8vw, 6rem);
+  font-weight: 700;
+  letter-spacing: 1rem;
+  text-indent: 1rem;
+  background: linear-gradient(180deg, #f5e4c0 0%, var(--sakura) 60%, var(--plum) 100%);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+  margin-bottom: 0.8rem;
+}
+
+.no-story-subtitle {
+  font-size: 1rem;
+  color: var(--gold);
+  letter-spacing: 0.4rem;
+  margin-bottom: 3rem;
+  opacity: 0.8;
+}
+
+.no-story-message {
+  background: rgba(20, 16, 12, 0.6);
+  border: 1px solid rgba(201, 164, 94, 0.3);
+  border-radius: 4px;
+  padding: 2rem 3rem;
+  max-width: 520px;
+  margin: 0 auto;
+  backdrop-filter: blur(6px);
+}
+
+.no-story-message p {
+  color: var(--paper);
+  font-size: 1.1rem;
+  letter-spacing: 0.15rem;
+  margin-bottom: 1rem;
+  line-height: 1.8;
+}
+
+.no-story-message p:last-child {
+  margin-bottom: 0;
+}
+
+.no-story-hint {
+  color: rgba(245, 239, 227, 0.5) !important;
+  font-size: 0.85rem !important;
+  letter-spacing: 0.05rem !important;
+}
+
+.no-story-hint code {
+  background: rgba(201, 164, 94, 0.15);
+  border: 1px solid rgba(201, 164, 94, 0.3);
+  padding: 0.2rem 0.6rem;
+  border-radius: 2px;
+  font-family: "SF Mono", "Consolas", monospace;
+  font-size: 0.9em;
+  color: var(--gold);
 }
 
 /* 滾動條樣式 */

@@ -49,6 +49,12 @@
       "emotions": {
         "normal": "old_man.png"
       }
+    },
+    "眾人": {
+      "default": "crowd_normal.png",
+      "emotions": {
+        "normal": "crowd_normal.png"
+      }
     }
   },
   "endings": [
