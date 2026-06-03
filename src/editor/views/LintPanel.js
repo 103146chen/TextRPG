@@ -12,6 +12,7 @@ export class LintPanel {
     this.onJumpTo = onJumpTo;
     this.lastIssues = [];
     this.debounceTimer = null;
+    this.filter = "all"; // "all" | "error" | "warning" | "info"
 
     project.subscribe(() => this.refresh());
   }
@@ -33,30 +34,59 @@ export class LintPanel {
   }
 
   render() {
-    const issues = this.lastIssues;
-    const errs = issues.filter(i => i.level === "error").length;
-    const warns = issues.filter(i => i.level === "warning").length;
-    const infos = issues.filter(i => i.level === "info").length;
+    const allIssues = this.lastIssues;
+    const errs  = allIssues.filter(i => i.level === "error").length;
+    const warns = allIssues.filter(i => i.level === "warning").length;
+    const infos = allIssues.filter(i => i.level === "info").length;
+
+    // 依目前篩選條件過濾
+    const issues = this.filter === "all"
+      ? allIssues
+      : allIssues.filter(i => i.level === this.filter);
 
     this.containerEl.innerHTML = "";
 
+    // --- 標頭 ---
     const header = document.createElement("div");
     header.className = "lint-header";
-    header.innerHTML = `
-      <span class="lint-count err" title="錯誤">✕ ${errs}</span>
-      <span class="lint-count warn" title="警告">⚠ ${warns}</span>
-      <span class="lint-count info" title="提示">ⓘ ${infos}</span>
-      <button class="lint-toggle" title="展開/收起">▲</button>
-    `;
+
+    const makeCount = (level, icon, count) => {
+      const btn = document.createElement("button");
+      btn.className = `lint-count ${level}${this.filter === level ? " active" : ""}`;
+      btn.title = { error: "只顯示錯誤", warning: "只顯示警告", info: "只顯示提示" }[level];
+      btn.textContent = `${icon} ${count}`;
+      btn.addEventListener("click", () => {
+        this.filter = this.filter === level ? "all" : level;
+        this.render();
+      });
+      return btn;
+    };
+
+    header.appendChild(makeCount("error",   "✕", errs));
+    header.appendChild(makeCount("warning", "⚠", warns));
+    header.appendChild(makeCount("info",    "ⓘ", infos));
+
+    const toggleBtn = document.createElement("button");
+    toggleBtn.className = "lint-toggle";
+    toggleBtn.title = "展開/收起";
+    toggleBtn.textContent = "▲";
+    header.appendChild(toggleBtn);
+
     this.containerEl.appendChild(header);
 
+    // --- 清單 ---
     const list = document.createElement("div");
     list.className = "lint-list";
 
-    if (issues.length === 0) {
+    if (allIssues.length === 0) {
       const empty = document.createElement("div");
       empty.className = "lint-empty";
       empty.innerHTML = "✓ 劇本沒有問題";
+      list.appendChild(empty);
+    } else if (issues.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "lint-empty";
+      empty.innerHTML = `目前篩選（${this.filter}）無符合項目`;
       list.appendChild(empty);
     } else {
       // 依場景分組
@@ -97,10 +127,10 @@ export class LintPanel {
     this.containerEl.appendChild(list);
 
     // 收合按鈕
-    header.querySelector(".lint-toggle").addEventListener("click", () => {
+    toggleBtn.addEventListener("click", () => {
       const isHidden = list.style.display === "none";
       list.style.display = isHidden ? "" : "none";
-      header.querySelector(".lint-toggle").textContent = isHidden ? "▲" : "▼";
+      toggleBtn.textContent = isHidden ? "▲" : "▼";
     });
   }
 }

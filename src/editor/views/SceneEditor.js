@@ -11,6 +11,7 @@ export class SceneEditor {
     this.project = project;
     this.currentSceneId = null;
     this.openMenu = null;
+    this._pendingScrollTo = null;
 
     // 關閉插入選單（點到選單外）
     document.addEventListener("click", (e) => {
@@ -26,6 +27,10 @@ export class SceneEditor {
   }
 
   render() {
+    this.closeInsertMenu();
+    const oldBody = this.containerEl.querySelector('.scene-body');
+    const savedScroll = oldBody ? oldBody.scrollTop : 0;
+
     if (!this.currentSceneId) {
       this.containerEl.innerHTML = `
         <div class="main-empty">
@@ -46,6 +51,37 @@ export class SceneEditor {
     this.containerEl.innerHTML = "";
     this.#renderHeader(scene);
     this.#renderBody(scene);
+
+    const newBody = this.containerEl.querySelector('.scene-body');
+    if (!newBody) return;
+
+    if (this._pendingScrollTo !== null) {
+      const pending = this._pendingScrollTo;
+      this._pendingScrollTo = null;
+      requestAnimationFrame(() => {
+        const idx = typeof pending === 'object' ? pending.index : pending;
+        const targetRow = this.containerEl.querySelector(`.instr-row[data-index="${idx}"]`);
+        if (!targetRow) { newBody.scrollTop = savedScroll; return; }
+
+        if (typeof pending === 'object' && pending.visualOffset !== undefined) {
+          // 還原拖曳時的視覺位置：
+          // 此時 newBody.scrollTop = 0，getBoundingClientRect() 反映的是未捲動時的座標
+          const rowTop = targetRow.getBoundingClientRect().top;
+          const containerTop = newBody.getBoundingClientRect().top;
+          newBody.scrollTop = (rowTop - containerTop) - pending.visualOffset;
+        } else {
+          targetRow.scrollIntoView({ block: 'nearest' });
+        }
+        // 拖曳後高亮閃爍，方便定位
+        targetRow.classList.remove('drop-highlight');
+        void targetRow.offsetWidth; // 強制重排，確保動畫重新開始
+        targetRow.classList.add('drop-highlight');
+        targetRow.addEventListener('animationend',
+          () => targetRow.classList.remove('drop-highlight'), { once: true });
+      });
+    } else {
+      newBody.scrollTop = savedScroll;
+    }
   }
 
   #renderHeader(scene) {
@@ -223,8 +259,12 @@ export class SceneEditor {
         const tpl = item.template();
         if (Array.isArray(tpl)) {
           // 多指令一次插入（例如 if ... endif 一組）
-          tpl.forEach((t, i) => this.project.insertInstruction(this.currentSceneId, index + i, t));
+          tpl.forEach((t, i) => {
+            this._pendingScrollTo = index;
+            this.project.insertInstruction(this.currentSceneId, index + i, t);
+          });
         } else {
+          this._pendingScrollTo = index;
           this.project.insertInstruction(this.currentSceneId, index, tpl);
         }
         this.closeInsertMenu();
@@ -255,6 +295,15 @@ export class SceneEditor {
   // ============ 拖曳排序 ============
 
   #enableDragSort(listEl) {
+    const scrollContainer = listEl.parentElement; // .scene-body
+    let draggedVisualOffset = 0;
+
+    const clearIndicators = () => {
+      listEl.querySelectorAll('.drop-above, .drop-below').forEach(r => {
+        r.classList.remove('drop-above', 'drop-below');
+      });
+    };
+
     const rows = listEl.querySelectorAll(".instr-row");
     rows.forEach(row => {
       const handle = row.querySelector(".instr-handle");
@@ -264,19 +313,36 @@ export class SceneEditor {
         row.classList.add("dragging");
         e.dataTransfer.effectAllowed = "move";
         e.dataTransfer.setData("text/plain", row.dataset.index);
+        // 記錄拖曳起始時，元素頂端距離捲動容器頂端的視覺偏移
+        const rowRect = row.getBoundingClientRect();
+        const containerRect = scrollContainer.getBoundingClientRect();
+        draggedVisualOffset = rowRect.top - containerRect.top;
       });
       handle.addEventListener("dragend", () => {
         row.classList.remove("dragging");
+        clearIndicators();
       });
       row.addEventListener("dragover", (e) => {
+        if (row.classList.contains('dragging')) return;
         e.preventDefault();
         e.dataTransfer.dropEffect = "move";
+        const rect = row.getBoundingClientRect();
+        const isAbove = e.clientY < rect.top + rect.height / 2;
+        clearIndicators();
+        row.classList.add(isAbove ? 'drop-above' : 'drop-below');
+      });
+      row.addEventListener("dragleave", (e) => {
+        if (!row.contains(e.relatedTarget)) {
+          row.classList.remove('drop-above', 'drop-below');
+        }
       });
       row.addEventListener("drop", (e) => {
         e.preventDefault();
+        clearIndicators();
         const fromIdx = parseInt(e.dataTransfer.getData("text/plain"), 10);
         const toIdx = parseInt(row.dataset.index, 10);
         if (fromIdx !== toIdx) {
+          this._pendingScrollTo = { index: toIdx, visualOffset: draggedVisualOffset };
           this.project.moveInstruction(this.currentSceneId, fromIdx, toIdx);
         }
       });

@@ -219,9 +219,9 @@ html, body {
 
 .char-slot {
   position: absolute;
+  top: 0;
   bottom: var(--char-bottom-offset);
   width: 40%;
-  height: 85%;
   display: flex;
   align-items: flex-end;
   justify-content: center;

@@ -66,6 +66,7 @@ export class Linter {
       const scene = project.getScene(sceneId);
       const sceneIssues = this.#lintScene(scene, {
         sceneIds, characters, resources, flagSet, flagRead,
+        charactersData: project.storyMeta.characters || {},
       });
       issues.push(...sceneIssues);
     }

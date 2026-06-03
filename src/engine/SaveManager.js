@@ -17,7 +17,14 @@ export class SaveManager {
       preview: preview.slice(0, 200),
       savedAt: Date.now(),
     };
-    localStorage.setItem(this.getSlotKey(storyId, slot), JSON.stringify(payload));
+    try {
+      localStorage.setItem(this.getSlotKey(storyId, slot), JSON.stringify(payload));
+    } catch (e) {
+      if (e.name === "QuotaExceededError" || e.name === "NS_ERROR_DOM_QUOTA_REACHED") {
+        throw new Error("存檔空間不足，請先刪除舊存檔後再試。");
+      }
+      throw e;
+    }
   }
 
   static load(storyId, slot) {

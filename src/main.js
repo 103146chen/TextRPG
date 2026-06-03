@@ -332,12 +332,17 @@ async function handleSaveSlotClick(slot, data) {
       return;
     }
     if (data && !confirm(`檔案 ${slot} 已有資料，要覆寫嗎？`)) return;
-    SaveManager.save(
-      engine.storyMeta.id,
-      slot,
-      engine.serialize(),
-      textBox.getPreview()
-    );
+    try {
+      SaveManager.save(
+        engine.storyMeta.id,
+        slot,
+        engine.serialize(),
+        textBox.getPreview()
+      );
+    } catch (e) {
+      alert(e.message);
+      return;
+    }
     renderSaveSlots();
   } else {
     if (!data) return;

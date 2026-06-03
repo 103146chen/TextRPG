@@ -468,6 +468,29 @@ input, textarea, select {
   border-color: var(--e-border);
 }
 
+/* 拖曳排序狀態 */
+.instr-row.dragging {
+  opacity: 0.35;
+}
+
+@keyframes instrHighlight {
+  0%   { background: rgba(212, 160, 96, 0.35); box-shadow: 0 0 0 2px rgba(212, 160, 96, 0.5); }
+  60%  { background: rgba(212, 160, 96, 0.15); box-shadow: 0 0 0 1px rgba(212, 160, 96, 0.2); }
+  100% { background: transparent; box-shadow: none; }
+}
+
+.instr-row.drop-highlight {
+  animation: instrHighlight 0.9s ease-out forwards;
+}
+
+.instr-row.drop-above {
+  box-shadow: 0 -3px 0 var(--e-accent);
+}
+
+.instr-row.drop-below {
+  box-shadow: 0 3px 0 var(--e-accent);
+}
+
 /* 條件區塊縮排 */
 .instr-row.indented-1 { margin-left: 24px; }
 .instr-row.indented-2 { margin-left: 48px; }
@@ -900,11 +923,20 @@ input, textarea, select {
   padding: 2px 6px;
   border-radius: 3px;
   font-family: var(--e-font-mono);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: opacity 0.15s, border-color 0.15s;
 }
 
-.lint-count.err { color: var(--e-red); background: rgba(212, 101, 101, 0.15); }
-.lint-count.warn { color: var(--e-accent); background: rgba(212, 160, 96, 0.12); }
-.lint-count.info { color: var(--e-blue); background: rgba(92, 158, 212, 0.12); }
+.lint-count:hover { opacity: 0.85; }
+
+.lint-count.error  { color: var(--e-red);    background: rgba(212, 101, 101, 0.15); }
+.lint-count.warning{ color: var(--e-accent);  background: rgba(212, 160, 96, 0.12); }
+.lint-count.info   { color: var(--e-blue);   background: rgba(92, 158, 212, 0.12); }
+
+.lint-count.error.active   { border-color: var(--e-red);    background: rgba(212, 101, 101, 0.3); }
+.lint-count.warning.active { border-color: var(--e-accent);  background: rgba(212, 160, 96, 0.28); }
+.lint-count.info.active    { border-color: var(--e-blue);   background: rgba(92, 158, 212, 0.28); }
 
 .lint-toggle {
   margin-left: auto;

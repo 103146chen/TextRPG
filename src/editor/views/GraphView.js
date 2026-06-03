@@ -8,14 +8,15 @@ export class GraphView {
     this.containerEl = containerEl;
     this.project = project;
     this.onSelectScene = onSelectScene;
-    this.panX = 0;
-    this.panY = 0;
-    this.scale = 1;
-    this.isPanning = false;
-    this.panStart = null;
+    this._panZoomAbort = null;
   }
 
   render() {
+    // 先中止舊的 pan/zoom 事件監聽，防止 window 監聽器累積
+    if (this._panZoomAbort) {
+      this._panZoomAbort.abort();
+      this._panZoomAbort = null;
+    }
     this.containerEl.innerHTML = "";
     this.containerEl.className = "graph-view";
 
@@ -413,23 +414,29 @@ export class GraphView {
   // ==================== 平移/縮放 ====================
 
   #setupPanZoom(svg) {
+    // 記錄原始 viewBox 尺寸，之後縮放都以此為基準，避免公式累積誤差
+    const origW = svg.viewBox.baseVal.width;
+    const origH = svg.viewBox.baseVal.height;
     const state = { panX: 0, panY: 0, scale: 1, isPanning: false, startX: 0, startY: 0 };
 
     const updateTransform = () => {
-      const inner = svg.querySelector("g:not(defs)");
-      // 直接改 viewBox 以平移縮放
-      const vb = svg.viewBox.baseVal;
-      const w = vb.width / state.scale;
-      const h = vb.height / state.scale;
-      svg.setAttribute("viewBox", `${-state.panX} ${-state.panY} ${w} ${h}`);
+      svg.setAttribute("viewBox",
+        `${-state.panX} ${-state.panY} ${origW / state.scale} ${origH / state.scale}`);
     };
 
+    // AbortController 讓 render() 重新呼叫時能清除舊監聽
+    const abort = new AbortController();
+    const { signal } = abort;
+    this._panZoomAbort = abort;
+
     svg.addEventListener("mousedown", (e) => {
-      if (e.target.tagName === "svg" || e.target.tagName === "rect" && e.target.parentNode.classList?.contains("graph-grid")) {
+      // 只在背景（svg 元素本身）啟動平移，不影響節點點擊
+      if (e.target === svg || e.target.closest?.('.graph-grid')) {
         state.isPanning = true;
         state.startX = e.clientX;
         state.startY = e.clientY;
         svg.style.cursor = "grabbing";
+        e.preventDefault();
       }
     });
 
@@ -437,22 +444,38 @@ export class GraphView {
       if (!state.isPanning) return;
       const dx = e.clientX - state.startX;
       const dy = e.clientY - state.startY;
-      state.panX += dx;
-      state.panY += dy;
+      // 將螢幕像素轉換為 viewBox 座標單位（縮放後平移速度保持一致）
+      const svgRect = svg.getBoundingClientRect();
+      const vbW = origW / state.scale;
+      const vbH = origH / state.scale;
+      state.panX += dx * (vbW / svgRect.width);
+      state.panY += dy * (vbH / svgRect.height);
       state.startX = e.clientX;
       state.startY = e.clientY;
       updateTransform();
-    });
+    }, { signal });
 
     window.addEventListener("mouseup", () => {
-      state.isPanning = false;
-      svg.style.cursor = "grab";
-    });
+      if (state.isPanning) {
+        state.isPanning = false;
+        svg.style.cursor = "grab";
+      }
+    }, { signal });
 
     svg.addEventListener("wheel", (e) => {
       e.preventDefault();
-      const delta = -e.deltaY * 0.001;
-      const newScale = Math.max(0.3, Math.min(3, state.scale * (1 + delta)));
+      // 縮放至滑鼠游標位置，速度降低為原本的 0.6 倍
+      const delta = -e.deltaY * 0.0006;
+      const newScale = Math.max(0.2, Math.min(4, state.scale * (1 + delta)));
+      const svgRect = svg.getBoundingClientRect();
+      const mouseRatioX = (e.clientX - svgRect.left) / svgRect.width;
+      const mouseRatioY = (e.clientY - svgRect.top) / svgRect.height;
+      const oldVbW = origW / state.scale;
+      const oldVbH = origH / state.scale;
+      const newVbW = origW / newScale;
+      const newVbH = origH / newScale;
+      state.panX += mouseRatioX * (newVbW - oldVbW);
+      state.panY += mouseRatioY * (newVbH - oldVbH);
       state.scale = newScale;
       updateTransform();
     }, { passive: false });

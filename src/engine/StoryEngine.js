@@ -320,6 +320,7 @@ export class StoryEngine {
       sceneId: this.state.sceneId,
       pc: this.state.pc,
       flags: { ...this.state.flags },
+      branchStack: JSON.parse(JSON.stringify(this.state._branchStack || [])),
     });
     if (this.history.length > this.maxHistory) {
       this.history.shift();
@@ -348,6 +349,7 @@ export class StoryEngine {
     }
     this.state.pc = prev.pc;
     this.state.flags = { ...prev.flags };
+    this.state._branchStack = JSON.parse(JSON.stringify(prev.branchStack || []));
     this.state.waitingForChoice = false;
 
     await this.step();

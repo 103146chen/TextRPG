@@ -80,8 +80,9 @@ function setView(view) {
   currentView = view;
   $("#view-scene").classList.toggle("active", view === "scene");
   $("#view-graph").classList.toggle("active", view === "graph");
-  $("#main-content").style.display = view === "scene" ? "" : "none";
-  $("#graph-content").style.display = view === "graph" ? "" : "none";
+  // 明確設定 display 值，避免 "" 清掉 inline style 中原本的 display:flex
+  $("#main-content").style.display = view === "scene" ? "flex" : "none";
+  $("#graph-content").style.display = view === "graph" ? "flex" : "none";
   if (view === "graph") {
     graphView.render();
   } else {

@@ -23,7 +23,7 @@ bgm: bgm_ending_hollow.mp3
 你沒有答她。你倒在床上就睡了。
 @hide 得參 fade=600
 @wait 1500
-@bg market_morning.svg fade=2000
+@bg market_morning.png fade=2000
 你第二天沒去擺攤。第三天也沒去。
 巡查來罰你的時候，你是醉醺醺的。他罰了你，你們都沒有什麼感覺了。
 
@@ -33,7 +33,7 @@ bgm: bgm_ending_hollow.mp3
 後來不是你不做——是米酒。偶爾去幫人搬磚、搬貨，賺一點就拿去買酒。
 阿秀帶著孩子回娘家了。她走後，你甚至沒察覺心裡有什麼。
 等她走了，家裡是空的，桌上留了一張紙條，你不認識字，你也不知道上面寫什麼。
-@bg home_ruin.svg fade=2000
+@bg home_ruin.png fade=2000
 幾年過去，你變得很瘦，肚子很大——這模樣竟有幾分官家大爺的氣勢。
 孩子路過，看著你這副樣子跑走了。
 @show 得參 center despair
