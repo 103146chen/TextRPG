@@ -7,23 +7,34 @@
 import { MarkdownWriter } from "../core/MarkdownWriter.js";
 
 export class PreviewPanel {
-  constructor(project) {
+  /**
+   * @param {StoryProject} project
+   * @param {object} [opts]
+   * @param {HTMLElement} [opts.container] - 給定時「停靠」進該容器（常駐欄）；
+   *   未給定則沿用原本的右側浮動 dock（可開關）。
+   */
+  constructor(project, { container = null } = {}) {
     this.project = project;
     this.iframe = null;
     this.ready = false;
     this.pendingStart = null;
-    this.#buildDom();
+    this.docked = !!container;
+    this.#buildDom(container);
     window.addEventListener("message", (e) => this.#onMessage(e));
+    // 常駐欄：一開始就建立 iframe（顯示 preview.html 的等待提示）
+    if (this.docked) this.#ensureIframe();
   }
 
-  #buildDom() {
+  #buildDom(container) {
     const panel = document.createElement("div");
     panel.id = "preview-panel";
-    panel.style.cssText = [
-      "position:fixed", "top:0", "right:0", "width:46%", "max-width:760px",
-      "height:100vh", "z-index:200", "display:none", "flex-direction:column",
-      "box-shadow:-6px 0 28px rgba(0,0,0,0.45)", "background:#000",
-    ].join(";");
+    panel.style.cssText = this.docked
+      ? "display:flex;flex-direction:column;height:100%;min-height:0;background:#000"
+      : [
+          "position:fixed", "top:0", "right:0", "width:46%", "max-width:760px",
+          "height:100vh", "z-index:200", "display:none", "flex-direction:column",
+          "box-shadow:-6px 0 28px rgba(0,0,0,0.45)", "background:#000",
+        ].join(";");
 
     const header = document.createElement("div");
     header.style.cssText = [
@@ -38,7 +49,9 @@ export class PreviewPanel {
       <button data-act="restart" style="cursor:pointer;background:rgba(255,255,255,.14);color:#f5efe3;border:0;border-radius:5px;padding:3px 10px;font-size:12px">⟳ 從頭</button>
       <button data-act="close" style="cursor:pointer;background:rgba(255,255,255,.14);color:#f5efe3;border:0;border-radius:5px;padding:3px 10px;font-size:12px">✕ 關閉</button>
     `;
-    header.querySelector('[data-act="close"]').addEventListener("click", () => this.close());
+    const closeBtn = header.querySelector('[data-act="close"]');
+    if (this.docked) closeBtn.remove();          // 常駐欄不需要關閉
+    else closeBtn.addEventListener("click", () => this.close());
     header.querySelector('[data-act="restart"]').addEventListener("click", () => {
       if (this.pendingStart) this.play(this.pendingStart.sceneId, this.pendingStart.pc);
     });
@@ -49,7 +62,7 @@ export class PreviewPanel {
 
     panel.appendChild(header);
     panel.appendChild(wrap);
-    document.body.appendChild(panel);
+    (container || document.body).appendChild(panel);
     this.panel = panel;
   }
 
@@ -62,16 +75,16 @@ export class PreviewPanel {
   }
 
   isOpen() {
-    return this.panel.style.display !== "none";
+    return this.docked || this.panel.style.display !== "none";
   }
 
   open() {
-    this.panel.style.display = "flex";
+    if (!this.docked) this.panel.style.display = "flex";
     this.#ensureIframe();
   }
 
   close() {
-    this.panel.style.display = "none";
+    if (!this.docked) this.panel.style.display = "none";
   }
 
   /** 預覽指定場景，可選從第幾個指令開始（「從這裡試玩」） */

@@ -26,15 +26,15 @@ const usingMemory = !ProjectFileSystem.isSupported();
 
 const fs = usingMemory ? new MemoryBackend() : new ProjectFileSystem();
 const project = new StoryProject(fs);
-const previewPanel = new PreviewPanel(project);
+const previewPanel = new PreviewPanel(project, { container: $("#preview-host") });
 const sceneEditor = new SceneEditor($("#main-content"), project, (sceneId, index) => previewPanel.play(sceneId, index), (tab) => storyManager.open(tab));
 const graphView = new GraphView($("#graph-content"), project, (sceneId) => {
   currentSceneId = sceneId;
-  setView("scene");
+  setPage("script");
 });
 const lintPanel = new LintPanel($("#lint-panel"), project, (sceneId, index) => {
   currentSceneId = sceneId;
-  setView("scene");
+  setPage("script");
   setTimeout(() => {
     if (index !== null) {
       const row = document.querySelector(`.instr-row[data-index="${index}"]`);
@@ -49,7 +49,7 @@ const lintPanel = new LintPanel($("#lint-panel"), project, (sceneId, index) => {
 
 const flagInspector = new FlagInspector($("#flag-panel"), project, (sceneId, index) => {
   currentSceneId = sceneId;
-  setView("scene");
+  setPage("script");
   setTimeout(() => {
     if (index !== null) {
       const row = document.querySelector(`.instr-row[data-index="${index}"]`);
@@ -66,20 +66,18 @@ const storyManager = new StoryManager(project);
 const assetPanel = new AssetPanel($("#asset-panel"), project);
 
 let currentSceneId = null;
-let currentView = "scene"; // "scene" | "graph"
+let currentPage = "script";   // script | assets | map | theme | publish | settings
+let sceneFilter = "";
 
-function setView(view) {
-  currentView = view;
-  $("#view-scene").classList.toggle("active", view === "scene");
-  $("#view-graph").classList.toggle("active", view === "graph");
-  // 明確設定 display 值，避免 "" 清掉 inline style 中原本的 display:flex
-  $("#main-content").style.display = view === "scene" ? "flex" : "none";
-  $("#graph-content").style.display = view === "graph" ? "flex" : "none";
-  if (view === "graph") {
-    graphView.render();
-  } else {
-    sceneEditor.openScene(currentSceneId);
-  }
+function setPage(page) {
+  currentPage = page;
+  document.querySelectorAll(".main-tab").forEach((t) =>
+    t.classList.toggle("active", t.dataset.page === page));
+  document.querySelectorAll(".page").forEach((p) =>
+    p.classList.toggle("active", p.dataset.page === page));
+
+  if (page === "map") graphView.render();
+  else if (page === "script") sceneEditor.openScene(currentSceneId);
 }
 
 // ==================== 工具列 ====================
@@ -212,19 +210,26 @@ $("#btn-story-settings").addEventListener("click", () => {
   storyManager.open();
 });
 
-// 側邊面板 tab 切換
-document.querySelectorAll(".side-tab").forEach(tab => {
+// 頂部主分頁
+document.querySelectorAll(".main-tab").forEach((tab) => {
+  tab.addEventListener("click", () => setPage(tab.dataset.page));
+});
+
+// 檢查器分頁（問題 / 檢查器）
+document.querySelectorAll(".insp-tab").forEach((tab) => {
   tab.addEventListener("click", () => {
-    const target = tab.dataset.target;
-    document.querySelectorAll(".side-tab").forEach(t => t.classList.toggle("active", t === tab));
-    document.querySelectorAll(".side-panel").forEach(p => {
-      p.style.display = p.id === target ? "" : "none";
+    document.querySelectorAll(".insp-tab").forEach((t) => t.classList.toggle("active", t === tab));
+    document.querySelectorAll(".insp-panel").forEach((p) => {
+      p.style.display = p.id === tab.dataset.target ? "" : "none";
     });
   });
 });
 
-$("#view-scene").addEventListener("click", () => setView("scene"));
-$("#view-graph").addEventListener("click", () => setView("graph"));
+// 場景搜尋
+$("#scene-search").addEventListener("input", () => {
+  sceneFilter = $("#scene-search").value.trim().toLowerCase();
+  renderSidebar();
+});
 
 // 鍵盤快捷鍵
 document.addEventListener("keydown", (e) => {
@@ -268,7 +273,7 @@ project.subscribe((type, payload) => {
       type === "instruction-moved" || type === "instructions-replaced" ||
       type === "undo" || type === "redo" || type === "resources-updated" ||
       type === "characters-updated" || type === "flags-updated" || type === "story-meta-updated") {
-    if (currentView === "scene") sceneEditor.render();
+    if (currentPage === "script") sceneEditor.render();
   }
   // 影響 graph 結構的變更
   if (type === "loaded" || type === "scene-created" || type === "scene-deleted" ||
@@ -276,7 +281,7 @@ project.subscribe((type, payload) => {
       type === "instruction-deleted" || type === "instructions-replaced" ||
       type === "instruction-updated" || type === "scene-meta-updated" ||
       type === "undo" || type === "redo") {
-    if (currentView === "graph") graphView.render();
+    if (currentPage === "map") graphView.render();
   }
 });
 
@@ -284,7 +289,7 @@ project.subscribe((type, payload) => {
 
 function renderAll() {
   renderSidebar();
-  if (currentView === "graph") {
+  if (currentPage === "map") {
     graphView.render();
   } else {
     sceneEditor.openScene(currentSceneId);
@@ -295,8 +300,16 @@ function renderAll() {
 function renderSidebar() {
   const list = $("#scene-list");
   list.innerHTML = "";
-  const ids = project.getAllSceneIds();
+  const allIds = project.getAllSceneIds();
   const startId = project.storyMeta?.start;
+  // 搜尋過濾（比對場景標題與 id）
+  const ids = sceneFilter
+    ? allIds.filter((id) => {
+        const sc = project.getScene(id);
+        return id.toLowerCase().includes(sceneFilter) ||
+               String(sc.meta.title || "").toLowerCase().includes(sceneFilter);
+      })
+    : allIds;
   for (const id of ids) {
     const sc = project.getScene(id);
     const hasEnding = sc.instructions.some(i => i.type === "ending");
@@ -320,8 +333,17 @@ function renderSidebar() {
     list.appendChild(item);
   }
 
-  // 場景總數顯示
-  $("#scene-count").textContent = `${ids.length} 個場景`;
+  if (ids.length === 0) {
+    const empty = document.createElement("li");
+    empty.className = "panel-empty";
+    empty.textContent = allIds.length === 0 ? "還沒有場景" : "沒有符合搜尋的場景";
+    list.appendChild(empty);
+  }
+
+  // 場景總數顯示（有過濾時顯示 n/總數）
+  $("#scene-count").textContent = sceneFilter
+    ? `${ids.length} / ${allIds.length} 個場景`
+    : `${allIds.length} 個場景`;
 }
 
 function updateToolbar() {
@@ -331,6 +353,17 @@ function updateToolbar() {
   $("#btn-redo").disabled = !project.canRedo();
   $("#btn-save").disabled = !project.hasUnsavedChanges();
   $("#btn-delete-scene").disabled = !currentSceneId;
+  updateStatusBar();
+}
+
+function updateStatusBar() {
+  $("#status-project").textContent = fs.rootHandle ? `專案：${fs.projectName}` : "未開啟專案";
+  $("#status-backend").textContent = usingMemory
+    ? "記憶體模式（ZIP / IndexedDB）"
+    : "資料夾模式（File System Access）";
+  $("#status-scenes").textContent = project.storyMeta
+    ? `${project.getAllSceneIds().length} 個場景`
+    : "";
 }
 
 // ==================== 通用工具 ====================

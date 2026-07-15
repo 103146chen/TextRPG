@@ -8,54 +8,120 @@
 </head>
 <body>
   <div id="editor-app">
-    <!-- 工具列 -->
-    <div class="toolbar">
-      <div class="title">織夢編輯器</div>
-      <button id="btn-open" class="tb-btn">開啟專案</button>
-      <button id="btn-new" class="tb-btn">新專案</button>
-      <button id="btn-story-settings" class="tb-btn" title="專案資料庫：角色 / 旗標 / 資產 / 結局 / 基本">⚙ 資料庫</button>
-      <span id="project-name" class="project-name">(未開啟)</span>
-      <span id="dirty-indicator" class="dirty-indicator" style="display:none">有未儲存變更</span>
-      <div class="view-switcher">
-        <button id="view-scene" class="view-btn active">場景</button>
-        <button id="view-graph" class="view-btn">流程圖</button>
+    <!-- ===== 頂部：主分頁 + 動作 ===== -->
+    <header class="topbar">
+      <div class="brand">織夢</div>
+
+      <nav class="main-tabs">
+        <button class="main-tab active" data-page="script">劇本</button>
+        <button class="main-tab" data-page="assets">資產</button>
+        <button class="main-tab" data-page="map">敘事地圖</button>
+        <button class="main-tab" data-page="theme">個性化</button>
+        <button class="main-tab" data-page="publish">發布</button>
+        <button class="main-tab" data-page="settings">設定</button>
+      </nav>
+
+      <div class="topbar-actions">
+        <span id="project-name" class="project-name">(未開啟)</span>
+        <span id="dirty-indicator" class="dirty-indicator" style="display:none">有未儲存變更</span>
+        <button id="btn-open" class="tb-btn">開啟專案</button>
+        <button id="btn-new" class="tb-btn">新專案</button>
+        <button id="btn-story-settings" class="tb-btn" title="專案資料庫：角色 / 旗標 / 資產 / 結局 / 基本">⚙ 資料庫</button>
+        <button id="btn-undo" class="tb-btn" title="復原 (Ctrl+Z)">↶</button>
+        <button id="btn-redo" class="tb-btn" title="重做 (Ctrl+Shift+Z)">↷</button>
+        <button id="btn-save" class="tb-btn primary" title="儲存 (Ctrl+S)">儲存</button>
+        <button id="btn-export-zip" class="tb-btn" title="匯出整個專案為 ZIP（備份／分享）">⬇ ZIP</button>
       </div>
-      <div class="spacer"></div>
-      <button id="btn-undo" class="tb-btn" title="復原 (Ctrl+Z)">↶ 復原</button>
-      <button id="btn-redo" class="tb-btn" title="重做 (Ctrl+Shift+Z)">↷ 重做</button>
-      <button id="btn-save" class="tb-btn primary" title="儲存 (Ctrl+S)">儲存</button>
-      <button id="btn-export-zip" class="tb-btn" title="匯出整個專案為 ZIP（備份／分享）">⬇ ZIP</button>
+    </header>
+
+    <!-- ===== 頁面容器 ===== -->
+    <div class="pages">
+
+      <!-- ---------- 劇本頁：結構樹 ｜ 事件卡片 ｜ 預覽＋檢查器 ---------- -->
+      <section class="page page-script active" data-page="script">
+        <aside class="col col-structure">
+          <div class="col-head">
+            <span id="scene-count">場景</span>
+            <div class="col-head-actions">
+              <button id="btn-new-scene" title="新增場景">＋</button>
+              <button id="btn-delete-scene" title="刪除目前場景">刪除</button>
+            </div>
+          </div>
+          <div class="structure-search">
+            <input id="scene-search" type="search" placeholder="搜尋場景…" />
+          </div>
+          <ul id="scene-list" class="scene-list"></ul>
+        </aside>
+
+        <main class="col col-events">
+          <div id="main-content"></div>
+        </main>
+
+        <aside class="col col-preview">
+          <div id="preview-host" class="preview-host"></div>
+          <div class="inspector">
+            <div class="inspector-tabs">
+              <button class="insp-tab active" data-target="lint-panel">問題</button>
+              <button class="insp-tab" data-target="inspector-panel">檢查器</button>
+            </div>
+            <div id="lint-panel" class="insp-panel"></div>
+            <div id="inspector-panel" class="insp-panel" style="display:none">
+              <div class="panel-empty">選取指令後，這裡會顯示細部參數。<br><small>（S3 實作）</small></div>
+            </div>
+          </div>
+        </aside>
+      </section>
+
+      <!-- ---------- 資產頁 ---------- -->
+      <section class="page page-assets" data-page="assets">
+        <div id="asset-panel" class="asset-page-host"></div>
+      </section>
+
+      <!-- ---------- 敘事地圖頁：變量管理 ｜ 地圖 ---------- -->
+      <section class="page page-map" data-page="map">
+        <aside class="col col-vars">
+          <div class="col-head"><span>變量管理</span></div>
+          <div id="flag-panel" class="vars-body"></div>
+        </aside>
+        <main class="col col-graph">
+          <div id="graph-content"></div>
+        </main>
+      </section>
+
+      <!-- ---------- 個性化 / 發布 / 設定：骨架 ---------- -->
+      <section class="page page-plain" data-page="theme">
+        <div class="page-placeholder">
+          <h2>個性化</h2>
+          <p>遊戲外觀主題：文字框樣式、字體、配色。</p>
+          <p class="muted">尚未實作（計畫 S 階段）。</p>
+        </div>
+      </section>
+
+      <section class="page page-plain" data-page="publish">
+        <div class="page-placeholder">
+          <h2>發布</h2>
+          <p>目前可用工具列的「⬇ ZIP」匯出整個專案。</p>
+          <p class="muted">一鍵產生可上傳的網頁版：尚未實作。</p>
+        </div>
+      </section>
+
+      <section class="page page-plain" data-page="settings">
+        <div class="page-placeholder">
+          <h2>設定</h2>
+          <p>編輯器偏好設定。</p>
+          <p class="muted">尚未實作。</p>
+        </div>
+      </section>
     </div>
 
-    <!-- 左側邊欄 -->
-    <aside class="sidebar">
-      <div class="sidebar-section sidebar-scenes">
-        <div class="sidebar-section-header">
-          <span id="scene-count">場景</span>
-          <div style="display:flex;gap:4px">
-            <button id="btn-new-scene" title="新增場景">+ 新場景</button>
-            <button id="btn-delete-scene" title="刪除目前場景">刪除</button>
-          </div>
-        </div>
-        <ul id="scene-list" class="scene-list"></ul>
-      </div>
-      <div class="sidebar-side-tabs">
-        <button class="side-tab active" data-target="lint-panel">問題</button>
-        <button class="side-tab" data-target="flag-panel">Flags</button>
-        <button class="side-tab" data-target="asset-panel">資產</button>
-      </div>
-      <div class="sidebar-section">
-        <div id="lint-panel" class="side-panel"></div>
-        <div id="flag-panel" class="side-panel" style="display:none"></div>
-        <div id="asset-panel" class="side-panel" style="display:none"></div>
-      </div>
-    </aside>
-
-    <!-- 主內容區 -->
-    <main class="main">
-      <div id="main-content" style="flex:1;display:flex;flex-direction:column;overflow:hidden;"></div>
-      <div id="graph-content" style="flex:1;display:none;overflow:hidden;background:#1a1d23;"></div>
-    </main>
+    <!-- ===== 狀態列 ===== -->
+    <footer class="statusbar">
+      <span id="status-autosave" class="status-item">● 自動存檔：關閉</span>
+      <span id="status-project" class="status-item">未開啟專案</span>
+      <span id="status-backend" class="status-item"></span>
+      <span class="status-spacer"></span>
+      <span id="status-scenes" class="status-item"></span>
+    </footer>
   </div>
 
   <script type="module" src="./src/editor/main.js"></script>
