@@ -12,31 +12,19 @@ import { LintPanel } from "./views/LintPanel.js";
 import { FlagInspector } from "./views/FlagInspector.js";
 import { StoryManager } from "./views/StoryManager.js";
 import { AssetPanel } from "./views/AssetPanel.js";
+import { MemoryBackend } from "./core/MemoryBackend.js";
+import { exportProjectZip } from "./core/projectZip.js";
 
 const $ = s => document.querySelector(s);
 
-// ==================== 瀏覽器支援檢查 ====================
-
-if (!ProjectFileSystem.isSupported()) {
-  document.body.innerHTML = `
-    <div class="browser-warning">
-      <div class="browser-warning-content">
-        <h1>瀏覽器不支援</h1>
-        <p>這個編輯器需要使用 <strong>File System Access API</strong>，目前只有以下瀏覽器支援：</p>
-        <p>✓ Chrome 86+<br>✓ Edge 86+<br>✓ Opera 72+</p>
-        <p>很抱歉，Firefox 與 Safari 目前不支援。</p>
-        <p style="margin-top:30px">
-          <a href="./index.html" style="color:var(--e-accent)">← 返回遊戲</a>
-        </p>
-      </div>
-    </div>
-  `;
-  throw new Error("unsupported browser");
-}
+// ==================== 選擇儲存後端 ====================
+// 支援 File System Access API（Chrome/Edge/Opera）→ 直接讀寫本機資料夾；
+// 否則（Firefox/Safari）→ 記憶體後端，靠 ZIP 匯入匯出 + IndexedDB 持久化。
+const usingMemory = !ProjectFileSystem.isSupported();
 
 // ==================== 初始化 ====================
 
-const fs = new ProjectFileSystem();
+const fs = usingMemory ? new MemoryBackend() : new ProjectFileSystem();
 const project = new StoryProject(fs);
 const previewPanel = new PreviewPanel(project);
 const sceneEditor = new SceneEditor($("#main-content"), project, (sceneId, index) => previewPanel.play(sceneId, index));
@@ -153,6 +141,27 @@ $("#btn-save").addEventListener("click", async () => {
     console.error(err);
   }
 });
+
+$("#btn-export-zip").addEventListener("click", async () => {
+  if (!fs.rootHandle) { toast("尚未開啟專案", "error"); return; }
+  try {
+    const blob = await exportProjectZip(fs);
+    const base = (project.storyMeta?.id || fs.projectName || "project").replace(/[^\w一-鿿-]+/g, "_");
+    downloadBlob(blob, `${base}.zip`);
+    toast("已匯出 ZIP", "success");
+  } catch (err) {
+    toast(`匯出失敗：${err.message}`, "error");
+    console.error(err);
+  }
+});
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 1000);
+}
 
 $("#btn-undo").addEventListener("click", () => {
   if (project.undo()) {
@@ -351,3 +360,20 @@ $("#main-content").innerHTML = `
   </div>
 `;
 updateToolbar();
+
+// ==================== 記憶體模式：啟動提示 + 還原 ====================
+if (usingMemory) {
+  toast("記憶體模式：此瀏覽器無法直接存取資料夾，請用「⬇ ZIP」匯出保存（下次用「開啟專案」選該 ZIP 匯入）。", "info");
+  (async () => {
+    try {
+      const restored = await fs.restore();
+      if (restored) {
+        await project.loadAll();
+        toast(`已從瀏覽器儲存還原上次專案：${fs.projectName}`, "success");
+        renderAll();
+      }
+    } catch (err) {
+      console.error("還原失敗", err);
+    }
+  })();
+}
