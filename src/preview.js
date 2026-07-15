@@ -78,6 +78,7 @@ async function loadPreview(data) {
       choiceContainer: $("#choice-container"),
       characterLayer: $("#character-layer"),
       backgroundLayer: $("#background-layer"),
+      screen: gameScreen,
     },
     storyMeta,
     sceneLoader: (sceneId) => {

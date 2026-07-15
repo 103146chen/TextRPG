@@ -145,6 +145,10 @@ export class InstructionRow {
       stopbgm: "停止 BGM",
       se: "音效",
       wait: "等待",
+      shake: "震動螢幕",
+      flash: "閃光",
+      tint: "畫面染色",
+      "tint-clear": "清除染色",
     }[name] || name;
 
     container.appendChild(this.#badge(nameLabel));
@@ -251,6 +255,61 @@ export class InstructionRow {
           this.onChange({ args: { ...args, positional: [pos[0], e.target.value] } });
         });
         container.appendChild(movInput);
+        break;
+      }
+      case "shake": {
+        const iInput = this.#numberInput(pos[0], "強度(px)");
+        iInput.addEventListener("change", (e) => {
+          this.onChange({ args: { ...args, positional: [parseInt(e.target.value) || 8] } });
+        });
+        container.appendChild(iInput);
+        container.appendChild(this.#labelInline("時長"));
+        const dInput = this.#numberInput(args.duration, "ms");
+        dInput.addEventListener("change", (e) => {
+          this.onChange({ args: { ...args, duration: parseInt(e.target.value) || undefined } });
+        });
+        container.appendChild(dInput);
+        break;
+      }
+      case "flash": {
+        const cInput = document.createElement("input");
+        cInput.className = "instr-field";
+        cInput.value = pos[0] || "";
+        cInput.placeholder = "#ffffff";
+        cInput.addEventListener("change", (e) => {
+          this.onChange({ args: { ...args, positional: [e.target.value] } });
+        });
+        container.appendChild(cInput);
+        container.appendChild(this.#labelInline("時長"));
+        const dInput = this.#numberInput(args.duration, "ms");
+        dInput.addEventListener("change", (e) => {
+          this.onChange({ args: { ...args, duration: parseInt(e.target.value) || undefined } });
+        });
+        container.appendChild(dInput);
+        break;
+      }
+      case "tint": {
+        const cInput = document.createElement("input");
+        cInput.className = "instr-field";
+        cInput.value = pos[0] || "";
+        cInput.placeholder = "#000000";
+        cInput.addEventListener("change", (e) => {
+          this.onChange({ args: { ...args, positional: [e.target.value] } });
+        });
+        container.appendChild(cInput);
+        container.appendChild(this.#labelInline("透明度"));
+        const oInput = this.#numberInput(args.opacity, "0~1");
+        oInput.step = "0.1";
+        oInput.addEventListener("change", (e) => {
+          this.onChange({ args: { ...args, opacity: parseFloat(e.target.value) } });
+        });
+        container.appendChild(oInput);
+        container.appendChild(this.#labelInline("時長"));
+        const dInput = this.#numberInput(args.duration, "ms");
+        dInput.addEventListener("change", (e) => {
+          this.onChange({ args: { ...args, duration: parseInt(e.target.value) || undefined } });
+        });
+        container.appendChild(dInput);
         break;
       }
       default: {

@@ -9,6 +9,7 @@ import { TextBox } from "./TextBox.js";
 import { ChoiceMenu } from "./ChoiceMenu.js";
 import { CharacterLayer, BackgroundLayer } from "./CharacterLayer.js";
 import { AudioManager } from "./AudioManager.js";
+import { ScreenEffects } from "./ScreenEffects.js";
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -43,6 +44,7 @@ export class GameRuntime {
     );
     this.backgroundLayer = new BackgroundLayer(dom.backgroundLayer, storyPath, resolveAsset);
     this.audio = new AudioManager(storyPath, resolveAsset);
+    this.effects = dom.screen ? new ScreenEffects(dom.screen) : null;
 
     this.engine = new StoryEngine({
       storyPath,
@@ -145,6 +147,36 @@ export class GameRuntime {
       }
       case "wait": {
         await wait(parseInt(args.positional[0] || "500", 10));
+        break;
+      }
+      case "shake": {
+        if (this.effects) {
+          const intensity = Number(args.positional[0]) || Number(args.intensity) || 8;
+          const duration = args.duration ?? args.fade ?? 500;
+          await this.effects.shake({ intensity, duration });
+        }
+        break;
+      }
+      case "flash": {
+        if (this.effects) {
+          const color = args.color || args.positional[0] || "#ffffff";
+          const duration = args.duration ?? args.fade ?? 400;
+          await this.effects.flash({ color, duration });
+        }
+        break;
+      }
+      case "tint": {
+        if (this.effects) {
+          const color = args.color || args.positional[0] || "#000000";
+          const opacity = args.opacity != null ? Number(args.opacity) : 0.4;
+          const duration = args.duration ?? args.fade ?? 600;
+          this.effects.tint({ color, opacity, duration });
+        }
+        break;
+      }
+      case "tint-clear":
+      case "cleartint": {
+        if (this.effects) this.effects.clearTint({ duration: args.duration ?? args.fade ?? 600 });
         break;
       }
       default:

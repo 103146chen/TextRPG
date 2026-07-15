@@ -857,3 +857,25 @@ html, body {
 ::-webkit-scrollbar-track { background: var(--ink-900); }
 ::-webkit-scrollbar-thumb { background: var(--gold-dim); border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: var(--gold); }
+
+/* ===================== 螢幕演出特效 ===================== */
+/* 覆蓋層：立繪之上（char-layer 預設 z-index），文字框（z-index:10）之下 */
+.fx-overlay {
+  position: absolute;
+  inset: 0;
+  z-index: 5;
+  pointer-events: none;
+  overflow: hidden;
+}
+.fx-tint {
+  position: absolute;
+  inset: 0;
+  background-color: transparent;
+  opacity: 0;
+}
+.fx-flash {
+  position: absolute;
+  inset: 0;
+  background: #ffffff;
+  opacity: 0;
+}

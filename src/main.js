@@ -59,6 +59,7 @@ async function initRuntime() {
       choiceContainer: $("#choice-container"),
       characterLayer: $("#character-layer"),
       backgroundLayer: $("#background-layer"),
+      screen: $("#game-screen"),
     },
     storyMeta,
     storyPath: STORY_PATH,
