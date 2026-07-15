@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+  <title>織夢 · 即時預覽</title>
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Serif+TC:wght@400;500;700&family=Klee+One:wght@400;600&family=Shippori+Mincho:wght@500;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/styles/main.css" />
+  <style>
+    html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
+    #game-screen { position: absolute; inset: 0; }
+    /* 預覽提示條 */
+    .preview-bar {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 50;
+      display: flex; align-items: center; gap: 10px;
+      padding: 4px 10px; font-size: 12px;
+      background: rgba(20,20,28,0.66); color: #f5efe3;
+      font-family: system-ui, sans-serif; pointer-events: none;
+    }
+    .preview-bar button { pointer-events: auto; cursor: pointer;
+      background: rgba(255,255,255,0.14); color: #f5efe3;
+      border: none; border-radius: 5px; padding: 3px 10px; font-size: 12px; }
+    .preview-bar button:hover { background: rgba(255,255,255,0.26); }
+    .preview-bar .dot { width: 7px; height: 7px; border-radius: 50%; background: #6bd08a; }
+    .preview-empty {
+      position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+      color: rgba(245,239,227,0.55); font-family: system-ui, sans-serif; font-size: 14px;
+    }
+  </style>
+</head>
+<body>
+  <div class="preview-bar">
+    <span class="dot"></span><span>即時預覽</span>
+    <button id="preview-restart" title="從頭播放">⟳ 從頭</button>
+  </div>
+
+  <div id="preview-empty" class="preview-empty">等待編輯器載入劇本…</div>
+
+  <!-- 遊戲畫面（與 index.html 結構一致，共用 main.css） -->
+  <div id="game-screen" class="screen hidden">
+    <div id="background-layer" class="bg-layer"></div>
+    <div id="character-layer" class="char-layer">
+      <div class="char-slot" data-slot="left"></div>
+      <div class="char-slot" data-slot="center"></div>
+      <div class="char-slot" data-slot="right"></div>
+    </div>
+
+    <div id="text-container" class="text-container">
+      <div id="speaker-name" class="speaker-name"></div>
+      <div id="text-box" class="text-box">
+        <div id="text-content" class="text-content"></div>
+        <span id="text-indicator" class="text-indicator">▼</span>
+      </div>
+    </div>
+
+    <div id="choice-container" class="choice-container hidden"></div>
+  </div>
+
+  <script type="module" src="./src/preview.js"></script>
+</body>
+</html>
