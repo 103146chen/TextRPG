@@ -1,14 +1,11 @@
 // ============================================
 // main.js
-// 主入口：裝配引擎與 UI
+// 主入口：裝配遊戲執行期（GameRuntime）與應用外殼（標題／存讀檔／圖鑑）
 // ============================================
 
 import { StoryEngine } from "./engine/StoryEngine.js";
 import { SaveManager } from "./engine/SaveManager.js";
-import { TextBox } from "./ui/TextBox.js";
-import { ChoiceMenu } from "./ui/ChoiceMenu.js";
-import { CharacterLayer, BackgroundLayer } from "./ui/CharacterLayer.js";
-import { AudioManager } from "./ui/AudioManager.js";
+import { GameRuntime } from "./ui/GameRuntime.js";
 
 // 設定：目前的劇本路徑
 // 需透過 URL 參數 ?story=xxx 指定，例如 index.html?story=demo_story
@@ -32,17 +29,7 @@ const screens = {
   noStory: $("#no-story-screen"),
 };
 
-const textBox = new TextBox({
-  contentEl: $("#text-content"),
-  speakerEl: $("#speaker-name"),
-  indicatorEl: $("#text-indicator"),
-});
-const choiceMenu = new ChoiceMenu($("#choice-container"));
-let characterLayer = null;
-let backgroundLayer = null;
-let audio = null;
-let engine = null;
-
+let runtime = null;
 let saveMode = "save"; // "save" | "load"
 
 // =====================================================
@@ -55,135 +42,34 @@ function showScreen(name) {
 }
 
 // =====================================================
-// 初始化引擎
+// 初始化遊戲執行期
 // =====================================================
-async function initEngine() {
+async function initRuntime() {
   showScreen("loading");
 
   // 載入 story.json 取得角色等設定
   const metaRes = await fetch(`${STORY_PATH}/story.json`);
   const storyMeta = await metaRes.json();
 
-  characterLayer = new CharacterLayer(
-    $("#character-layer"),
-    STORY_PATH,
-    storyMeta.characters || {}
-  );
-  backgroundLayer = new BackgroundLayer($("#background-layer"), STORY_PATH);
-  audio = new AudioManager(STORY_PATH);
-
-  engine = new StoryEngine({
+  runtime = new GameRuntime({
+    dom: {
+      textContent: $("#text-content"),
+      speakerName: $("#speaker-name"),
+      textIndicator: $("#text-indicator"),
+      choiceContainer: $("#choice-container"),
+      characterLayer: $("#character-layer"),
+      backgroundLayer: $("#background-layer"),
+    },
+    storyMeta,
     storyPath: STORY_PATH,
-    onText: handleText,
-    onChoice: handleChoice,
-    onDirective: handleDirective,
-    onSceneChange: handleSceneChange,
-    onEnding: handleEnding,
+    onEnding: () => goToTitle(),
   });
-
-  engine.storyMeta = storyMeta;
 
   // 更新標題
   $(".game-title").textContent = storyMeta.title || "織夢";
   if (storyMeta.subtitle) {
     $(".game-subtitle").textContent = `— ${storyMeta.subtitle} —`;
   }
-}
-
-// =====================================================
-// 引擎回呼
-// =====================================================
-async function handleText(speaker, text, state) {
-  if (speaker) characterLayer.setSpeaking(speaker);
-  else characterLayer.clearSpeaking();
-  await textBox.showText(speaker, text);
-
-}
-
-async function handleChoice(options) {
-  const idx = await choiceMenu.show(options);
-  engine.selectChoice(idx);
-}
-
-async function handleDirective(ins, state) {
-  const { name, args } = ins;
-  switch (name) {
-    case "bg": {
-      const file = args.positional[0];
-      const fade = args.fade ?? 800;
-      await backgroundLayer.change(file, fade);
-      break;
-    }
-    case "show": {
-      const [charName, slot = "center", emotion = null] = args.positional;
-      await characterLayer.show(charName, slot, emotion);
-      break;
-    }
-    case "hide": {
-      const charName = args.positional[0];
-      if (charName === "all") {
-        await characterLayer.hideAll(args.fade ?? 400);
-      } else {
-        await characterLayer.hide(charName, args.fade ?? 400);
-      }
-      break;
-    }
-    case "move": {
-      // @move alice center→left
-      const [charName, movement] = args.positional;
-      const [from, to] = movement.split(/[→\->]/).map(s => s.trim());
-      const cur = Object.entries(characterLayer.current).find(
-        ([, v]) => v?.charName === charName
-      );
-      if (cur) {
-        const emotion = cur[1].emotion;
-        await characterLayer.hide(charName, 200);
-        await characterLayer.show(charName, to, emotion);
-      }
-      break;
-    }
-    case "bgm": {
-      const file = args.positional[0];
-      await audio.playBgm(file, { fadeIn: args.fade ?? 1000 });
-      break;
-    }
-    case "bgm-stop":
-    case "stopbgm": {
-      await audio.stopBgm(args.fade ?? 500);
-      break;
-    }
-    case "se": {
-      audio.playSe(args.positional[0]);
-      break;
-    }
-    case "wait": {
-      const ms = parseInt(args.positional[0] || "500", 10);
-      await new Promise(r => setTimeout(r, ms));
-      break;
-    }
-    default:
-      console.warn("未知指令:", name, args);
-  }
-}
-
-async function handleSceneChange(sceneMeta) {
-  // 應用場景預設的 bg 與 bgm（front matter 中的）
-  if (sceneMeta.background) {
-    await backgroundLayer.change(sceneMeta.background, 600);
-  }
-  if (sceneMeta.bgm) {
-    await audio.playBgm(sceneMeta.bgm, { fadeIn: 800 });
-  }
-}
-
-async function handleEnding(endingIns) {
-  // 結局畫面：顯示「結局：XXX」訊息 → 回標題
-  await new Promise(r => setTimeout(r, 500));
-  await textBox.showText("", `—— 結局：${endingIns.title} ——`);
-  await new Promise(r => setTimeout(r, 1500));
-  await textBox.showText("", endingIns.desc || "你的故事走到了這裡。");
-  await new Promise(r => setTimeout(r, 2000));
-  goToTitle();
 }
 
 // =====================================================
@@ -194,11 +80,7 @@ function setupGameClicks() {
     // 點擊控制列、選項區、設定按鈕時不前進
     if (e.target.closest(".game-controls")) return;
     if (e.target.closest(".choice-container")) return;
-
-    const advanced = textBox.handleClick();
-    if (advanced) {
-      setTimeout(() => engine.advance(), 0);
-    }
+    runtime.handleAdvanceInput();
   });
 }
 
@@ -212,14 +94,14 @@ function setupGameControls() {
       const ctrl = btn.dataset.ctrl;
       switch (ctrl) {
         case "font-plus":
-          textBox.changeFontSize(2);
+          runtime.textBox.changeFontSize(2);
           break;
         case "font-minus":
-          textBox.changeFontSize(-2);
+          runtime.textBox.changeFontSize(-2);
           break;
         case "back":
-          if (engine.canRollback()) {
-            await engine.rollback();
+          if (runtime.canRollback()) {
+            await runtime.rollback();
           }
           break;
         case "save":
@@ -246,7 +128,7 @@ function setupTitleMenu() {
       switch (action) {
         case "start":
           showScreen("game");
-          await engine.startNewGame();
+          await runtime.startNewGame();
           break;
         case "load":
           openSaveScreen("load");
@@ -263,8 +145,7 @@ function setupTitleMenu() {
 }
 
 function goToTitle() {
-  audio.stopBgm(500);
-  characterLayer.hideAll(300);
+  runtime.stopAmbient();
   showScreen("title");
 }
 
@@ -281,7 +162,7 @@ function openSaveScreen(mode) {
 function renderSaveSlots() {
   const container = $("#save-slots");
   container.innerHTML = "";
-  const slots = SaveManager.listAll(engine.storyMeta.id);
+  const slots = SaveManager.listAll(runtime.storyMeta.id);
 
   for (const { slot, data } of slots) {
     const div = document.createElement("div");
@@ -313,7 +194,7 @@ function renderSaveSlots() {
       if (e.target.closest("[data-delete]")) {
         e.stopPropagation();
         if (confirm(`確定刪除檔案 ${slot}？`)) {
-          SaveManager.delete(engine.storyMeta.id, slot);
+          SaveManager.delete(runtime.storyMeta.id, slot);
           renderSaveSlots();
         }
         return;
@@ -327,17 +208,17 @@ function renderSaveSlots() {
 
 async function handleSaveSlotClick(slot, data) {
   if (saveMode === "save") {
-    if (!engine.state.sceneId) {
+    if (!runtime.state.sceneId) {
       alert("尚未開始遊戲");
       return;
     }
     if (data && !confirm(`檔案 ${slot} 已有資料，要覆寫嗎？`)) return;
     try {
       SaveManager.save(
-        engine.storyMeta.id,
+        runtime.storyMeta.id,
         slot,
-        engine.serialize(),
-        textBox.getPreview()
+        runtime.serialize(),
+        runtime.getPreviewText()
       );
     } catch (e) {
       alert(e.message);
@@ -347,7 +228,7 @@ async function handleSaveSlotClick(slot, data) {
   } else {
     if (!data) return;
     showScreen("game");
-    const result = await engine.loadState(data);
+    const result = await runtime.loadState(data);
     if (result?.stale) {
       flashNotice("此存檔的劇本已更新，已盡力復原進度，位置可能略有偏差。");
     }
@@ -361,8 +242,8 @@ function openGallery() {
   const grid = $("#gallery-grid");
   grid.innerHTML = "";
 
-  const unlocked = StoryEngine.getUnlockedEndings(engine.storyMeta.id);
-  const allEndings = engine.storyMeta.endings || [];
+  const unlocked = StoryEngine.getUnlockedEndings(runtime.storyMeta.id);
+  const allEndings = runtime.storyMeta.endings || [];
 
   allEndings.forEach((ending, idx) => {
     const isUnlocked = !!unlocked[ending.id];
@@ -393,7 +274,7 @@ function setupCloseButtons() {
   document.querySelectorAll("[data-close]").forEach(btn => {
     btn.addEventListener("click", () => {
       // 如果遊戲正在進行，回到遊戲，否則回標題
-      if (engine.state.sceneId && !engine.state.finished) {
+      if (runtime.state.sceneId && !runtime.state.finished) {
         showScreen("game");
       } else {
         showScreen("title");
@@ -440,7 +321,7 @@ function flashNotice(message, ms = 4000) {
   }
 
   try {
-    await initEngine();
+    await initRuntime();
     setupTitleMenu();
     setupGameClicks();
     setupGameControls();
@@ -451,9 +332,7 @@ function flashNotice(message, ms = 4000) {
       if (screens.game.classList.contains("hidden")) return;
       if (e.key === "Enter" || e.key === " ") {
         e.preventDefault();
-        if (textBox.handleClick()) {
-          setTimeout(() => engine.advance(), 0);
-        }
+        runtime.handleAdvanceInput();
       } else if (e.key === "Escape") {
         goToTitle();
       }

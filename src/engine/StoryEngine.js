@@ -79,6 +79,20 @@ export class StoryEngine {
     await this.gotoScene(this.storyMeta.start);
   }
 
+  // 從指定場景與指令位置開始（供即時預覽「從這行試玩」；flags 從空白起算）
+  async startAtScene(sceneId, pc = 0) {
+    this.state = this.#createFreshState();
+    this.history = [];
+    const scene = await this.loadScene(sceneId);
+    this.state.sceneId = sceneId;
+    this.state.pc = Math.max(0, Math.min(pc, scene.instructions.length));
+    if (this.onSceneChange) {
+      await this.onSceneChange(scene.meta);
+    }
+    this.running = true;
+    await this.step();
+  }
+
   async gotoScene(sceneId) {
     const scene = await this.loadScene(sceneId);
     this.state.sceneId = sceneId;
