@@ -334,13 +334,14 @@ export class InstructionRow {
   #renderSet(container) {
     container.appendChild(this.#badge("設定"));
 
-    const keyInput = document.createElement("input");
-    keyInput.className = "instr-field";
-    keyInput.value = this.ins.key || "";
-    keyInput.placeholder = "flag 名稱";
+    const keyInput = createSelectField({
+      value: this.ins.key || "",
+      options: this.project.getKnownFlagNames(),
+      placeholder: "選旗標",
+      addLabel: "新增旗標…", onAdd: () => this.onManage?.("flags"),
+      onChange: (v) => this.onChange({ key: v }),
+    });
     keyInput.style.minWidth = "120px";
-    keyInput.style.fontFamily = "var(--e-font-mono)";
-    keyInput.addEventListener("change", () => this.onChange({ key: keyInput.value }));
     container.appendChild(keyInput);
 
     const opSelect = document.createElement("select");
@@ -452,6 +453,33 @@ export class InstructionRow {
     condInput.placeholder = "條件表達式，例: met_alice && charm > 2";
     condInput.addEventListener("change", () => this.onChange({ condition: condInput.value }));
     container.appendChild(condInput);
+
+    // 運算式無法純下拉，提供「插入旗標」輔助（含跳新增）
+    const insertSel = document.createElement("select");
+    insertSel.className = "instr-field";
+    insertSel.title = "插入旗標名到條件式";
+    insertSel.style.maxWidth = "110px";
+    const ph = document.createElement("option");
+    ph.value = ""; ph.textContent = "＋旗標";
+    insertSel.appendChild(ph);
+    for (const f of this.project.getKnownFlagNames()) {
+      const o = document.createElement("option");
+      o.value = f; o.textContent = f;
+      insertSel.appendChild(o);
+    }
+    const addOpt = document.createElement("option");
+    addOpt.value = "\u0000add"; addOpt.textContent = "＋ 新增旗標…";
+    insertSel.appendChild(addOpt);
+    insertSel.addEventListener("change", () => {
+      const v = insertSel.value;
+      insertSel.value = "";
+      if (v === "\u0000add") { this.onManage?.("flags"); return; }
+      if (!v) return;
+      const cur = condInput.value.trim();
+      condInput.value = cur ? `${cur} ${v}` : v;
+      this.onChange({ condition: condInput.value });
+    });
+    container.appendChild(insertSel);
   }
 
   // ---------- Else ----------
