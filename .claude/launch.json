@@ -4,7 +4,11 @@
     {
       "name": "galgame-engine",
       "runtimeExecutable": "python",
-      "runtimeArgs": ["-m", "http.server", "8123"],
+      "runtimeArgs": [
+        "tools/dev_server.py",
+        "--port",
+        "8123"
+      ],
       "port": 8123
     }
   ]

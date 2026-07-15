@@ -24,14 +24,21 @@
 
 ## 🚀 快速開始
 
-### 方法 1：直接用 Python 啟動
+### 方法 1：開發用伺服器（推薦）
 
 ```bash
 cd galgame-engine
-python3 -m http.server 8000
+python tools/dev_server.py
 ```
 
-然後瀏覽 <http://localhost:8000>
+然後瀏覽 <http://127.0.0.1:8123>
+
+> 這支伺服器和 `python -m http.server` 一樣是純靜態，但會回應「不要快取」標頭。
+> 因為本專案是原生 ES modules，瀏覽器會依模組 URL 各自快取；改完 `.js` 後若快取
+> 沒清乾淨，可能出現「新舊模組混用」（症狀：`xxx is not a function`）。用這支
+> 伺服器就**改完直接重整即可，不需要硬重整**。
+>
+> 若你只是要跑遊戲（不改程式），`python -m http.server 8000` 也完全可以。
 
 ### 方法 2：Node.js serve
 
