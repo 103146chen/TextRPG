@@ -36,6 +36,19 @@ export class StoryEngine {
     };
   }
 
+  // 依 story.json 的 flags 宣告產生開場預設旗標值（未宣告則為空，向後相容）
+  #initialFlags() {
+    const flags = {};
+    const decls = this.storyMeta?.flags || {};
+    for (const [name, def] of Object.entries(decls)) {
+      if (def && "default" in def) flags[name] = def.default;
+      else if (def?.type === "number") flags[name] = 0;
+      else if (def?.type === "boolean") flags[name] = false;
+      else flags[name] = "";
+    }
+    return flags;
+  }
+
   // ============ 載入 ============
 
   async loadStoryMeta() {
@@ -75,6 +88,7 @@ export class StoryEngine {
 
   async startNewGame() {
     this.state = this.#createFreshState();
+    this.state.flags = this.#initialFlags();
     this.history = [];
     await this.gotoScene(this.storyMeta.start);
   }
@@ -82,6 +96,7 @@ export class StoryEngine {
   // 從指定場景與指令位置開始（供即時預覽「從這行試玩」；flags 從空白起算）
   async startAtScene(sceneId, pc = 0) {
     this.state = this.#createFreshState();
+    this.state.flags = this.#initialFlags();
     this.history = [];
     const scene = await this.loadScene(sceneId);
     this.state.sceneId = sceneId;
@@ -412,7 +427,7 @@ export class StoryEngine {
   async loadState(saveData) {
     this.state = this.#createFreshState();
     this.history = [];
-    this.state.flags = { ...saveData.flags };
+    this.state.flags = { ...this.#initialFlags(), ...saveData.flags };
     const scene = await this.loadScene(saveData.sceneId);
     this.state.sceneId = saveData.sceneId;
 

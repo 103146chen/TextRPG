@@ -266,6 +266,61 @@ export class StoryProject {
     this.notify("scene-meta-updated", { sceneId });
   }
 
+  // ==================== 旗標登記 ====================
+
+  getDeclaredFlags() {
+    return this.storyMeta?.flags || {};
+  }
+
+  upsertFlag(name, def) {
+    this.#pushUndo();
+    if (!this.storyMeta.flags) this.storyMeta.flags = {};
+    this.storyMeta.flags[name] = def;
+    this.notify("flags-updated", { name });
+  }
+
+  removeFlag(name) {
+    this.#pushUndo();
+    if (this.storyMeta.flags) delete this.storyMeta.flags[name];
+    this.notify("flags-updated", { name, removed: true });
+  }
+
+  // 從條件式抽出旗標名（與 FlagInspector 規則一致）
+  #extractConditionFlags(expr) {
+    if (!expr) return [];
+    const noStr = expr.replace(/"([^"\\]|\\.)*"/g, "").replace(/'([^'\\]|\\.)*'/g, "");
+    const reserved = new Set(["true", "false", "null"]);
+    const re = /([a-zA-Z_一-鿿㐀-䶿豈-﫿][\w一-鿿㐀-䶿豈-﫿]*)/g;
+    const out = [];
+    let m;
+    while ((m = re.exec(noStr)) !== null) if (!reserved.has(m[1])) out.push(m[1]);
+    return out;
+  }
+
+  // 劇本中實際用到的旗標名（@set / 選項 set / 條件式）
+  collectUsedFlagNames() {
+    const used = new Set();
+    for (const sc of this.scenes.values()) {
+      for (const ins of sc.instructions) {
+        if (ins.type === "set" && ins.key) used.add(ins.key);
+        if ((ins.type === "if" || ins.type === "elif") && ins.condition) {
+          for (const f of this.#extractConditionFlags(ins.condition)) used.add(f);
+        }
+        if (ins.type === "choice") {
+          for (const opt of ins.options) for (const k of Object.keys(opt.set || {})) used.add(k);
+        }
+      }
+    }
+    return used;
+  }
+
+  // 已登記 ∪ 已使用，供下拉選單與 Linter 用
+  getKnownFlagNames() {
+    const set = new Set(Object.keys(this.getDeclaredFlags()));
+    for (const f of this.collectUsedFlagNames()) set.add(f);
+    return [...set].sort((a, b) => a.localeCompare(b));
+  }
+
   // ==================== Story meta 操作 ====================
 
   updateStoryMeta(patch) {
