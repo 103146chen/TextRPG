@@ -4,8 +4,9 @@
 // ============================================
 
 export class AudioManager {
-  constructor(storyPath) {
+  constructor(storyPath, resolveAsset = null) {
     this.storyPath = storyPath;
+    this.resolveAsset = resolveAsset;
     this.bgm = null;
     this.currentBgmFile = null;
     this.bgmVolume = 0.5;
@@ -18,7 +19,7 @@ export class AudioManager {
     await this.stopBgm(500);
     if (!fileName) return;
 
-    this.bgm = new Audio(`${this.storyPath}/bgm/${fileName}`);
+    this.bgm = new Audio(await this.#assetUrl("bgm", fileName));
     this.bgm.loop = loop;
     this.bgm.volume = 0;
     this.currentBgmFile = fileName;
@@ -46,11 +47,19 @@ export class AudioManager {
     this.currentBgmFile = null;
   }
 
-  playSe(fileName, { volume } = {}) {
+  async playSe(fileName, { volume } = {}) {
     if (!fileName) return;
-    const se = new Audio(`${this.storyPath}/se/${fileName}`);
+    const se = new Audio(await this.#assetUrl("se", fileName));
     se.volume = (volume ?? this.seVolume) * (this.muted ? 0 : 1);
     se.play().catch(() => {});
+  }
+
+  async #assetUrl(kind, fileName) {
+    if (this.resolveAsset) {
+      const u = await this.resolveAsset(kind, fileName);
+      if (u) return u;
+    }
+    return `${this.storyPath}/${kind}/${fileName}`;
   }
 
   setMuted(muted) {

@@ -4,9 +4,10 @@
 // ============================================
 
 export class CharacterLayer {
-  constructor(layerEl, storyPath, characterMap = {}) {
+  constructor(layerEl, storyPath, characterMap = {}, resolveAsset = null) {
     this.layerEl = layerEl;
     this.storyPath = storyPath;
+    this.resolveAsset = resolveAsset; // 可選：(kind, file) => Promise<url>，供即時預覽用 blob URL
     this.characterMap = characterMap; // name -> {defaultFile, emotions: {happy: "alice_happy.png"}}
     this.slots = {
       left: layerEl.querySelector('[data-slot="left"]'),
@@ -43,7 +44,8 @@ export class CharacterLayer {
     }
 
     slotEl.innerHTML = "";
-    const img = this.#createImg(fileName, charName);
+    const url = await this.#assetUrl("characters", fileName);
+    const img = this.#createImg(url, charName);
     slotEl.appendChild(img);
     // 強制重繪
     await this.#wait(20);
@@ -103,10 +105,18 @@ export class CharacterLayer {
     }
   }
 
-  #createImg(fileName, charName) {
-    // 若檔名以 .svg 結尾且是 inline 資源，使用 img 標籤即可
+  // 解析資產 URL：有 resolveAsset 就用它（blob URL），否則退回路徑
+  async #assetUrl(kind, fileName) {
+    if (this.resolveAsset) {
+      const u = await this.resolveAsset(kind, fileName);
+      if (u) return u;
+    }
+    return `${this.storyPath}/${kind}/${fileName}`;
+  }
+
+  #createImg(url, charName) {
     const img = document.createElement("img");
-    img.src = `${this.storyPath}/characters/${fileName}`;
+    img.src = url;
     img.alt = charName;
     img.onerror = () => {
       // fallback: 以 SVG placeholder 代替
@@ -151,10 +161,19 @@ export class CharacterLayer {
 // ============================================
 
 export class BackgroundLayer {
-  constructor(layerEl, storyPath) {
+  constructor(layerEl, storyPath, resolveAsset = null) {
     this.layerEl = layerEl;
     this.storyPath = storyPath;
+    this.resolveAsset = resolveAsset;
     this.current = null;
+  }
+
+  async #assetUrl(kind, fileName) {
+    if (this.resolveAsset) {
+      const u = await this.resolveAsset(kind, fileName);
+      if (u) return u;
+    }
+    return `${this.storyPath}/${kind}/${fileName}`;
   }
 
   async change(fileName, fadeMs = 800) {
@@ -165,7 +184,7 @@ export class BackgroundLayer {
     this.layerEl.classList.add("fading");
     await this.#wait(fadeMs / 2);
 
-    const url = `${this.storyPath}/backgrounds/${fileName}`;
+    const url = await this.#assetUrl("backgrounds", fileName);
     const img = new Image();
     const loaded = await new Promise(resolve => {
       img.onload = () => resolve(true);

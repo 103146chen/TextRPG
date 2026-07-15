@@ -7,8 +7,10 @@ import { SceneParser } from "./SceneParser.js";
 import { ConditionEvaluator } from "./ConditionEvaluator.js";
 
 export class StoryEngine {
-  constructor({ storyPath, onText, onChoice, onDirective, onEnding, onSceneChange }) {
+  constructor({ storyPath, onText, onChoice, onDirective, onEnding, onSceneChange, sceneLoader, metaLoader }) {
     this.storyPath = storyPath;         // e.g. "./public/stories/demo_story"
+    this.sceneLoader = sceneLoader;     // 可選：(sceneId) => Promise<string raw md>，供即時預覽從記憶體讀取
+    this.metaLoader = metaLoader;       // 可選：() => Promise<storyMeta>
     this.onText = onText;                // (speaker, text, state) => void
     this.onChoice = onChoice;            // (options) => void
     this.onDirective = onDirective;      // (directive, state) => Promise
@@ -37,6 +39,10 @@ export class StoryEngine {
   // ============ 載入 ============
 
   async loadStoryMeta() {
+    if (this.metaLoader) {
+      this.storyMeta = await this.metaLoader();
+      return this.storyMeta;
+    }
     const res = await fetch(`${this.storyPath}/story.json`);
     if (!res.ok) throw new Error(`無法載入 story.json: ${res.status}`);
     this.storyMeta = await res.json();
@@ -45,13 +51,24 @@ export class StoryEngine {
 
   async loadScene(sceneId) {
     if (this.sceneCache.has(sceneId)) return this.sceneCache.get(sceneId);
-    const res = await fetch(`${this.storyPath}/scenes/${sceneId}.md`);
-    if (!res.ok) throw new Error(`無法載入場景 ${sceneId}: ${res.status}`);
-    const raw = await res.text();
+    let raw;
+    if (this.sceneLoader) {
+      raw = await this.sceneLoader(sceneId);
+      if (raw == null) throw new Error(`無法載入場景 ${sceneId}`);
+    } else {
+      const res = await fetch(`${this.storyPath}/scenes/${sceneId}.md`);
+      if (!res.ok) throw new Error(`無法載入場景 ${sceneId}: ${res.status}`);
+      raw = await res.text();
+    }
     const parsed = SceneParser.parse(raw);
     parsed.raw = raw;                    // 保留原文供存檔雜湊比對
     this.sceneCache.set(sceneId, parsed);
     return parsed;
+  }
+
+  // 清空場景快取（即時預覽重載時使用，確保讀到最新的記憶體內容）
+  clearSceneCache() {
+    this.sceneCache.clear();
   }
 
   // ============ 場景切換 ============
