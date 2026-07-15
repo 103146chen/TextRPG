@@ -100,6 +100,30 @@ export class StoryProject {
     return false;
   }
 
+  // ==================== 資源操作 ====================
+
+  async refreshResources() {
+    this.resources.backgrounds = await this.fs.listResources("backgrounds");
+    this.resources.characters = await this.fs.listResources("characters");
+    this.resources.bgm = await this.fs.listResources("bgm");
+    this.resources.se = await this.fs.listResources("se");
+  }
+
+  // 匯入資源檔（File/Blob），寫回資料夾並刷新清單
+  async importAsset(kind, file) {
+    const fileName = file.name || `asset_${Date.now()}`;
+    await this.fs.writeResource(kind, fileName, file);
+    await this.refreshResources();
+    this.notify("resources-updated", { kind, fileName });
+    return fileName;
+  }
+
+  async deleteAsset(kind, fileName) {
+    await this.fs.deleteResource(kind, fileName);
+    await this.refreshResources();
+    this.notify("resources-updated", { kind, fileName, deleted: true });
+  }
+
   // ==================== 場景操作 ====================
 
   getScene(sceneId) {

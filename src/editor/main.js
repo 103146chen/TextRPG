@@ -11,6 +11,7 @@ import { GraphView } from "./views/GraphView.js";
 import { LintPanel } from "./views/LintPanel.js";
 import { FlagInspector } from "./views/FlagInspector.js";
 import { StoryManager } from "./views/StoryManager.js";
+import { AssetPanel } from "./views/AssetPanel.js";
 
 const $ = s => document.querySelector(s);
 
@@ -74,6 +75,7 @@ const flagInspector = new FlagInspector($("#flag-panel"), project, (sceneId, ind
 });
 
 const storyManager = new StoryManager(project);
+const assetPanel = new AssetPanel($("#asset-panel"), project);
 
 let currentSceneId = null;
 let currentView = "scene"; // "scene" | "graph"
@@ -255,7 +257,7 @@ project.subscribe((type, payload) => {
   // 部分變更要重繪主區
   if (type === "instruction-inserted" || type === "instruction-deleted" ||
       type === "instruction-moved" || type === "instructions-replaced" ||
-      type === "undo" || type === "redo") {
+      type === "undo" || type === "redo" || type === "resources-updated") {
     if (currentView === "scene") sceneEditor.render();
   }
   // 影響 graph 結構的變更

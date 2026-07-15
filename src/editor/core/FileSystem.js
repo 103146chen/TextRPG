@@ -104,6 +104,34 @@ export class ProjectFileSystem {
     }
   }
 
+  // 寫入單一資源檔（匯入立繪／背景／BGM／音效）
+  async writeResource(kind, fileName, blob) {
+    const dirMap = {
+      backgrounds: this.backgroundsDirHandle,
+      characters: this.charactersDirHandle,
+      bgm: this.bgmDirHandle,
+      se: this.seDirHandle,
+    };
+    const dir = dirMap[kind];
+    if (!dir) throw new Error(`未知的資源類型: ${kind}`);
+    const handle = await dir.getFileHandle(fileName, { create: true });
+    const writable = await handle.createWritable();
+    await writable.write(blob);
+    await writable.close();
+  }
+
+  async deleteResource(kind, fileName) {
+    const dirMap = {
+      backgrounds: this.backgroundsDirHandle,
+      characters: this.charactersDirHandle,
+      bgm: this.bgmDirHandle,
+      se: this.seDirHandle,
+    };
+    const dir = dirMap[kind];
+    if (!dir) return;
+    try { await dir.removeEntry(fileName); } catch (e) { console.warn("刪除資源失敗", e); }
+  }
+
   async listResources(kind) {
     // kind: "backgrounds" | "characters" | "bgm" | "se"
     const dirMap = {

@@ -1470,3 +1470,58 @@ input, textarea, select {
   font-size: 11px;
   margin: 0 2px;
 }
+
+/* ===================== 資產面板 ===================== */
+#asset-panel { padding: 6px 4px; overflow-y: auto; }
+.asset-empty { padding: 24px 12px; color: var(--e-text-faded); font-size: 12px; text-align: center; }
+.asset-section { margin-bottom: 14px; }
+.asset-section-head {
+  display: flex; align-items: center; gap: 6px;
+  padding: 2px 6px 6px; font-size: 12px; color: var(--e-text-dim);
+}
+.asset-section-head > span:first-child { font-weight: 600; color: var(--e-text); }
+.asset-count {
+  background: var(--e-bg-3); color: var(--e-text-faded);
+  border-radius: 8px; padding: 0 6px; font-size: 11px;
+}
+.asset-import-btn {
+  margin-left: auto; cursor: pointer; font-size: 11px;
+  background: var(--e-bg-3); color: var(--e-text); border: 1px solid var(--e-border);
+  border-radius: var(--e-radius, 5px); padding: 2px 8px;
+}
+.asset-import-btn:hover { background: var(--e-accent); color: #fff; border-color: var(--e-accent); }
+.asset-grid {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(72px, 1fr));
+  gap: 6px; padding: 6px; border: 1px dashed var(--e-border);
+  border-radius: var(--e-radius, 6px); min-height: 48px;
+}
+.asset-grid.dragover { border-color: var(--e-accent); background: rgba(74,144,217,0.08); }
+.asset-drop-hint {
+  grid-column: 1 / -1; color: var(--e-text-faded);
+  font-size: 11px; text-align: center; padding: 10px 4px; line-height: 1.5;
+}
+.asset-item {
+  position: relative; display: flex; flex-direction: column; align-items: center;
+  gap: 3px; padding: 4px; border-radius: var(--e-radius, 5px);
+  background: var(--e-bg-2); border: 1px solid var(--e-border);
+}
+.asset-thumb {
+  width: 100%; height: 48px; object-fit: cover;
+  border-radius: 3px; background: var(--e-bg-4);
+}
+.asset-audio-btn {
+  width: 100%; height: 48px; cursor: pointer; font-size: 16px;
+  background: var(--e-bg-4); color: var(--e-text); border: 0; border-radius: 3px;
+}
+.asset-audio-btn:hover { background: var(--e-accent); color: #fff; }
+.asset-name {
+  width: 100%; font-size: 10px; color: var(--e-text-dim);
+  text-align: center; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.asset-del {
+  position: absolute; top: 1px; right: 1px; width: 16px; height: 16px;
+  cursor: pointer; border: 0; border-radius: 3px; padding: 0; line-height: 14px;
+  background: rgba(0,0,0,0.45); color: #fff; font-size: 12px; opacity: 0;
+}
+.asset-item:hover .asset-del { opacity: 1; }
+.asset-del:hover { background: var(--e-red); }
