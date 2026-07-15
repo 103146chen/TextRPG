@@ -22,6 +22,10 @@ export class SceneParser {
    * @returns {{meta: Object, instructions: Array}}
    */
   static parse(rawText) {
+    // 去除開頭 BOM：fetch/File.text() 會自動去除，但直接餵字串（如即時預覽）不會
+    if (typeof rawText === "string" && rawText.charCodeAt(0) === 0xfeff) {
+      rawText = rawText.slice(1);
+    }
     const { meta, body } = this.#extractFrontMatter(rawText);
     const instructions = this.#parseBody(body);
     this.#linkControlFlow(instructions);
@@ -245,10 +249,27 @@ export class SceneParser {
     for (const part of parts) {
       const m = part.match(/^\s*([a-zA-Z_\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff][\w\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]*)\s*:\s*(.+)\s*$/);
       if (m) {
-        result[m[1]] = this.#parseValue(m[2].trim());
+        result[m[1]] = this.#parseOpValue(m[2].trim());
       }
     }
     return result;
+  }
+
+  /**
+   * 解析選項 set 的右值：
+   *   `true` / `5` / `"文字"`  → 直接賦值（維持舊語意）
+   *   `+= 1` / `-= 2`          → 增量物件 { op, value }（供引擎套用時做加減）
+   * 非數字的增量無意義，退回當一般賦值處理。
+   */
+  static #parseOpValue(raw) {
+    const opMatch = raw.match(/^(\+=|-=)\s*(.+)$/);
+    if (opMatch) {
+      const num = this.#parseValue(opMatch[2].trim());
+      if (typeof num === "number") {
+        return { op: opMatch[1], value: num };
+      }
+    }
+    return this.#parseValue(raw);
   }
 
   /**

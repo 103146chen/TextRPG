@@ -156,7 +156,7 @@ export class MarkdownWriter {
       lines.push(`${indent}- text: ${this.#quoteIfNeeded(opt.text)}`);
       if (opt.set && Object.keys(opt.set).length > 0) {
         const entries = Object.entries(opt.set)
-          .map(([k, v]) => `${k}: ${this.#formatValue(v)}`)
+          .map(([k, v]) => `${k}: ${this.#formatSetEntryValue(v)}`)
           .join(", ");
         lines.push(`${indent}  set: { ${entries} }`);
       }
@@ -166,6 +166,14 @@ export class MarkdownWriter {
     }
     lines.push(`${indent}??`);
     return lines.join("\n");
+  }
+
+  // 選項 set 的單項：{ op, value } 輸出成 "+= 1"，其餘照一般值
+  static #formatSetEntryValue(v) {
+    if (v && typeof v === "object" && "op" in v) {
+      return `${v.op} ${this.#formatValue(v.value)}`;
+    }
+    return this.#formatValue(v);
   }
 
   static #formatSetValue(v) {

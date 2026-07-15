@@ -253,7 +253,9 @@ export class FlagInspector {
             for (const [k, v] of Object.entries(opt.set || {})) {
               ensure(k).sets.push({
                 sceneId, index: idx,
-                detail: `選項「${opt.text}」→ ${k} = ${this.#formatValue(v)}`,
+                detail: (v && typeof v === "object" && "op" in v)
+                  ? `選項「${opt.text}」→ ${k} ${v.op} ${this.#formatValue(v.value)}`
+                  : `選項「${opt.text}」→ ${k} = ${this.#formatValue(v)}`,
               });
             }
           }

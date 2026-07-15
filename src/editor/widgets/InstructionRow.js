@@ -289,6 +289,16 @@ export class InstructionRow {
     container.appendChild(valInput);
   }
 
+  // 與 SceneParser 一致：`+= 1` / `-= 2` -> { op, value }，其餘照一般值
+  #parseOpValue(raw) {
+    const opMatch = raw.match(/^(\+=|-=)\s*(.+)$/);
+    if (opMatch) {
+      const num = this.#parseValue(opMatch[2].trim());
+      if (typeof num === "number") return { op: opMatch[1], value: num };
+    }
+    return this.#parseValue(raw);
+  }
+
   #parseValue(s) {
     if (s === "true") return true;
     if (s === "false") return false;
@@ -500,7 +510,10 @@ export class InstructionRow {
 
   #formatSet(obj) {
     return Object.entries(obj)
-      .map(([k, v]) => `${k}: ${typeof v === "string" ? `"${v}"` : v}`)
+      .map(([k, v]) => {
+        if (v && typeof v === "object" && "op" in v) return `${k}: ${v.op} ${v.value}`;
+        return `${k}: ${typeof v === "string" ? `"${v}"` : v}`;
+      })
       .join(", ");
   }
 
@@ -510,7 +523,7 @@ export class InstructionRow {
     const parts = str.split(",");
     for (const part of parts) {
       const m = part.match(/^\s*([a-zA-Z_\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff][\w\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]*)\s*:\s*(.+)\s*$/);
-      if (m) result[m[1]] = this.#parseValue(m[2].trim());
+      if (m) result[m[1]] = this.#parseOpValue(m[2].trim());
     }
     return result;
   }

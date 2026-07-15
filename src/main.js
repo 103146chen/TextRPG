@@ -347,7 +347,10 @@ async function handleSaveSlotClick(slot, data) {
   } else {
     if (!data) return;
     showScreen("game");
-    await engine.loadState(data);
+    const result = await engine.loadState(data);
+    if (result?.stale) {
+      flashNotice("此存檔的劇本已更新，已盡力復原進度，位置可能略有偏差。");
+    }
   }
 }
 
@@ -405,6 +408,25 @@ function escapeHtml(s) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+// 非阻塞浮動提示（不依賴外部 CSS）
+function flashNotice(message, ms = 4000) {
+  const el = document.createElement("div");
+  el.textContent = message;
+  el.style.cssText = [
+    "position:fixed", "left:50%", "bottom:32px", "transform:translateX(-50%)",
+    "max-width:80%", "padding:10px 18px", "border-radius:8px",
+    "background:rgba(20,20,28,0.92)", "color:#fff", "font-size:14px",
+    "line-height:1.5", "z-index:9999", "box-shadow:0 4px 16px rgba(0,0,0,0.4)",
+    "pointer-events:none", "opacity:0", "transition:opacity .25s",
+  ].join(";");
+  document.body.appendChild(el);
+  requestAnimationFrame(() => { el.style.opacity = "1"; });
+  setTimeout(() => {
+    el.style.opacity = "0";
+    setTimeout(() => el.remove(), 300);
+  }, ms);
 }
 
 // =====================================================

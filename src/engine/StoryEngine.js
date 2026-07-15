@@ -49,6 +49,7 @@ export class StoryEngine {
     if (!res.ok) throw new Error(`無法載入場景 ${sceneId}: ${res.status}`);
     const raw = await res.text();
     const parsed = SceneParser.parse(raw);
+    parsed.raw = raw;                    // 保留原文供存檔雜湊比對
     this.sceneCache.set(sceneId, parsed);
     return parsed;
   }
@@ -232,17 +233,31 @@ export class StoryEngine {
   }
 
   #applySet(ins) {
-    const cur = this.state.flags[ins.key];
-    switch (ins.op) {
-      case "=":
-        this.state.flags[ins.key] = ins.value;
-        break;
+    this.#writeFlag(ins.key, ins.op, ins.value);
+  }
+
+  // 統一的旗標寫入：op 為 "=" / "+=" / "-="
+  #writeFlag(key, op, value) {
+    const cur = this.state.flags[key];
+    switch (op) {
       case "+=":
-        this.state.flags[ins.key] = (cur ?? 0) + ins.value;
+        this.state.flags[key] = (cur ?? 0) + value;
         break;
       case "-=":
-        this.state.flags[ins.key] = (cur ?? 0) - ins.value;
+        this.state.flags[key] = (cur ?? 0) - value;
         break;
+      case "=":
+      default:
+        this.state.flags[key] = value;
+    }
+  }
+
+  // 套用選項 set 的單一項目：純值視為賦值，{ op, value } 視為增量
+  #applyOpValue(key, val) {
+    if (val && typeof val === "object" && "op" in val) {
+      this.#writeFlag(key, val.op, val.value);
+    } else {
+      this.#writeFlag(key, "=", val);
     }
   }
 
@@ -277,17 +292,9 @@ export class StoryEngine {
     const opt = choiceIns.options[optionIndex];
     if (!opt) return;
 
-    // 套用選項的 set
+    // 套用選項的 set：{ flag: true } 為賦值，{ charm: += 1 } 為增量
     for (const [key, val] of Object.entries(opt.set || {})) {
-      // 處理 +1 / -1 的增量（字串形式已在解析時轉成數字）
-      // 若值為「原本 flag 的增量」語意，作者需要用 +1 / -1
-      // 簡化：若原值是數字且新值也是數字，視為設值；若作者用 +=/-= 語意請改用 @set 指令
-      // 這裡為了選項內簡潔，直接設值
-      if (typeof val === "number" && typeof this.state.flags[key] === "number") {
-        // 若作者意圖是「增加」，建議在場景內用 @set charm += 1
-        // 這裡單純覆寫
-      }
-      this.state.flags[key] = val;
+      this.#applyOpValue(key, val);
     }
 
     // goto 選項目標
@@ -359,11 +366,14 @@ export class StoryEngine {
   // ============ 存讀檔 ============
 
   serialize() {
+    const scene = this.sceneCache.get(this.state.sceneId);
     return {
       storyId: this.storyMeta?.id || "unknown",
       sceneId: this.state.sceneId,
       pc: this.state.pc,
       flags: { ...this.state.flags },
+      branchStack: JSON.parse(JSON.stringify(this.state._branchStack || [])),
+      sceneHash: scene?.raw != null ? StoryEngine.#hashString(scene.raw) : null,
       timestamp: Date.now(),
     };
   }
@@ -374,13 +384,34 @@ export class StoryEngine {
     this.state.flags = { ...saveData.flags };
     const scene = await this.loadScene(saveData.sceneId);
     this.state.sceneId = saveData.sceneId;
-    this.state.pc = saveData.pc;
+
+    // 預設精確還原（含分支堆疊，避免載入 if 區塊內時誤觸 else/elif）
+    let pc = saveData.pc ?? 0;
+    let branchStack = Array.isArray(saveData.branchStack)
+      ? JSON.parse(JSON.stringify(saveData.branchStack))
+      : [];
+    let stale = false;
+
+    // 存檔含場景雜湊且與目前劇本不符 → 場景被改過，索引可能錯位
+    if (saveData.sceneHash != null && scene.raw != null) {
+      const curHash = StoryEngine.#hashString(scene.raw);
+      if (curHash !== saveData.sceneHash) {
+        stale = true;
+        // 保守復原：夾在有效範圍內並清空分支堆疊，避免落在無效指令或分支不一致
+        pc = Math.max(0, Math.min(pc, scene.instructions.length));
+        branchStack = [];
+      }
+    }
+
+    this.state.pc = pc;
+    this.state._branchStack = branchStack;
 
     if (this.onSceneChange) {
       await this.onSceneChange(scene.meta);
     }
     this.running = true;
     await this.step();
+    return { stale };
   }
 
   // ============ 結局圖鑑 ============
@@ -393,6 +424,16 @@ export class StoryEngine {
       unlockedAt: Date.now(),
     };
     localStorage.setItem(key, JSON.stringify(unlocked));
+  }
+
+  // 場景內容雜湊（FNV-1a 32-bit），偵測存檔後劇本是否被修改
+  static #hashString(str) {
+    let h = 0x811c9dc5;
+    for (let i = 0; i < str.length; i++) {
+      h ^= str.charCodeAt(i);
+      h = Math.imul(h, 0x01000193);
+    }
+    return (h >>> 0).toString(16);
   }
 
   static getUnlockedEndings(storyId) {
