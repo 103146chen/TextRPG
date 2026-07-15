@@ -1,0 +1,111 @@
+﻿{
+  "id": "chu_shi_biao",
+  "title": "出師表",
+  "subtitle": "親歷諸葛亮的一生",
+  "author": "教學劇本",
+  "version": "3.0.0",
+  "start": "scene_01",
+  "characters": {
+    "諸葛亮": {
+      "default": "zhuge_normal.png",
+      "emotions": {
+        "normal": "zhuge_normal.png",
+        "worried": "zhuge_worried.png",
+        "sad": "zhuge_sad.png",
+        "firm": "zhuge_firm.png",
+        "tired": "zhuge_tired.png"
+      }
+    },
+    "劉備": {
+      "default": "liubei_normal.png",
+      "emotions": {
+        "normal": "liubei_normal.png",
+        "angry": "liubei_angry.png",
+        "sick": "liubei_sick.png"
+      }
+    },
+    "劉禪": {
+      "default": "liushan_normal.png",
+      "emotions": {
+        "normal": "liushan_normal.png"
+      }
+    },
+    "孫權": {
+      "default": "sunquan_normal.png",
+      "emotions": {
+        "normal": "sunquan_normal.png"
+      }
+    },
+    "周瑜": {
+      "default": "zhouyu_normal.png",
+      "emotions": {
+        "normal": "zhouyu_normal.png"
+      }
+    },
+    "譙周": {
+      "default": "qiaozhou_normal.png",
+      "emotions": {
+        "normal": "qiaozhou_normal.png"
+      }
+    },
+    "黃皓": {
+      "default": "huanghao_normal.png",
+      "emotions": {
+        "normal": "huanghao_normal.png"
+      }
+    },
+    "信使": {
+      "default": "messenger_normal.png",
+      "emotions": {
+        "normal": "messenger_normal.png"
+      }
+    }
+  },
+  "endings": [
+    {
+      "id": "ending_鞠躬盡瘁",
+      "title": "鞠躬盡瘁",
+      "description": "你明知此生看不到中原,仍走完了北伐的路。五丈原的秋風裡,你履行了對先帝的全部承諾——鞠躬盡瘁,死而後已。漢室終究未興,但你問心無愧。"
+    },
+    {
+      "id": "ending_孤臣",
+      "title": "孤臣",
+      "description": "滿朝無人真正懂你為何非北伐不可。你獨自扛起興復漢室的重擔,在無人理解中走到了五丈原。你是忠臣,也是一個徹底孤獨的人。"
+    },
+    {
+      "id": "ending_執念",
+      "title": "執念",
+      "description": "為了你心中的信念,你傾盡蜀中之力,數度北伐,至死方休。有人敬你忠貞,也有人嘆你以一隅之力強求天命。這份執著是偉大還是負擔,留給後人去說。"
+    },
+    {
+      "id": "ending_如釋重負",
+      "title": "如釋重負",
+      "description": "你盡了全部的人事——表寫了,賢薦了,後事也安排妥當。北伐成敗,你交給天意。走到五丈原時,你心裡是平靜的:謀事在人,成事在天,你已無愧於心。"
+    },
+    {
+      "id": "ending_未竟之志",
+      "title": "未竟之志",
+      "description": "「興復漢室,還於舊都」——這八個字你寫進了表裡,卻終究沒能親手實現。五丈原的星落了,留下一個最壯麗也最遺憾的未完成。"
+    },
+    {
+      "id": "ending_義無反顧",
+      "title": "義無反顧",
+      "description": "從草廬到五丈原,你走的是一條最直、最不肯回頭的路。三顧之恩、託孤之諾、明知不可為而為之——這些別人未必懂的詞,你用一生把它們一筆一畫地兌現了。你沒有讓任何人失望,也沒有讓自己失望。"
+    },
+    {
+      "id": "ending_隱士",
+      "title": "隱士",
+      "description": "那個風雪的午後,你婉拒了劉備。此後你在隆中耕讀終老,從遠處聽著天下的興亡。你活得長久而平靜,只是偶爾在月下,會想起那個三次來訪、最終失望離去的人——以及那條你沒有走的路。"
+    },
+    {
+      "id": "ending_倦勤",
+      "title": "倦勤",
+      "description": "你終於把擔子放下了。不是背叛,只是太累。你半隱於成都城外,看著蜀漢在沒有你的日子裡慢慢鬆弛下來。你保住了餘生的安寧,卻也親眼看著那個你本可以再撐一撐的國,一點一點地黯淡。人,到底能扛多久?這個問題,你用放手回答了。"
+    },
+    {
+      "id": "ending_偏安",
+      "title": "偏安",
+      "description": "你選了休養生息的路,沒有北伐。蜀漢因此多了幾年喘息,你成了百姓愛戴的賢相。可你一生,終究沒為中原試過一次。晚年你常想:這份謹慎,是智慧,還是讓一個夢悄悄死去?歷史記得一個善治的丞相——卻不會記得那個寫下〈出師表〉、明知不可為而為之的諸葛亮。"
+    }
+  ]
+}

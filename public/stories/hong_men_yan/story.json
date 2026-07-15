@@ -1,0 +1,106 @@
+{
+  "id": "hong_men_yan",
+  "title": "鴻門宴",
+  "subtitle": "改編自司馬遷《史記·項羽本紀》",
+  "author": "教學劇本",
+  "version": "1.0.0",
+  "start": "scene_01",
+  "characters": {
+    "項羽": {
+      "default": "xiangyu_normal.png",
+      "emotions": {
+        "normal": "xiangyu_normal.png",
+        "angry": "xiangyu_angry.png",
+        "sad": "xiangyu_sad.png"
+      }
+    },
+    "范增": {
+      "default": "fanzeng_normal.png",
+      "emotions": {
+        "normal": "fanzeng_normal.png",
+        "urgent": "fanzeng_urgent.png",
+        "angry": "fanzeng_angry.png"
+      }
+    },
+    "劉邦": {
+      "default": "liubang_normal.png",
+      "emotions": {
+        "normal": "liubang_normal.png",
+        "humble": "liubang_humble.png",
+        "nervous": "liubang_nervous.png"
+      }
+    },
+    "張良": {
+      "default": "zhangliang_normal.png",
+      "emotions": {
+        "normal": "zhangliang_normal.png",
+        "calm": "zhangliang_calm.png"
+      }
+    },
+    "項伯": {
+      "default": "xiangbo_normal.png",
+      "emotions": {
+        "normal": "xiangbo_normal.png",
+        "earnest": "xiangbo_earnest.png"
+      }
+    },
+    "項莊": {
+      "default": "xiangzhuang_normal.png",
+      "emotions": {
+        "normal": "xiangzhuang_normal.png"
+      }
+    },
+    "樊噲": {
+      "default": "fankuai_fierce.png",
+      "emotions": {
+        "normal": "fankuai_normal.png",
+        "fierce": "fankuai_fierce.png"
+      }
+    },
+    "虞姬": {
+      "default": "yuji_sad.png",
+      "emotions": {
+        "normal": "yuji_normal.png",
+        "sad": "yuji_sad.png"
+      }
+    },
+    "亭長": {
+      "default": "tingzhang_normal.png",
+      "emotions": {
+        "normal": "tingzhang_normal.png"
+      }
+    }
+  },
+  "endings": [
+    {
+      "id": "ending_烏江",
+      "title": "烏江",
+      "description": "你走完了司馬遷筆下的路。鴻門一放,垓下一圍,烏江一刎。臨死你說「天之亡我,非戰之罪也」——太史公在兩千年前就替你問了:豈不謬哉?可他也寫下:「近古以來,未嘗有也。」"
+    },
+    {
+      "id": "ending_渡江",
+      "title": "捲土重來",
+      "description": "你上了那條船。史書上沒有這一頁,只有詩人的爭論:「捲土重來未可知」,還是「肯與君王捲土來」?回到江東的你,要面對的第一件事,是八千子弟的父兄——和那個你從沒學會的詞:認錯。"
+    },
+    {
+      "id": "ending_帳中玦",
+      "title": "玉玦落地之時",
+      "description": "你回應了亞父的玉玦,劉邦死在鴻門的宴席上。威脅解除了——可是「下一個劉邦」呢?那個此刻還在你軍中執戟的年輕人,三年後也會讓人說出「其志不在小」。殺人容易,可你還是那個項羽。"
+    },
+    {
+      "id": "ending_旦日擊",
+      "title": "旦日的四十萬",
+      "description": "你沒有赴宴,天一亮就碾碎了霸上的十萬人。史書上將不會有「鴻門宴」三個字,只有戲西一戰。你用刀兵贏下了這一場——然後呢?分封、義帝、諸侯、人心,那些真正的考驗,一個都不會少。"
+    },
+    {
+      "id": "ending_血宴",
+      "title": "血濺鴻門",
+      "description": "你在自己的宴席上,殺了前來謝罪的客人。不是決斷,是失控。天下人記住的不是霸王的武勇,而是:項王的宴席,去不得。從此沒有人再向你低頭——他們只會直接反。"
+    },
+    {
+      "id": "ending_追騎",
+      "title": "遲來的追擊",
+      "description": "宴上你舉不起刀,席散了你才想追。追到霸上壁壘之前,你什麼都沒有得到,卻把「不義」兩個字掛上了自己的旗。天下最著名的一場局,你是設局的人——可笑的是,你明明什麼都沒做成。"
+    }
+  ]
+}
