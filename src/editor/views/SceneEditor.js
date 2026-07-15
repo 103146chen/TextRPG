@@ -6,9 +6,10 @@
 import { InstructionRow } from "../widgets/InstructionRow.js";
 
 export class SceneEditor {
-  constructor(containerEl, project) {
+  constructor(containerEl, project, onPlayFrom = null) {
     this.containerEl = containerEl;
     this.project = project;
+    this.onPlayFrom = onPlayFrom;   // (sceneId, index) => void
     this.currentSceneId = null;
     this.openMenu = null;
     this._pendingScrollTo = null;
@@ -139,6 +140,16 @@ export class SceneEditor {
     });
     header.appendChild(this.#field("下一場景", nextSelect));
 
+    // 即時預覽此場景（從開頭）
+    if (this.onPlayFrom) {
+      const playBtn = document.createElement("button");
+      playBtn.textContent = "▶ 預覽此場景";
+      playBtn.title = "從本場景開頭即時預覽（含未存檔變更）";
+      playBtn.style.cssText = "cursor:pointer;background:var(--e-accent,#4a90d9);color:#fff;border:0;border-radius:6px;padding:5px 12px;font-size:13px;align-self:center";
+      playBtn.addEventListener("click", () => this.onPlayFrom(this.currentSceneId, 0));
+      header.appendChild(playBtn);
+    }
+
     this.containerEl.appendChild(header);
   }
 
@@ -168,6 +179,7 @@ export class SceneEditor {
         sceneId: this.currentSceneId,
         onChange: (patch) => this.project.updateInstruction(this.currentSceneId, idx, patch),
         onDelete: () => this.project.deleteInstruction(this.currentSceneId, idx),
+        onPlayFrom: this.onPlayFrom ? (index) => this.onPlayFrom(this.currentSceneId, index) : null,
       });
       list.appendChild(row.render());
 

@@ -14,7 +14,7 @@ export class InstructionRow {
    * @param {Function} params.onChange - (patch) => void
    * @param {Function} params.onDelete
    */
-  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete }) {
+  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete, onPlayFrom }) {
     this.ins = instruction;
     this.index = index;
     this.indent = indent;
@@ -22,6 +22,7 @@ export class InstructionRow {
     this.sceneId = sceneId;
     this.onChange = onChange;
     this.onDelete = onDelete;
+    this.onPlayFrom = onPlayFrom;   // 可選：(index) => void，「從這裡試玩」
     this.el = null;
   }
 
@@ -37,6 +38,7 @@ export class InstructionRow {
       <div class="instr-handle" title="拖曳排序"></div>
       <div class="instr-content"></div>
       <div class="instr-actions">
+        <button class="btn-play" title="從這裡試玩" style="cursor:pointer">▶</button>
         <button class="btn-delete" title="刪除">×</button>
       </div>
     `;
@@ -48,6 +50,16 @@ export class InstructionRow {
       e.stopPropagation();
       this.onDelete();
     });
+
+    const playBtn = row.querySelector(".btn-play");
+    if (this.onPlayFrom) {
+      playBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.onPlayFrom(this.index);
+      });
+    } else {
+      playBtn.remove();
+    }
 
     this.el = row;
     return row;

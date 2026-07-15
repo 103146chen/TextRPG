@@ -86,6 +86,24 @@ export class ProjectFileSystem {
     return file.text();
   }
 
+  // 讀取單一資源檔為 File(Blob)，供即時預覽以 blob URL 載入
+  async readResource(kind, fileName) {
+    const dirMap = {
+      backgrounds: this.backgroundsDirHandle,
+      characters: this.charactersDirHandle,
+      bgm: this.bgmDirHandle,
+      se: this.seDirHandle,
+    };
+    const dir = dirMap[kind];
+    if (!dir) return null;
+    try {
+      const handle = await dir.getFileHandle(fileName);
+      return await handle.getFile();   // File 繼承自 Blob，可經 postMessage 傳遞
+    } catch {
+      return null;
+    }
+  }
+
   async listResources(kind) {
     // kind: "backgrounds" | "characters" | "bgm" | "se"
     const dirMap = {

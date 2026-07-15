@@ -6,6 +6,7 @@
 import { ProjectFileSystem } from "./core/FileSystem.js";
 import { StoryProject } from "./core/StoryProject.js";
 import { SceneEditor } from "./views/SceneEditor.js";
+import { PreviewPanel } from "./views/PreviewPanel.js";
 import { GraphView } from "./views/GraphView.js";
 import { LintPanel } from "./views/LintPanel.js";
 import { FlagInspector } from "./views/FlagInspector.js";
@@ -36,7 +37,8 @@ if (!ProjectFileSystem.isSupported()) {
 
 const fs = new ProjectFileSystem();
 const project = new StoryProject(fs);
-const sceneEditor = new SceneEditor($("#main-content"), project);
+const previewPanel = new PreviewPanel(project);
+const sceneEditor = new SceneEditor($("#main-content"), project, (sceneId, index) => previewPanel.play(sceneId, index));
 const graphView = new GraphView($("#graph-content"), project, (sceneId) => {
   currentSceneId = sceneId;
   setView("scene");

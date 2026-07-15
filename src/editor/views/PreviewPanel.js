@@ -1,0 +1,126 @@
+// ============================================
+// PreviewPanel.js
+// 編輯器內的即時預覽面板：右側停靠一個 iframe(preview.html)，
+// 把記憶體中的專案（含未存檔變更）以 postMessage 送進去播放。
+// ============================================
+
+import { MarkdownWriter } from "../core/MarkdownWriter.js";
+
+export class PreviewPanel {
+  constructor(project) {
+    this.project = project;
+    this.iframe = null;
+    this.ready = false;
+    this.pendingStart = null;
+    this.#buildDom();
+    window.addEventListener("message", (e) => this.#onMessage(e));
+  }
+
+  #buildDom() {
+    const panel = document.createElement("div");
+    panel.id = "preview-panel";
+    panel.style.cssText = [
+      "position:fixed", "top:0", "right:0", "width:46%", "max-width:760px",
+      "height:100vh", "z-index:200", "display:none", "flex-direction:column",
+      "box-shadow:-6px 0 28px rgba(0,0,0,0.45)", "background:#000",
+    ].join(";");
+
+    const header = document.createElement("div");
+    header.style.cssText = [
+      "display:flex", "align-items:center", "gap:8px", "padding:6px 10px",
+      "background:#20232b", "color:#f5efe3", "font-size:13px",
+      "font-family:system-ui,sans-serif", "flex:0 0 auto",
+    ].join(";");
+    header.innerHTML = `
+      <span style="font-weight:600">▶ 即時預覽</span>
+      <span style="opacity:.6;font-size:11px">反映未存檔的變更</span>
+      <span style="flex:1"></span>
+      <button data-act="restart" style="cursor:pointer;background:rgba(255,255,255,.14);color:#f5efe3;border:0;border-radius:5px;padding:3px 10px;font-size:12px">⟳ 從頭</button>
+      <button data-act="close" style="cursor:pointer;background:rgba(255,255,255,.14);color:#f5efe3;border:0;border-radius:5px;padding:3px 10px;font-size:12px">✕ 關閉</button>
+    `;
+    header.querySelector('[data-act="close"]').addEventListener("click", () => this.close());
+    header.querySelector('[data-act="restart"]').addEventListener("click", () => {
+      if (this.pendingStart) this.play(this.pendingStart.sceneId, this.pendingStart.pc);
+    });
+
+    const wrap = document.createElement("div");
+    wrap.style.cssText = "flex:1;position:relative;overflow:hidden";
+    this.iframeWrap = wrap;
+
+    panel.appendChild(header);
+    panel.appendChild(wrap);
+    document.body.appendChild(panel);
+    this.panel = panel;
+  }
+
+  #ensureIframe() {
+    if (this.iframe) return;
+    this.iframe = document.createElement("iframe");
+    this.iframe.src = "./preview.html";
+    this.iframe.style.cssText = "width:100%;height:100%;border:0;background:#000";
+    this.iframeWrap.appendChild(this.iframe);
+  }
+
+  isOpen() {
+    return this.panel.style.display !== "none";
+  }
+
+  open() {
+    this.panel.style.display = "flex";
+    this.#ensureIframe();
+  }
+
+  close() {
+    this.panel.style.display = "none";
+  }
+
+  /** 預覽指定場景，可選從第幾個指令開始（「從這裡試玩」） */
+  play(sceneId, pc = 0) {
+    if (!sceneId) return;
+    this.pendingStart = { sceneId, pc };
+    this.open();
+    if (this.ready) this.#send();
+    // 尚未 ready 時，等 preview:ready 訊息到達後由 #onMessage 觸發 #send
+  }
+
+  #buildData(startSceneId, startPc) {
+    const scenes = {};
+    for (const id of this.project.getAllSceneIds()) {
+      const sc = this.project.getScene(id);
+      // 用 MarkdownWriter 從記憶體狀態產生 raw，確保反映未存檔變更
+      scenes[id] = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions });
+    }
+    return {
+      type: "preview:load",
+      storyMeta: this.project.storyMeta,
+      scenes,
+      startSceneId,
+      startPc,
+    };
+  }
+
+  #send() {
+    if (!this.pendingStart || !this.iframe) return;
+    const data = this.#buildData(this.pendingStart.sceneId, this.pendingStart.pc);
+    this.iframe.contentWindow.postMessage(data, "*");
+  }
+
+  async #onMessage(e) {
+    const msg = e.data;
+    if (!msg || typeof msg !== "object") return;
+    // 只處理來自本面板 iframe 的訊息
+    if (this.iframe && e.source !== this.iframe.contentWindow) return;
+
+    if (msg.type === "preview:ready") {
+      this.ready = true;
+      this.#send();
+    } else if (msg.type === "preview:asset-request") {
+      const { reqId, kind, file } = msg;
+      let blob = null;
+      try {
+        blob = await this.project.fs.readResource(kind, file);
+      } catch { /* 找不到就回 null，讓引擎自己 fallback placeholder */ }
+      this.iframe.contentWindow.postMessage({ type: "preview:asset-response", reqId, blob }, "*");
+    }
+  }
+}
