@@ -4,12 +4,14 @@
 // ============================================
 
 import { InstructionRow } from "../widgets/InstructionRow.js";
+import { createSelectField } from "../widgets/selectField.js";
 
 export class SceneEditor {
-  constructor(containerEl, project, onPlayFrom = null) {
+  constructor(containerEl, project, onPlayFrom = null, onManage = null) {
     this.containerEl = containerEl;
     this.project = project;
     this.onPlayFrom = onPlayFrom;   // (sceneId, index) => void
+    this.onManage = onManage;       // (tab) => void，開啟資料庫 Hub
     this.currentSceneId = null;
     this.openMenu = null;
     this._pendingScrollTo = null;
@@ -114,25 +116,27 @@ export class SceneEditor {
     })));
 
     // Background
-    const bgSelect = this.#selectWithDatalist({
+    const bgSelect = createSelectField({
       value: scene.meta.background || "",
       options: this.project.resources.backgrounds,
-      placeholder: "背景檔名",
+      placeholder: "（無背景）",
+      addLabel: "匯入背景…", onAdd: () => this.onManage?.("assets"),
       onChange: (v) => this.project.updateSceneMeta(this.currentSceneId, { background: v }),
     });
     header.appendChild(this.#field("背景", bgSelect));
 
     // BGM
-    const bgmSelect = this.#selectWithDatalist({
+    const bgmSelect = createSelectField({
       value: scene.meta.bgm || "",
       options: this.project.resources.bgm,
-      placeholder: "BGM 檔名",
+      placeholder: "（無 BGM）",
+      addLabel: "匯入 BGM…", onAdd: () => this.onManage?.("assets"),
       onChange: (v) => this.project.updateSceneMeta(this.currentSceneId, { bgm: v }),
     });
     header.appendChild(this.#field("BGM", bgmSelect));
 
     // Next
-    const nextSelect = this.#selectWithDatalist({
+    const nextSelect = createSelectField({
       value: scene.meta.next || "",
       options: this.project.getAllSceneIds().filter(id => id !== this.currentSceneId),
       placeholder: "（無）",
@@ -180,6 +184,7 @@ export class SceneEditor {
         onChange: (patch) => this.project.updateInstruction(this.currentSceneId, idx, patch),
         onDelete: () => this.project.deleteInstruction(this.currentSceneId, idx),
         onPlayFrom: this.onPlayFrom ? (index) => this.onPlayFrom(this.currentSceneId, index) : null,
+        onManage: this.onManage,
       });
       list.appendChild(row.render());
 

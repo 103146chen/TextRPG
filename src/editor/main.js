@@ -27,7 +27,7 @@ const usingMemory = !ProjectFileSystem.isSupported();
 const fs = usingMemory ? new MemoryBackend() : new ProjectFileSystem();
 const project = new StoryProject(fs);
 const previewPanel = new PreviewPanel(project);
-const sceneEditor = new SceneEditor($("#main-content"), project, (sceneId, index) => previewPanel.play(sceneId, index));
+const sceneEditor = new SceneEditor($("#main-content"), project, (sceneId, index) => previewPanel.play(sceneId, index), (tab) => storyManager.open(tab));
 const graphView = new GraphView($("#graph-content"), project, (sceneId) => {
   currentSceneId = sceneId;
   setView("scene");
@@ -266,7 +266,8 @@ project.subscribe((type, payload) => {
   // 部分變更要重繪主區
   if (type === "instruction-inserted" || type === "instruction-deleted" ||
       type === "instruction-moved" || type === "instructions-replaced" ||
-      type === "undo" || type === "redo" || type === "resources-updated") {
+      type === "undo" || type === "redo" || type === "resources-updated" ||
+      type === "characters-updated" || type === "flags-updated" || type === "story-meta-updated") {
     if (currentView === "scene") sceneEditor.render();
   }
   // 影響 graph 結構的變更

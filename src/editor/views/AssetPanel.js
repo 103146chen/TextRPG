@@ -19,11 +19,18 @@ export class AssetPanel {
     this.currentAudio = null;
 
     // 資源變動時重繪
-    this.project.subscribe((type) => {
+    this._unsub = this.project.subscribe((type) => {
       if (type === "resources-updated" || type === "loaded") this.render();
     });
 
     this.render();   // 初次渲染（未開專案時顯示提示）
+  }
+
+  // 卸載（Hub 分頁關閉時呼叫）：撤銷 object URL、取消訂閱
+  destroy() {
+    this._unsub?.();
+    this.#revokeAll();
+    this.containerEl.innerHTML = "";
   }
 
   render() {

@@ -3,6 +3,8 @@
 // 單一指令的卡片 UI
 // ============================================
 
+import { createSelectField } from "./selectField.js";
+
 export class InstructionRow {
   /**
    * @param {Object} params
@@ -14,7 +16,7 @@ export class InstructionRow {
    * @param {Function} params.onChange - (patch) => void
    * @param {Function} params.onDelete
    */
-  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete, onPlayFrom }) {
+  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete, onPlayFrom, onManage }) {
     this.ins = instruction;
     this.index = index;
     this.indent = indent;
@@ -23,6 +25,7 @@ export class InstructionRow {
     this.onChange = onChange;
     this.onDelete = onDelete;
     this.onPlayFrom = onPlayFrom;   // 可選：(index) => void，「從這裡試玩」
+    this.onManage = onManage;       // 可選：(tab) => void，開啟資料庫 Hub 對應分頁
     this.el = null;
   }
 
@@ -159,9 +162,10 @@ export class InstructionRow {
     switch (name) {
       case "bg": {
         const files = this.project.resources.backgrounds;
-        const input = this.#selectOrInput(pos[0], files, "背景檔名");
-        input.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, positional: [e.target.value, ...pos.slice(1)] } });
+        const input = createSelectField({
+          value: pos[0], options: files, placeholder: "選背景",
+          addLabel: "匯入背景…", onAdd: () => this.onManage?.("assets"),
+          onChange: (v) => this.onChange({ args: { ...args, positional: [v, ...pos.slice(1)] } }),
         });
         container.appendChild(input);
         const fadeInput = this.#numberInput(args.fade, "fade (ms)");
@@ -174,9 +178,10 @@ export class InstructionRow {
       }
       case "show": {
         const charNames = Object.keys(this.project.storyMeta?.characters || {});
-        const charInput = this.#selectOrInput(pos[0], charNames, "角色名");
-        charInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, positional: [e.target.value, pos[1] || "center", pos[2] || ""] } });
+        const charInput = createSelectField({
+          value: pos[0], options: charNames, placeholder: "選角色",
+          addLabel: "新增角色…", onAdd: () => this.onManage?.("characters"),
+          onChange: (v) => this.onChange({ args: { ...args, positional: [v, pos[1] || "center", pos[2] || ""] } }),
         });
         container.appendChild(charInput);
 
@@ -198,9 +203,10 @@ export class InstructionRow {
         const charName = pos[0];
         const charData = this.project.storyMeta?.characters?.[charName];
         const emotions = charData?.emotions ? Object.keys(charData.emotions) : [];
-        const emoInput = this.#selectOrInput(pos[2], emotions, "表情");
-        emoInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, positional: [pos[0], pos[1] || "center", e.target.value] } });
+        const emoInput = createSelectField({
+          value: pos[2], options: emotions, placeholder: "（預設表情）",
+          addLabel: "編輯角色表情…", onAdd: () => this.onManage?.("characters"),
+          onChange: (v) => this.onChange({ args: { ...args, positional: [pos[0], pos[1] || "center", v] } }),
         });
         container.appendChild(emoInput);
         break;
@@ -216,18 +222,20 @@ export class InstructionRow {
       }
       case "bgm": {
         const files = this.project.resources.bgm;
-        const input = this.#selectOrInput(pos[0], files, "BGM 檔名");
-        input.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, positional: [e.target.value] } });
+        const input = createSelectField({
+          value: pos[0], options: files, placeholder: "選 BGM",
+          addLabel: "匯入 BGM…", onAdd: () => this.onManage?.("assets"),
+          onChange: (v) => this.onChange({ args: { ...args, positional: [v] } }),
         });
         container.appendChild(input);
         break;
       }
       case "se": {
         const files = this.project.resources.se;
-        const input = this.#selectOrInput(pos[0], files, "音效檔名");
-        input.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, positional: [e.target.value] } });
+        const input = createSelectField({
+          value: pos[0], options: files, placeholder: "選音效",
+          addLabel: "匯入音效…", onAdd: () => this.onManage?.("assets"),
+          onChange: (v) => this.onChange({ args: { ...args, positional: [v] } }),
         });
         container.appendChild(input);
         break;

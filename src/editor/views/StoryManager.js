@@ -1,7 +1,10 @@
 // ============================================
 // StoryManager.js
-// 管理 story.json 的內容：標題、起始場景、角色、結局
+// 專案資料庫 Hub：統一管理 基本 / 角色 / 旗標 / 資產 / 結局。
+// 供編輯欄位的「＋ 新增」以 open(tab) 快速跳轉進來。
 // ============================================
+
+import { AssetPanel } from "./AssetPanel.js";
 
 export class StoryManager {
   constructor(project) {
@@ -9,7 +12,7 @@ export class StoryManager {
     this.dialogEl = null;
   }
 
-  open() {
+  open(activeTab = "basic") {
     this.close();
     const overlay = document.createElement("div");
     overlay.className = "dialog-overlay";
@@ -25,11 +28,15 @@ export class StoryManager {
       <div class="dialog-tabs">
         <button class="tab-btn active" data-tab="basic">基本資訊</button>
         <button class="tab-btn" data-tab="characters">角色</button>
+        <button class="tab-btn" data-tab="flags">旗標</button>
+        <button class="tab-btn" data-tab="assets">資產</button>
         <button class="tab-btn" data-tab="endings">結局</button>
       </div>
       <div class="dialog-body">
         <div class="tab-panel" data-panel="basic"></div>
         <div class="tab-panel" data-panel="characters" style="display:none"></div>
+        <div class="tab-panel" data-panel="flags" style="display:none"></div>
+        <div class="tab-panel" data-panel="assets" style="display:none"></div>
         <div class="tab-panel" data-panel="endings" style="display:none"></div>
       </div>
       <div class="dialog-actions">
@@ -57,10 +64,18 @@ export class StoryManager {
     // 渲染各 panel
     this.#renderBasicPanel(dialog.querySelector('[data-panel="basic"]'));
     this.#renderCharactersPanel(dialog.querySelector('[data-panel="characters"]'));
+    this.#renderFlagsPanel(dialog.querySelector('[data-panel="flags"]'));
+    this.#renderAssetsPanel(dialog.querySelector('[data-panel="assets"]'));
     this.#renderEndingsPanel(dialog.querySelector('[data-panel="endings"]'));
+
+    // 開啟指定分頁
+    if (activeTab && activeTab !== "basic") {
+      dialog.querySelector(`.tab-btn[data-tab="${activeTab}"]`)?.click();
+    }
   }
 
   close() {
+    if (this.assetPanel) { this.assetPanel.destroy(); this.assetPanel = null; }
     if (this.dialogEl) {
       this.dialogEl.remove();
       this.dialogEl = null;
@@ -272,6 +287,135 @@ export class StoryManager {
     row.appendChild(delBtn);
 
     return row;
+  }
+
+  // ==================== Flags（旗標登記）====================
+
+  #renderFlagsPanel(el) {
+    el.innerHTML = "";
+    const flags = this.project.getDeclaredFlags();
+    const names = Object.keys(flags);
+
+    const intro = document.createElement("div");
+    intro.className = "sm-sub-label";
+    intro.style.marginBottom = "10px";
+    intro.textContent = "登記旗標後，寫劇本（@set、選項、條件）時就能用下拉選取，並在開場套用預設值。";
+    el.appendChild(intro);
+
+    const list = document.createElement("div");
+    list.className = "flag-decl-list";
+    if (names.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "panel-empty";
+      empty.textContent = "還沒登記任何旗標。";
+      list.appendChild(empty);
+    }
+    for (const name of names) list.appendChild(this.#renderFlagRow(name, flags[name]));
+    el.appendChild(list);
+
+    const addBtn = document.createElement("button");
+    addBtn.className = "tb-btn";
+    addBtn.textContent = "+ 新增旗標";
+    addBtn.style.marginTop = "16px";
+    addBtn.addEventListener("click", () => {
+      const name = prompt("旗標名稱（例：charm、met_alice）：", "");
+      if (!name) return;
+      if (flags[name]) { alert("旗標已存在"); return; }
+      this.project.upsertFlag(name, { type: "number", default: 0, label: "" });
+      this.#renderFlagsPanel(el);
+    });
+    el.appendChild(addBtn);
+
+    const declared = new Set(names);
+    const missing = [...this.project.collectUsedFlagNames()].filter((n) => !declared.has(n));
+    if (missing.length > 0) {
+      const warn = document.createElement("div");
+      warn.className = "ending-warn";
+      warn.innerHTML = `
+        <strong>⚠ 劇本用到 ${missing.length} 個未登記旗標：</strong><br>
+        ${missing.map((n) => `<code>${escapeHtml(n)}</code>`).join(", ")}
+        <br><button class="tb-btn" style="margin-top:8px">一鍵登記</button>
+      `;
+      warn.querySelector("button").addEventListener("click", () => {
+        for (const n of missing) this.project.upsertFlag(n, { type: "number", default: 0, label: "" });
+        this.#renderFlagsPanel(el);
+      });
+      el.appendChild(warn);
+    }
+  }
+
+  #renderFlagRow(name, def) {
+    const row = document.createElement("div");
+    row.className = "flag-decl-row char-row";
+
+    const header = document.createElement("div");
+    header.className = "char-row-header";
+    header.innerHTML = `<strong class="char-name">${escapeHtml(name)}</strong><button class="char-delete" title="刪除旗標登記">×</button>`;
+    header.querySelector(".char-delete").addEventListener("click", () => {
+      if (!confirm(`刪除旗標登記「${name}」？\n不會刪除劇本中的引用。`)) return;
+      this.project.removeFlag(name);
+      row.remove();
+    });
+    row.appendChild(header);
+
+    const type = def.type || "number";
+
+    const typeSel = document.createElement("select");
+    for (const [val, txt] of [["number", "數值"], ["boolean", "是/否"], ["string", "文字"]]) {
+      const o = document.createElement("option");
+      o.value = val; o.textContent = txt;
+      if (type === val) o.selected = true;
+      typeSel.appendChild(o);
+    }
+    typeSel.addEventListener("change", () => {
+      const nd = { ...def, type: typeSel.value };
+      if (typeSel.value === "number" && typeof nd.default !== "number") nd.default = 0;
+      else if (typeSel.value === "boolean" && typeof nd.default !== "boolean") nd.default = false;
+      else if (typeSel.value === "string" && typeof nd.default !== "string") nd.default = "";
+      this.project.upsertFlag(name, nd);
+      this.#renderFlagsPanel(row.closest('[data-panel="flags"]'));
+    });
+    row.appendChild(this.#field("型別", typeSel));
+
+    let defInput;
+    if (type === "boolean") {
+      defInput = document.createElement("select");
+      for (const [val, txt] of [["false", "否"], ["true", "是"]]) {
+        const o = document.createElement("option");
+        o.value = val; o.textContent = txt;
+        if (String(def.default) === val) o.selected = true;
+        defInput.appendChild(o);
+      }
+      defInput.addEventListener("change", () => this.project.upsertFlag(name, { ...def, default: defInput.value === "true" }));
+    } else {
+      defInput = document.createElement("input");
+      defInput.type = type === "number" ? "number" : "text";
+      defInput.value = def.default ?? (type === "number" ? 0 : "");
+      defInput.addEventListener("change", () => {
+        const v = type === "number" ? (parseFloat(defInput.value) || 0) : defInput.value;
+        this.project.upsertFlag(name, { ...def, default: v });
+      });
+    }
+    row.appendChild(this.#field("預設值", defInput));
+
+    const labelInput = document.createElement("input");
+    labelInput.value = def.label || "";
+    labelInput.placeholder = "說明（例：好感度）";
+    labelInput.addEventListener("change", () => this.project.upsertFlag(name, { ...def, label: labelInput.value }));
+    row.appendChild(this.#field("說明", labelInput));
+
+    return row;
+  }
+
+  // ==================== Assets（重用 AssetPanel）====================
+
+  #renderAssetsPanel(el) {
+    el.innerHTML = "";
+    const host = document.createElement("div");
+    host.className = "hub-asset-host";
+    el.appendChild(host);
+    if (this.assetPanel) this.assetPanel.destroy();
+    this.assetPanel = new AssetPanel(host, this.project);
   }
 
   // ==================== Endings ====================
