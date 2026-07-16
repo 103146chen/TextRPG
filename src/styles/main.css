@@ -931,3 +931,11 @@ html, body {
   transition: opacity 0.3s ease;
 }
 .text-box, .choice-container { transition: opacity 0.3s ease; }
+
+/* S6b：鏡頭暗角 */
+.fx-vignette {
+  position: absolute;
+  inset: 0;
+  background: radial-gradient(ellipse at center, transparent 42%, rgba(0, 0, 0, 0.88) 100%);
+  opacity: 0;
+}

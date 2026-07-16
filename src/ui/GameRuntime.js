@@ -50,6 +50,12 @@ export class GameRuntime {
     this.uiHidden = false;
     dom.screen?.classList.remove("ui-hidden");   // 預覽重建 runtime 時清掉殘留
 
+    // 鏡頭狀態（zoom/x/y 為持續狀態；預覽重建 runtime 時清掉上一輪的 transform）
+    this.camera = { zoom: 1, x: 0, y: 0 };
+    for (const el of [dom.backgroundLayer, dom.characterLayer]) {
+      if (el) { el.style.transform = ""; el.style.transition = ""; }
+    }
+
     this.engine = new StoryEngine({
       storyPath,
       sceneLoader,
@@ -109,6 +115,25 @@ export class GameRuntime {
   #setUiHidden(hide) {
     this.uiHidden = !!hide;
     this.dom.screen?.classList.toggle("ui-hidden", this.uiHidden);
+  }
+
+  /**
+   * @camera：把 zoom/x/y 合併進鏡頭狀態，同一個 transform 套到背景與立繪層。
+   * x,y 為畫面百分比：x=10 代表鏡頭右移（內容向左移 10%）。
+   * 沒有額外包一層 stage 容器 —— 避免動到 index/preview 的既有 DOM 結構。
+   */
+  #applyCamera(partial, duration) {
+    Object.assign(this.camera, partial);
+    const { zoom, x, y } = this.camera;
+    const idle = zoom === 1 && x === 0 && y === 0;
+    const t = idle ? "" : `scale(${zoom}) translate(${-x}%, ${-y}%)`;
+    for (const el of [this.dom.backgroundLayer, this.dom.characterLayer]) {
+      if (!el) continue;
+      el.style.transformOrigin = "center center";
+      el.style.transition = duration > 0 ? `transform ${duration}ms ease` : "none";
+      void el.offsetWidth;   // 讓 transition 生效（背景分頁 rAF 不可靠）
+      el.style.transform = t;
+    }
   }
 
   /** 靜態求值到第 pc 條指令（畫面停在該點，不播放） */
@@ -257,6 +282,25 @@ export class GameRuntime {
       case "ui": {
         // 顯示/隱藏界面（持續狀態）：hide 後點擊會先恢復界面
         this.#setUiHidden((args.positional[0] || "hide") === "hide");
+        break;
+      }
+      case "camera": {
+        // 鏡頭（持續狀態）：只合併有給的欄位；vignette 為暗角透明度 0~1
+        const p = {};
+        if (args.zoom != null) p.zoom = Number(args.zoom);
+        if (args.x != null) p.x = Number(args.x);
+        if (args.y != null) p.y = Number(args.y);
+        const dur = this.#d(args.duration ?? 800);
+        if (Object.keys(p).length) this.#applyCamera(p, dur);
+        if (args.vignette != null && this.effects) {
+          this.effects.vignette({ opacity: Number(args.vignette), duration: dur });
+        }
+        break;
+      }
+      case "camera-reset": {
+        const dur = this.#d(args.duration ?? 800);
+        this.#applyCamera({ zoom: 1, x: 0, y: 0 }, dur);
+        this.effects?.vignette({ opacity: 0, duration: dur });
         break;
       }
       default:

@@ -21,12 +21,15 @@ export class ScreenEffects {
 
     this.tintEl = document.createElement("div");
     this.tintEl.className = "fx-tint";
+    this.vignetteEl = document.createElement("div");
+    this.vignetteEl.className = "fx-vignette";
     this.curtainEl = document.createElement("div");
     this.curtainEl.className = "fx-curtain";
     this.flashEl = document.createElement("div");
     this.flashEl.className = "fx-flash";
 
     this.overlay.appendChild(this.tintEl);      // 染色在最下（持續）
+    this.overlay.appendChild(this.vignetteEl);  // 暗角（持續，鏡頭氛圍）
     this.overlay.appendChild(this.curtainEl);   // 帷幕在中（持續，蓋過染色）
     this.overlay.appendChild(this.flashEl);     // 閃光在上（瞬間）
     screenEl.appendChild(this.overlay);
@@ -79,6 +82,13 @@ export class ScreenEffects {
     this.tintEl.style.opacity = String(Math.max(0, Math.min(1, opacity)));
   }
 
+  // 暗角（持續狀態）：radial-gradient 邊緣壓暗，opacity 0~1；0 = 關閉
+  vignette({ opacity = 0.5, duration = 600 } = {}) {
+    this.vignetteEl.style.transition = duration > 0 ? `opacity ${duration}ms ease` : "none";
+    void this.vignetteEl.offsetWidth;
+    this.vignetteEl.style.opacity = String(Math.max(0, Math.min(1, opacity)));
+  }
+
   clearTint({ duration = 600 } = {}) {
     this.tintEl.style.transition = `opacity ${duration}ms ease`;
     this.tintEl.style.opacity = "0";
@@ -115,5 +125,7 @@ export class ScreenEffects {
     this.curtainEl.style.opacity = "0";
     this.curtainFullEl.style.transition = "none";
     this.curtainFullEl.style.opacity = "0";
+    this.vignetteEl.style.transition = "none";
+    this.vignetteEl.style.opacity = "0";
   }
 }

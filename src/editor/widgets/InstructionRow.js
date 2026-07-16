@@ -162,6 +162,8 @@ export class InstructionRow {
       curtain: "帷幕",
       ui: "界面顯示",
       textcfg: "文本參數",
+      camera: "鏡頭",
+      "camera-reset": "復位鏡頭",
     }[name] || name;
 
     container.appendChild(this.#badge(nameLabel));
@@ -431,6 +433,33 @@ export class InstructionRow {
           this.onChange({ args: { ...args, indicator: iSel.value || undefined } });
         });
         container.appendChild(iSel);
+        break;
+      }
+      case "camera": {
+        const numField = (key, label, ph, step) => {
+          container.appendChild(this.#labelInline(label));
+          const input = this.#numberInput(args[key], ph);
+          if (step) input.step = step;
+          input.addEventListener("change", (e) => {
+            const v = e.target.value.trim();
+            this.onChange({ args: { ...args, [key]: v === "" ? undefined : parseFloat(v) } });
+          });
+          container.appendChild(input);
+        };
+        numField("zoom", "縮放", "1.0", "0.1");
+        numField("x", "X%", "0");
+        numField("y", "Y%", "0");
+        numField("vignette", "暗角", "0~1", "0.1");
+        numField("duration", "時長", "ms");
+        break;
+      }
+      case "camera-reset": {
+        container.appendChild(this.#labelInline("時長"));
+        const dInput = this.#numberInput(args.duration, "ms");
+        dInput.addEventListener("change", (e) => {
+          this.onChange({ args: { ...args, duration: parseInt(e.target.value) || undefined } });
+        });
+        container.appendChild(dInput);
         break;
       }
       default: {
