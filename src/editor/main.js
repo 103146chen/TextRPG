@@ -14,6 +14,9 @@ import { StoryManager } from "./views/StoryManager.js";
 import { AssetPanel } from "./views/AssetPanel.js";
 import { MemoryBackend } from "./core/MemoryBackend.js";
 import { exportProjectZip } from "./core/projectZip.js";
+import { SceneParser } from "../engine/SceneParser.js";
+import { MarkdownWriter } from "./core/MarkdownWriter.js";
+import { SceneJson } from "./core/SceneJson.js";
 
 const $ = s => document.querySelector(s);
 
@@ -68,6 +71,7 @@ const assetPanel = new AssetPanel($("#asset-panel"), project);
 let currentSceneId = null;
 let currentPage = "script";   // script | assets | map | theme | publish | settings
 let sceneFilter = "";
+let viewMode = "cards";       // cards | md | json
 
 function setPage(page) {
   currentPage = page;
@@ -77,7 +81,79 @@ function setPage(page) {
     p.classList.toggle("active", p.dataset.page === page));
 
   if (page === "map") graphView.render();
-  else if (page === "script") sceneEditor.openScene(currentSceneId);
+  else if (page === "script") renderEvents();
+}
+
+// ==================== 檢視切換（卡片 / Markdown / JSON）====================
+
+function setViewMode(mode) {
+  // 離開原始碼檢視前，若有未套用的編輯就先確認
+  if ((viewMode === "md" || viewMode === "json") && mode !== viewMode && isSourceDirty()) {
+    if (!confirm("原始碼有未套用的變更，切換後會捨棄。確定切換？")) return;
+  }
+  viewMode = mode;
+  document.querySelectorAll(".view-mode").forEach((b) =>
+    b.classList.toggle("active", b.dataset.mode === mode));
+  renderEvents();
+}
+
+function renderEvents() {
+  const cards = mode0() === "cards";
+  $("#main-content").style.display = cards ? "flex" : "none";
+  $("#source-view").style.display = cards ? "none" : "flex";
+  $("#events-scene-name").textContent = currentSceneId
+    ? (project.getScene(currentSceneId)?.meta.title || currentSceneId)
+    : "—";
+
+  if (cards) {
+    sceneEditor.openScene(currentSceneId);
+  } else {
+    fillSource();
+  }
+}
+
+function mode0() { return viewMode; }
+
+function serializeCurrent() {
+  const sc = currentSceneId && project.getScene(currentSceneId);
+  if (!sc) return "";
+  const data = { meta: sc.meta, instructions: sc.instructions };
+  return viewMode === "json" ? SceneJson.stringify(data) : MarkdownWriter.write(data);
+}
+
+function fillSource() {
+  const text = serializeCurrent();
+  $("#source-text").value = text;
+  $("#source-text").dataset.original = text;
+  $("#source-text").disabled = !currentSceneId;
+  setSourceStatus(currentSceneId ? "" : "未選擇場景", "");
+}
+
+function isSourceDirty() {
+  const ta = $("#source-text");
+  return ta.dataset.original !== undefined && ta.value !== ta.dataset.original;
+}
+
+function setSourceStatus(msg, kind = "") {
+  const el = $("#source-status");
+  el.textContent = msg;
+  el.className = `source-status ${kind}`;
+}
+
+function applySource() {
+  if (!currentSceneId) return;
+  const text = $("#source-text").value;
+  let data;
+  try {
+    data = viewMode === "json" ? SceneJson.parse(text) : SceneParser.parse(text);
+  } catch (err) {
+    setSourceStatus(`解析失敗：${err.message}`, "err");
+    return;
+  }
+  project.replaceScene(currentSceneId, data);
+  $("#source-text").dataset.original = $("#source-text").value;
+  setSourceStatus("已套用", "ok");
+  setTimeout(() => setSourceStatus("", ""), 2000);
 }
 
 // ==================== 工具列 ====================
@@ -215,6 +291,19 @@ document.querySelectorAll(".main-tab").forEach((tab) => {
   tab.addEventListener("click", () => setPage(tab.dataset.page));
 });
 
+// 檢視切換（卡片 / Markdown / JSON）
+document.querySelectorAll(".view-mode").forEach((b) => {
+  b.addEventListener("click", () => setViewMode(b.dataset.mode));
+});
+$("#btn-source-apply").addEventListener("click", applySource);
+$("#btn-source-revert").addEventListener("click", () => {
+  fillSource();
+  setSourceStatus("已還原為目前內容", "");
+});
+$("#source-text").addEventListener("input", () => {
+  setSourceStatus(isSourceDirty() ? "有未套用的變更" : "", isSourceDirty() ? "err" : "");
+});
+
 // 檢查器分頁（問題 / 檢查器）
 document.querySelectorAll(".insp-tab").forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -260,7 +349,7 @@ window.addEventListener("beforeunload", (e) => {
 project.subscribe((type, payload) => {
   if (type === "loaded") {
     currentSceneId = project.storyMeta?.start || project.getAllSceneIds()[0] || null;
-    sceneEditor.openScene(currentSceneId);
+    renderEvents();
   }
   if (type === "scene-renamed" && payload?.oldId === currentSceneId) {
     currentSceneId = payload.newId;
@@ -273,7 +362,7 @@ project.subscribe((type, payload) => {
       type === "instruction-moved" || type === "instructions-replaced" ||
       type === "undo" || type === "redo" || type === "resources-updated" ||
       type === "characters-updated" || type === "flags-updated" || type === "story-meta-updated") {
-    if (currentPage === "script") sceneEditor.render();
+    if (currentPage === "script") renderEvents();
   }
   // 影響 graph 結構的變更
   if (type === "loaded" || type === "scene-created" || type === "scene-deleted" ||
@@ -292,7 +381,7 @@ function renderAll() {
   if (currentPage === "map") {
     graphView.render();
   } else {
-    sceneEditor.openScene(currentSceneId);
+    renderEvents();
   }
   updateToolbar();
 }
@@ -326,8 +415,10 @@ function renderSidebar() {
       </div>
     `;
     item.addEventListener("click", () => {
+      if ((viewMode === "md" || viewMode === "json") && isSourceDirty() &&
+          !confirm("原始碼有未套用的變更，切換場景後會捨棄。確定切換？")) return;
       currentSceneId = id;
-      sceneEditor.openScene(id);
+      renderEvents();
       renderSidebar();
     });
     list.appendChild(item);

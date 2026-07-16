@@ -54,7 +54,23 @@
         </aside>
 
         <main class="col col-events">
+          <div class="events-head">
+            <span id="events-scene-name" class="events-scene-name">—</span>
+            <div class="view-modes">
+              <button class="view-mode active" data-mode="cards" title="卡片編輯">✏️ 卡片</button>
+              <button class="view-mode" data-mode="md" title="Markdown 原文（可手寫）">☰ Markdown</button>
+              <button class="view-mode" data-mode="json" title="JSON（機器格式）">{ } JSON</button>
+            </div>
+          </div>
           <div id="main-content"></div>
+          <div id="source-view" class="source-view" style="display:none">
+            <textarea id="source-text" spellcheck="false"></textarea>
+            <div class="source-actions">
+              <span id="source-status" class="source-status"></span>
+              <button id="btn-source-revert" class="tb-btn">還原</button>
+              <button id="btn-source-apply" class="tb-btn primary">套用變更</button>
+            </div>
+          </div>
         </main>
 
         <aside class="col col-preview">

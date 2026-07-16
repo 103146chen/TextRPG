@@ -1524,3 +1524,71 @@ input, textarea, select {
 }
 .status-spacer { flex: 1; }
 .status-item { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+
+/* ============================================
+   S2b 檢視切換（卡片 / Markdown / JSON）
+   ============================================ */
+
+.events-head {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  background: var(--e-bg-3);
+  border-bottom: 1px solid var(--e-border);
+  flex: 0 0 auto;
+}
+.events-scene-name {
+  font-size: 12px;
+  color: var(--e-text-dim);
+  font-family: var(--e-font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.view-modes { margin-left: auto; display: flex; gap: 2px; }
+.view-mode {
+  padding: 4px 10px;
+  background: transparent;
+  color: var(--e-text-dim);
+  border: 1px solid transparent;
+  border-radius: 3px;
+  font-size: 12px;
+}
+.view-mode:hover { color: var(--e-text); background: var(--e-bg-4); }
+.view-mode.active {
+  color: var(--e-accent);
+  background: var(--e-bg);
+  border-color: var(--e-border);
+}
+
+.source-view { flex: 1; min-height: 0; display: flex; flex-direction: column; }
+#source-text {
+  flex: 1;
+  min-height: 0;
+  resize: none;
+  border: none;
+  outline: none;
+  padding: 12px 14px;
+  background: var(--e-bg);
+  color: var(--e-text);
+  font-family: var(--e-font-mono);
+  font-size: 12.5px;
+  line-height: 1.65;
+  tab-size: 2;
+  white-space: pre;
+  overflow: auto;
+}
+.source-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--e-bg-2);
+  border-top: 1px solid var(--e-border);
+  flex: 0 0 auto;
+}
+.source-status { flex: 1; font-size: 12px; color: var(--e-text-faded); }
+.source-status.ok { color: var(--e-green); }
+.source-status.err { color: var(--e-red); }

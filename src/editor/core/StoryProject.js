@@ -257,6 +257,22 @@ export class StoryProject {
     this.notify("instructions-replaced", { sceneId });
   }
 
+  /**
+   * 以完整的 { meta, instructions } 取代場景內容（供 Markdown/JSON 原始碼檢視套用）。
+   * 與 updateSceneMeta 的差異：meta 是「整份取代」而非合併，故刪掉的欄位會真的消失。
+   * 單一 undo 進入點，避免拆成兩次操作。
+   * 注意：場景 id 一律沿用原本的（改 id 請走場景 header 的改名流程，才會連動 goto/next）。
+   */
+  replaceScene(sceneId, { meta, instructions }) {
+    this.#pushUndo();
+    const sc = this.scenes.get(sceneId);
+    if (!sc) return;
+    if (meta) sc.meta = { ...meta, id: sc.meta.id };
+    if (Array.isArray(instructions)) sc.instructions = instructions;
+    this.markDirty(sceneId);
+    this.notify("instructions-replaced", { sceneId });
+  }
+
   updateSceneMeta(sceneId, patch) {
     this.#pushUndo();
     const sc = this.scenes.get(sceneId);
