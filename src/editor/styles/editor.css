@@ -1607,3 +1607,35 @@ input, textarea, select {
   margin-top: 2px;
 }
 .chapter-head:first-child { border-top: none; margin-top: 0; }
+
+
+/* 指令列選取（S3c：靜態預覽跟隨游標） */
+.instr-row.selected {
+  outline: 2px solid var(--e-accent);
+  outline-offset: -2px;
+  background: rgba(212, 160, 96, 0.08);
+}
+
+
+/* 檢查器面板（S3d） */
+.insp-body { padding: 8px 10px; }
+.insp-row {
+  display: flex;
+  gap: 8px;
+  padding: 4px 0;
+  border-bottom: 1px solid var(--e-border);
+  font-size: 12px;
+}
+.insp-k { flex: 0 0 76px; color: var(--e-text-faded); }
+.insp-v {
+  flex: 1;
+  color: var(--e-text);
+  font-family: var(--e-font-mono);
+  word-break: break-all;
+}
+.insp-note {
+  padding: 10px;
+  font-size: 11px;
+  color: var(--e-text-faded);
+  line-height: 1.6;
+}

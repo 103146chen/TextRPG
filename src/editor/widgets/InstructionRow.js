@@ -16,7 +16,7 @@ export class InstructionRow {
    * @param {Function} params.onChange - (patch) => void
    * @param {Function} params.onDelete
    */
-  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete, onPlayFrom, onManage }) {
+  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete, onPlayFrom, onManage, selected = false, onSelect = null }) {
     this.ins = instruction;
     this.index = index;
     this.indent = indent;
@@ -26,6 +26,8 @@ export class InstructionRow {
     this.onDelete = onDelete;
     this.onPlayFrom = onPlayFrom;   // 可選：(index) => void，「從這裡試玩」
     this.onManage = onManage;       // 可選：(tab) => void，開啟資料庫 Hub 對應分頁
+    this.selected = selected;
+    this.onSelect = onSelect;       // 可選：() => void，點列選取（靜態預覽跟隨）
     this.el = null;
   }
 
@@ -36,6 +38,10 @@ export class InstructionRow {
     row.dataset.type = this.ins.type;
     if (this.ins.type === "text" && !this.ins.speaker) row.dataset.narration = "true";
     row.dataset.index = this.index;
+    if (this.selected) row.classList.add("selected");
+    if (this.onSelect) {
+      row.addEventListener("click", () => this.onSelect());
+    }
 
     row.innerHTML = `
       <div class="instr-handle" title="拖曳排序"></div>

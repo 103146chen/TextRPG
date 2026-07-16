@@ -22,6 +22,9 @@
       border: none; border-radius: 5px; padding: 3px 10px; font-size: 12px; }
     .preview-bar button:hover { background: rgba(255,255,255,0.26); }
     .preview-bar .dot { width: 7px; height: 7px; border-radius: 50%; background: #6bd08a; }
+    .preview-bar #preview-mode[data-mode="play"] ~ .dot,
+    .preview-bar #preview-mode[data-mode="play"] { color: #ffd479; }
+    .preview-note { margin-left: 8px; opacity: .75; font-size: 11px; }
     .preview-empty {
       position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
       color: rgba(245,239,227,0.55); font-family: system-ui, sans-serif; font-size: 14px;
@@ -30,8 +33,9 @@
 </head>
 <body>
   <div class="preview-bar">
-    <span class="dot"></span><span>即時預覽</span>
-    <button id="preview-restart" title="從頭播放">⟳ 從頭</button>
+    <span class="dot"></span>
+    <span id="preview-mode" data-mode="scrub">靜態預覽 · 跟隨游標</span>
+    <span id="preview-note" class="preview-note" style="display:none"></span>
   </div>
 
   <div id="preview-empty" class="preview-empty">等待編輯器載入劇本…</div>

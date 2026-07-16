@@ -7,11 +7,13 @@ import { InstructionRow } from "../widgets/InstructionRow.js";
 import { createSelectField } from "../widgets/selectField.js";
 
 export class SceneEditor {
-  constructor(containerEl, project, onPlayFrom = null, onManage = null) {
+  constructor(containerEl, project, onPlayFrom = null, onManage = null, onSelect = null) {
     this.containerEl = containerEl;
     this.project = project;
-    this.onPlayFrom = onPlayFrom;   // (sceneId, index) => void
+    this.onPlayFrom = onPlayFrom;   // (sceneId, index) => void，實際播放
     this.onManage = onManage;       // (tab) => void，開啟資料庫 Hub
+    this.onSelect = onSelect;       // (sceneId, index) => void，選取指令（靜態預覽跟隨）
+    this.selectedIndex = null;
     this.currentSceneId = null;
     this.openMenu = null;
     this._pendingScrollTo = null;
@@ -25,8 +27,20 @@ export class SceneEditor {
   }
 
   openScene(sceneId) {
+    if (sceneId !== this.currentSceneId) this.selectedIndex = null;
     this.currentSceneId = sceneId;
     this.render();
+    // 開場景時預覽跳到開頭（靜態）
+    if (this.onSelect && sceneId) this.onSelect(sceneId, this.selectedIndex ?? 0);
+  }
+
+  /** 選取指令：更新樣式並通知宿主（帶動靜態預覽與檢查器） */
+  selectInstruction(index) {
+    if (this.selectedIndex === index) return;
+    this.selectedIndex = index;
+    this.containerEl.querySelectorAll(".instr-row").forEach((r) =>
+      r.classList.toggle("selected", Number(r.dataset.index) === index));
+    this.onSelect?.(this.currentSceneId, index);
   }
 
   render() {
@@ -191,6 +205,8 @@ export class SceneEditor {
         indent,
         project: this.project,
         sceneId: this.currentSceneId,
+        selected: this.selectedIndex === idx,
+        onSelect: () => this.selectInstruction(idx),
         onChange: (patch) => this.project.updateInstruction(this.currentSceneId, idx, patch),
         onDelete: () => this.project.deleteInstruction(this.currentSceneId, idx),
         onPlayFrom: this.onPlayFrom ? (index) => this.onPlayFrom(this.currentSceneId, index) : null,

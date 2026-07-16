@@ -13,6 +13,7 @@ const emptyHint = $("#preview-empty");
 
 let runtime = null;
 let currentData = null;            // 最近一次 preview:load 的資料
+let currentMode = "scrub";         // scrub（靜態，跟隨游標）| play（實際播放）
 const assetCache = new Map();      // "kind/file" -> objectURL
 const pendingAssets = new Map();   // reqId -> resolve
 let assetReqSeq = 0;
@@ -57,7 +58,8 @@ function clearAssetCache() {
 
 async function loadPreview(data) {
   currentData = data;
-  const { storyMeta, scenes, startSceneId, startPc } = data;
+  const { storyMeta, scenes, startSceneId, startPc, mode = "scrub" } = data;
+  currentMode = mode;
 
   // 收拾上一輪
   if (runtime) {
@@ -92,13 +94,46 @@ async function loadPreview(data) {
 
   emptyHint.style.display = "none";
   gameScreen.classList.remove("hidden");
+  setModeBadge(mode);
+
+  // scrub：靜態求值到游標位置（不播動畫/不出聲/不等待）
+  // play ：實際從該點開始播放
+  runtime.setInstant(mode === "scrub");
 
   const sceneId = startSceneId || storyMeta.start;
   try {
-    await runtime.startAtScene(sceneId, startPc || 0);
+    if (mode === "play") {
+      await runtime.startAtScene(sceneId, startPc || 0);
+    } else {
+      const r = await runtime.evaluateTo(sceneId, startPc ?? 0);
+      setStopReason(r);
+    }
   } catch (err) {
     showError(err.message);
   }
+}
+
+function setModeBadge(mode) {
+  const el = document.getElementById("preview-mode");
+  if (!el) return;
+  el.textContent = mode === "play" ? "▶ 播放中" : "靜態預覽 · 跟隨游標";
+  el.dataset.mode = mode;
+}
+
+// 求值沒走到游標位置時，說明原因（誠實告知，不假裝畫面是對的）
+function setStopReason(r) {
+  const el = document.getElementById("preview-note");
+  if (!el) return;
+  const map = {
+    choice: "停在選項：需要玩家選擇才能繼續",
+    ended: "停在結局",
+    "scene-changed": "此處跳轉到別的場景",
+    "end-of-scene": "已到場景結尾",
+    "max-steps": "偵測到迴圈，已停止求值",
+  };
+  const msg = r.reached ? "" : (map[r.stoppedAt] || "");
+  el.textContent = msg;
+  el.style.display = msg ? "" : "none";
 }
 
 function showError(message) {
@@ -129,18 +164,18 @@ window.addEventListener("message", (e) => {
 
 gameScreen.addEventListener("click", (e) => {
   if (e.target.closest(".choice-container")) return;
-  if (runtime) runtime.handleAdvanceInput();
+  if (runtime && currentMode === "play") runtime.handleAdvanceInput();
 });
 
 document.addEventListener("keydown", (e) => {
-  if (!runtime || gameScreen.classList.contains("hidden")) return;
+  if (!runtime || currentMode !== "play" || gameScreen.classList.contains("hidden")) return;
   if (e.key === "Enter" || e.key === " ") {
     e.preventDefault();
     runtime.handleAdvanceInput();
   }
 });
 
-$("#preview-restart").addEventListener("click", () => {
+$("#preview-restart")?.addEventListener("click", () => {
   if (currentData) loadPreview(currentData);
 });
 

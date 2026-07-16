@@ -30,7 +30,16 @@ const usingMemory = !ProjectFileSystem.isSupported();
 const fs = usingMemory ? new MemoryBackend() : new ProjectFileSystem();
 const project = new StoryProject(fs);
 const previewPanel = new PreviewPanel(project, { container: $("#preview-host") });
-const sceneEditor = new SceneEditor($("#main-content"), project, (sceneId, index) => previewPanel.play(sceneId, index), (tab) => handleManage(tab));
+const sceneEditor = new SceneEditor(
+  $("#main-content"),
+  project,
+  (sceneId, index) => previewPanel.play(sceneId, index),          // ▶ 從這裡試玩：實際播放
+  (tab) => handleManage(tab),
+  (sceneId, index) => {                                            // 點選指令：靜態預覽跟隨
+    previewPanel.scrub(sceneId, index);
+    renderInspector(sceneId, index);
+  }
+);
 const graphView = new GraphView($("#graph-content"), project, (sceneId) => {
   currentSceneId = sceneId;
   setPage("script");
@@ -490,6 +499,48 @@ function updateStatusBar() {
   $("#status-scenes").textContent = project.storyMeta
     ? `${project.getAllSceneIds().length} 個場景`
     : "";
+}
+
+// ==================== 檢查器（S3d）====================
+
+// 顯示選取指令的細部參數。用 SceneJson.toObject 剝除推導欄位，
+// 確保這裡看到的就是「真正被序列化的內容」，不會混入內部索引。
+function renderInspector(sceneId, index) {
+  const host = $("#inspector-panel");
+  const sc = sceneId ? project.getScene(sceneId) : null;
+  const ins = sc?.instructions?.[index];
+
+  if (!ins) {
+    host.innerHTML = `<div class="panel-empty">選取指令後，這裡會顯示細部參數。</div>`;
+    return;
+  }
+
+  const clean = SceneJson.toObject({ meta: {}, instructions: [ins] }).instructions[0];
+  const rows = [["行號", String(index + 1)],
+                ["類型", clean.type + (clean.name ? ` · @${clean.name}` : "")]];
+
+  for (const [k, v] of Object.entries(clean)) {
+    if (k === "type" || k === "name") continue;
+    if (k === "args" && v && typeof v === "object") {
+      const pos = (v.positional || []).filter((x) => x !== "" && x != null);
+      if (pos.length) rows.push(["參數", pos.join("  ")]);
+      for (const [ak, av] of Object.entries(v)) {
+        if (ak === "positional") continue;
+        rows.push([ak, String(av)]);
+      }
+      continue;
+    }
+    rows.push([k, typeof v === "object" ? JSON.stringify(v) : String(v)]);
+  }
+
+  host.innerHTML = `
+    <div class="insp-body">
+      ${rows.map(([k, v]) =>
+        `<div class="insp-row"><span class="insp-k">${escapeHtml(k)}</span><span class="insp-v">${escapeHtml(v)}</span></div>`
+      ).join("")}
+    </div>
+    <div class="insp-note">唯讀檢視。可編輯的細部參數會在 S6（複雜演出指令）加入後補上。</div>
+  `;
 }
 
 // ==================== 通用工具 ====================

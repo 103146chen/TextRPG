@@ -43,17 +43,23 @@ export class PreviewPanel {
       "font-family:system-ui,sans-serif", "flex:0 0 auto",
     ].join(";");
     header.innerHTML = `
-      <span style="font-weight:600">▶ 即時預覽</span>
+      <span style="font-weight:600">即時預覽</span>
       <span style="opacity:.6;font-size:11px">反映未存檔的變更</span>
       <span style="flex:1"></span>
-      <button data-act="restart" style="cursor:pointer;background:rgba(255,255,255,.14);color:#f5efe3;border:0;border-radius:5px;padding:3px 10px;font-size:12px">⟳ 從頭</button>
+      <button data-act="run" style="cursor:pointer;background:#c0392b;color:#fff;border:0;border-radius:5px;padding:3px 12px;font-size:12px;font-weight:600">▶ 運行</button>
+      <button data-act="restart" style="cursor:pointer;background:rgba(255,255,255,.14);color:#f5efe3;border:0;border-radius:5px;padding:3px 10px;font-size:12px" title="從場景開頭播放">⟳ 從頭</button>
       <button data-act="close" style="cursor:pointer;background:rgba(255,255,255,.14);color:#f5efe3;border:0;border-radius:5px;padding:3px 10px;font-size:12px">✕ 關閉</button>
     `;
     const closeBtn = header.querySelector('[data-act="close"]');
     if (this.docked) closeBtn.remove();          // 常駐欄不需要關閉
     else closeBtn.addEventListener("click", () => this.close());
-    header.querySelector('[data-act="restart"]').addEventListener("click", () => {
+    // ▶ 運行：從目前游標位置實際播放
+    header.querySelector('[data-act="run"]').addEventListener("click", () => {
       if (this.pendingStart) this.play(this.pendingStart.sceneId, this.pendingStart.pc);
+    });
+    // ⟳ 從頭：從場景開頭實際播放
+    header.querySelector('[data-act="restart"]').addEventListener("click", () => {
+      if (this.pendingStart) this.play(this.pendingStart.sceneId, 0);
     });
 
     const wrap = document.createElement("div");
@@ -87,16 +93,25 @@ export class PreviewPanel {
     if (!this.docked) this.panel.style.display = "none";
   }
 
-  /** 預覽指定場景，可選從第幾個指令開始（「從這裡試玩」） */
+  /** 靜態預覽：只顯示執行到該指令時的畫面，不播放（跟隨游標用） */
+  scrub(sceneId, pc = 0) {
+    this.#request(sceneId, pc, "scrub");
+  }
+
+  /** 實際播放：從指定位置開始跑 */
   play(sceneId, pc = 0) {
+    this.#request(sceneId, pc, "play");
+  }
+
+  #request(sceneId, pc, mode) {
     if (!sceneId) return;
-    this.pendingStart = { sceneId, pc };
+    this.pendingStart = { sceneId, pc, mode };
     this.open();
     if (this.ready) this.#send();
     // 尚未 ready 時，等 preview:ready 訊息到達後由 #onMessage 觸發 #send
   }
 
-  #buildData(startSceneId, startPc) {
+  #buildData(startSceneId, startPc, mode) {
     const scenes = {};
     for (const id of this.project.getAllSceneIds()) {
       const sc = this.project.getScene(id);
@@ -109,13 +124,14 @@ export class PreviewPanel {
       scenes,
       startSceneId,
       startPc,
+      mode,
     };
   }
 
   #send() {
     if (!this.pendingStart || !this.iframe) return;
-    const data = this.#buildData(this.pendingStart.sceneId, this.pendingStart.pc);
-    this.iframe.contentWindow.postMessage(data, "*");
+    const { sceneId, pc, mode } = this.pendingStart;
+    this.iframe.contentWindow.postMessage(this.#buildData(sceneId, pc, mode), "*");
   }
 
   async #onMessage(e) {
