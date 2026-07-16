@@ -7,14 +7,16 @@
 //   - 未引用場景：虛線紅框 + 徽章（從起點 BFS 不可達）
 //   - 工具列：放大／縮小／適應畫面／1:1
 //   - 圖例改為 HTML 浮層（不再跟著畫布平移縮放）
+//   - 橫向分層（左 → 右）：選項列的連線從右緣出發，與流向一致；
+//     分支故事的時間軸閱讀方向與寬螢幕比例也都偏橫向
 // ============================================
 
 const NODE_W = 200;
-const BASE_H = 66;      // 標題 + id + 統計列
-const ROW_H = 16;       // 每列選項高度
-const MAX_ROWS = 5;     // 節點內最多列出的選項數（超過折疊成一列）
-const X_GAP = 40;
-const Y_GAP = 110;
+const BASE_H = 66;        // 標題 + id + 統計列
+const ROW_H = 16;         // 每列選項高度
+const MAX_ROWS = 5;       // 節點內最多列出的選項數（超過折疊成一列）
+const LEVEL_GAP_X = 130;  // 層與層的水平間距（留給連線）
+const SIB_GAP_Y = 28;     // 同層節點的垂直間距
 
 export class GraphView {
   constructor(containerEl, project, onSelectScene) {
@@ -107,9 +109,9 @@ export class GraphView {
   // ==================== 佈局演算 ====================
 
   /**
-   * 簡易 BFS 分層佈局：從 start 逐層往下，同層水平置中分散。
-   * 節點高度不再固定（選項列數不同），每層以該層最高者決定下一層的 y。
-   * 從起點不可達的場景放在最下層，虛線標示「未引用」。
+   * 簡易 BFS 分層佈局（橫向）：從 start 逐層往右，同層垂直堆疊、整層置中。
+   * 節點高度不固定（選項列數不同）。
+   * 從起點不可達的場景放在最右層，虛線標示「未引用」。
    */
   #computeLayout() {
     const startId = this.project.storyMeta?.start;
@@ -133,7 +135,7 @@ export class GraphView {
       }
     }
 
-    // 不可達場景 → 最下層（未引用）
+    // 不可達場景 → 最右層（未引用）
     const reachable = new Set(levels.keys());
     const maxLv = Math.max(-1, ...levels.values());
     const orphanLv = maxLv + 1;
@@ -149,37 +151,37 @@ export class GraphView {
     }
     const sortedLevels = [...byLevel.keys()].sort((a, b) => a - b);
 
-    // 每層 y = 前面各層「最高節點」的累計
     const heights = new Map();
     for (const id of allIds) heights.set(id, this.#nodeHeight(this.project.getScene(id)));
 
-    let maxWidth = 0;
-    for (const ids of byLevel.values()) {
-      maxWidth = Math.max(maxWidth, ids.length * NODE_W + (ids.length - 1) * X_GAP);
+    // 每層總高（含間距），整層垂直置中對齊最高的那層
+    const totals = new Map();
+    let maxTotalH = 0;
+    for (const lv of sortedLevels) {
+      const ids = byLevel.get(lv);
+      const totalH = ids.reduce((s, id) => s + heights.get(id), 0) + (ids.length - 1) * SIB_GAP_Y;
+      totals.set(lv, totalH);
+      maxTotalH = Math.max(maxTotalH, totalH);
     }
 
     const positions = new Map();
-    let y = 40;
-    for (const lv of sortedLevels) {
+    sortedLevels.forEach((lv, idx) => {
       const ids = byLevel.get(lv);
-      const totalW = ids.length * NODE_W + (ids.length - 1) * X_GAP;
-      const startX = (maxWidth - totalW) / 2;
-      let levelMaxH = 0;
-      ids.forEach((id, i) => {
+      const x = 40 + idx * (NODE_W + LEVEL_GAP_X);
+      let y = 40 + (maxTotalH - totals.get(lv)) / 2;
+      for (const id of ids) {
         const h = heights.get(id);
-        levelMaxH = Math.max(levelMaxH, h);
         positions.set(id, {
-          x: startX + i * (NODE_W + X_GAP),
-          y,
+          x, y,
           width: NODE_W,
           height: h,
           isOrphan: !reachable.has(id),
         });
-      });
-      y += levelMaxH + Y_GAP;
-    }
+        y += h + SIB_GAP_Y;
+      }
+    });
 
-    // 邊：流程邊（節點底部出發）＋ 選項邊（各自的選項列出發）
+    // 邊：流程邊（節點右緣中央出發）＋ 選項邊（各自的選項列右緣出發）
     const edges = [];
     for (const id of allIds) {
       const scene = this.project.getScene(id);
@@ -191,7 +193,7 @@ export class GraphView {
       const all = this.#collectOptions(scene);
       all.forEach((opt, idx) => {
         if (!opt.target || !positions.has(opt.target)) return;
-        // 前 MAX_ROWS 個從自己那一列出發；被折疊的從節點底部出發
+        // 前 MAX_ROWS 個從自己那一列出發；被折疊的從右緣中央出發
         edges.push({ from: id, target: opt.target, type: "choice", row: idx < rows.length ? idx : null });
       });
     }
@@ -199,8 +201,8 @@ export class GraphView {
     return {
       positions,
       edges,
-      width: Math.max(800, maxWidth + 80),
-      height: Math.max(400, y - Y_GAP + 80),
+      width: Math.max(800, 40 + sortedLevels.length * (NODE_W + LEVEL_GAP_X) - LEVEL_GAP_X + 40),
+      height: Math.max(400, maxTotalH + 80),
       startId,
     };
   }
@@ -267,23 +269,17 @@ export class GraphView {
       const to = layout.positions.get(edge.target);
       if (!from || !to) continue;
 
-      const x2 = to.x + to.width / 2;
-      const y2 = to.y;
-      const path = document.createElementNS(svgns, "path");
+      // 起點：選項列右緣 或 節點右緣中央；終點：目標左緣中央
+      const x1 = from.x + from.width;
+      const y1 = (edge.type === "choice" && edge.row != null)
+        ? from.y + BASE_H + edge.row * ROW_H + ROW_H / 2 + 2
+        : from.y + from.height / 2;
+      const x2 = to.x;
+      const y2 = to.y + Math.min(to.height / 2, BASE_H / 2 + 8);
 
-      if (edge.type === "choice" && edge.row != null) {
-        // 從自己那一列選項的右緣出發
-        const x1 = from.x + from.width;
-        const y1 = from.y + BASE_H + edge.row * ROW_H + ROW_H / 2 + 2;
-        const cy = Math.max(y1, y2 - 60);
-        path.setAttribute("d", `M ${x1} ${y1} C ${x1 + 60} ${y1}, ${x2} ${cy}, ${x2} ${y2}`);
-      } else {
-        // 節點底部中央出發
-        const x1 = from.x + from.width / 2;
-        const y1 = from.y + from.height;
-        const cy = (y1 + y2) / 2;
-        path.setAttribute("d", `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${cy}, ${x2} ${y2}`);
-      }
+      const path = document.createElementNS(svgns, "path");
+      const midX = (x1 + x2) / 2;
+      path.setAttribute("d", `M ${x1} ${y1} C ${midX} ${y1}, ${midX} ${y2}, ${x2} ${y2}`);
 
       const s = styles[edge.type] || styles.next;
       path.setAttribute("fill", "none");
