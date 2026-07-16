@@ -1639,3 +1639,30 @@ input, textarea, select {
   color: var(--e-text-faded);
   line-height: 1.6;
 }
+
+
+/* 檢查器：可編輯欄位（S4a 定位） */
+.insp-head {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--e-border);
+  background: var(--e-bg-3);
+  font-size: 12px;
+}
+.insp-head span { margin-left: auto; color: var(--e-text-faded); font-family: var(--e-font-mono); }
+.insp-field { padding: 8px 10px; border-bottom: 1px solid var(--e-border); }
+.insp-field label { display: block; font-size: 11px; color: var(--e-text-dim); margin-bottom: 4px; }
+.insp-field small { display: block; margin-top: 4px; font-size: 10.5px; color: var(--e-text-faded); line-height: 1.5; }
+.insp-field input, .insp-field select {
+  width: 100%;
+  padding: 5px 8px;
+  background: var(--e-bg);
+  border: 1px solid var(--e-border);
+  border-radius: 3px;
+  font-size: 12px;
+}
+.insp-field input:focus, .insp-field select:focus { outline: none; border-color: var(--e-accent); }
+.insp-xy { display: flex; gap: 6px; }
+.insp-xy input { flex: 1; }
