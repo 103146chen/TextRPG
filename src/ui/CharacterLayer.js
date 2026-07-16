@@ -30,6 +30,14 @@ export class CharacterLayer {
     this.current = { left: null, center: null, right: null };
   }
 
+  /** 依角色名找到目前所在的 slot 容器（精靈動畫用）；不在場上回傳 null */
+  getSlotElement(charName) {
+    for (const [slot, cur] of Object.entries(this.current)) {
+      if (cur?.charName === charName) return this.slots[slot] || null;
+    }
+    return null;
+  }
+
   /** 取得（必要時建立）指定 slot 的容器。slot 是「身分鍵」：同一 slot 再 show 會取代前一個角色。 */
   #ensureSlot(slot) {
     if (this.slots[slot]) return this.slots[slot];

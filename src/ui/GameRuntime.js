@@ -50,6 +50,8 @@ export class GameRuntime {
     this.uiHidden = false;
     dom.screen?.classList.remove("ui-hidden");   // 預覽重建 runtime 時清掉殘留
 
+    dom.screen?.querySelectorAll(".float-text").forEach((el) => el.remove());   // 殘留浮動文字
+
     // 鏡頭狀態（zoom/x/y 為持續狀態；預覽重建 runtime 時清掉上一輪的 transform）
     this.camera = { zoom: 1, x: 0, y: 0 };
     for (const el of [dom.backgroundLayer, dom.characterLayer]) {
@@ -301,6 +303,72 @@ export class GameRuntime {
         const dur = this.#d(args.duration ?? 800);
         this.#applyCamera({ zoom: 1, x: 0, y: 0 }, dur);
         this.effects?.vignette({ opacity: 0, duration: dur });
+        break;
+      }
+      case "sprite": {
+        // 精靈動畫（瞬時）：@sprite 角色 jump|shake|move …
+        // 動畫作用在 slot 內的 img（slot 本身可能帶定位 transform，不能覆蓋）
+        if (this.instant) break;
+        const [charName, effect = "jump"] = args.positional;
+        const slotEl = this.characterLayer.getSlotElement?.(charName);
+        if (!slotEl) break;
+        const target = slotEl.querySelector("img, svg") || slotEl;
+        const duration = args.duration ?? 500;
+        const frames = [];
+        if (effect === "jump") {
+          const h = Number(args.height) || 20;
+          const times = Math.max(1, parseInt(args.times, 10) || 1);
+          for (let i = 0; i < times; i++) {
+            frames.push({ transform: "translateY(0)" },
+                        { transform: `translateY(-${h}px)` },
+                        { transform: "translateY(0)" });
+          }
+        } else if (effect === "shake") {
+          const it = Number(args.intensity) || 8;
+          const steps = Math.max(6, Math.round(duration / 40));
+          for (let i = 0; i <= steps; i++) {
+            const d = (1 - i / steps) * it;
+            frames.push({ transform: `translateX(${(i % 2 ? d : -d).toFixed(1)}px)` });
+          }
+          frames.push({ transform: "translateX(0)" });
+        } else if (effect === "move") {
+          const dx = Number(args.x) || 0, dy = Number(args.y) || 0;
+          frames.push({ transform: "translate(0, 0)" },
+                      { transform: `translate(${dx}%, ${dy}%)` },
+                      { transform: "translate(0, 0)" });
+        }
+        if (frames.length) {
+          try {
+            const anim = target.animate(frames, { duration, easing: "ease-in-out" });
+            await Promise.race([anim.finished, wait(duration + 100)]);
+          } catch { /* 動畫被中斷 */ }
+        }
+        break;
+      }
+      case "float": {
+        // 浮動文字（瞬時、不阻擋推進）：往上飄並淡出後自刪
+        if (this.instant) break;
+        const text = args.positional.join(" ") || String(args.text ?? "");
+        if (!text || !this.dom.screen) break;
+        const el = document.createElement("div");
+        el.className = "float-text";
+        el.textContent = text;
+        el.style.left = `${args.x ?? 50}%`;
+        el.style.top = `${args.y ?? 40}%`;
+        if (args.color) el.style.color = String(args.color);
+        if (args.size) el.style.fontSize = `${Number(args.size)}px`;
+        this.dom.screen.appendChild(el);
+        const duration = args.duration ?? 1500;
+        const rise = Number(args.rise) || 48;
+        try {
+          const anim = el.animate(
+            [{ transform: "translate(-50%, 0)", opacity: 0 },
+             { transform: `translate(-50%, -${Math.round(rise * 0.25)}px)`, opacity: 1, offset: 0.2 },
+             { transform: `translate(-50%, -${rise}px)`, opacity: 0 }],
+            { duration, easing: "ease-out" });
+          anim.finished.catch(() => {}).finally(() => el.remove());
+          setTimeout(() => el.remove(), duration + 200);   // 背景分頁後備
+        } catch { el.remove(); }
         break;
       }
       default:

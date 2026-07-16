@@ -164,6 +164,8 @@ export class InstructionRow {
       textcfg: "文本參數",
       camera: "鏡頭",
       "camera-reset": "復位鏡頭",
+      sprite: "精靈動畫",
+      float: "浮動文字",
     }[name] || name;
 
     container.appendChild(this.#badge(nameLabel));
@@ -460,6 +462,68 @@ export class InstructionRow {
           this.onChange({ args: { ...args, duration: parseInt(e.target.value) || undefined } });
         });
         container.appendChild(dInput);
+        break;
+      }
+      case "sprite": {
+        const charNames = Object.keys(this.project.storyMeta?.characters || {});
+        const charInput = this.#selectOrInput(pos[0], charNames, "角色名");
+        charInput.addEventListener("change", (e) => {
+          this.onChange({ args: { ...args, positional: [e.target.value, pos[1] || "jump"] } });
+        });
+        container.appendChild(charInput);
+
+        const fxSel = document.createElement("select");
+        fxSel.className = "instr-field";
+        for (const [val, txt] of [["jump", "跳動"], ["shake", "搖晃"], ["move", "位移"]]) {
+          const o = document.createElement("option");
+          o.value = val; o.textContent = txt;
+          if ((pos[1] || "jump") === val) o.selected = true;
+          fxSel.appendChild(o);
+        }
+        fxSel.addEventListener("change", () => {
+          this.onChange({ args: { ...args, positional: [pos[0] || "", fxSel.value] } });
+        });
+        container.appendChild(fxSel);
+
+        const numField = (key, label, ph) => {
+          container.appendChild(this.#labelInline(label));
+          const input = this.#numberInput(args[key], ph);
+          input.addEventListener("change", (e) => {
+            const v = e.target.value.trim();
+            this.onChange({ args: { ...args, [key]: v === "" ? undefined : parseFloat(v) } });
+          });
+          container.appendChild(input);
+        };
+        const effect = pos[1] || "jump";
+        if (effect === "jump") { numField("height", "高度", "px"); numField("times", "次數", "1"); }
+        else if (effect === "shake") { numField("intensity", "強度", "px"); }
+        else if (effect === "move") { numField("x", "X%", "0"); numField("y", "Y%", "0"); }
+        numField("duration", "時長", "ms");
+        break;
+      }
+      case "float": {
+        const tInput = document.createElement("input");
+        tInput.className = "instr-field";
+        tInput.style.minWidth = "140px";
+        tInput.value = pos.join(" ");
+        tInput.placeholder = "浮動文字內容";
+        tInput.addEventListener("change", (e) => {
+          this.onChange({ args: { ...args, positional: [e.target.value] } });
+        });
+        container.appendChild(tInput);
+
+        const numField = (key, label, ph) => {
+          container.appendChild(this.#labelInline(label));
+          const input = this.#numberInput(args[key], ph);
+          input.addEventListener("change", (e) => {
+            const v = e.target.value.trim();
+            this.onChange({ args: { ...args, [key]: v === "" ? undefined : parseFloat(v) } });
+          });
+          container.appendChild(input);
+        };
+        numField("x", "X%", "50");
+        numField("y", "Y%", "40");
+        numField("duration", "時長", "ms");
         break;
       }
       default: {

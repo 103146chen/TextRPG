@@ -281,6 +281,8 @@ export class SceneEditor {
       { kind: "textcfg", label: "文本參數", color: "var(--e-accent)", template: () => ({ type: "directive", name: "textcfg", args: { positional: [], speed: 35 } }) },
       { kind: "camera", label: "鏡頭（縮放/位移/暗角）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "camera", args: { positional: [], zoom: 1.2, duration: 800 } }) },
       { kind: "camera-reset", label: "復位鏡頭", color: "var(--e-accent)", template: () => ({ type: "directive", name: "camera-reset", args: { positional: [], duration: 800 } }) },
+      { kind: "sprite", label: "精靈動畫（跳動/搖晃/位移）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "sprite", args: { positional: ["", "jump"], duration: 500 } }) },
+      { kind: "float", label: "浮動文字", color: "var(--e-accent)", template: () => ({ type: "directive", name: "float", args: { positional: [""], x: 50, y: 40, duration: 1500 } }) },
       "divider",
       { kind: "choice", label: "選項", color: "var(--e-accent-2)", template: () => ({ type: "choice", options: [{ text: "", set: {}, goto: "" }, { text: "", set: {}, goto: "" }] }) },
       { kind: "if", label: "條件 if", color: "var(--e-purple)", template: () => [{ type: "if", condition: "" }, { type: "endif" }] },

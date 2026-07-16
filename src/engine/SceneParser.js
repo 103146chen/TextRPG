@@ -163,16 +163,18 @@ export class SceneParser {
       return { type: "ending", id: args.id, title: args.title, desc: args.desc };
     }
 
-    // 通用指令：@name arg1 arg2 key=value
-    const parts = str.split(/\s+/);
-    const name = parts.shift();
+    // 通用指令：@name arg1 "多 字 參數" key=value key="value with space"
+    // 引號內的空白不切段（S6c：@float 的文字內容需要）
+    const tokens = str.match(/(?:[^\s"']+|"[^"]*"|'[^']*')+/g) || [];
+    const name = tokens.shift();
     const args = { positional: [] };
-    for (const part of parts) {
-      if (part.includes("=")) {
-        const [k, v] = part.split("=");
-        args[k] = this.#parseValue(v);
+    for (const tok of tokens) {
+      const eq = tok.indexOf("=");
+      // k=v：k 必須是識別字，且 token 不是以引號開頭（那是帶引號的 positional）
+      if (eq > 0 && !/^["']/.test(tok) && /^[A-Za-z_]\w*$/.test(tok.slice(0, eq))) {
+        args[tok.slice(0, eq)] = this.#parseValue(tok.slice(eq + 1));
       } else {
-        args.positional.push(part);
+        args.positional.push(this.#unquote(tok));
       }
     }
     return { type: "directive", name, args };
@@ -283,6 +285,14 @@ export class SceneParser {
       result[m[1]] = this.#parseValue(m[2] ?? m[3] ?? m[4]);
     }
     return result;
+  }
+
+  /** 去除成對的外層引號（不動內部） */
+  static #unquote(s) {
+    if (s.length >= 2 && (s[0] === '"' || s[0] === "'") && s[s.length - 1] === s[0]) {
+      return s.slice(1, -1);
+    }
+    return s;
   }
 
   /**

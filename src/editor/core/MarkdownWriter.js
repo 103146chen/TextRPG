@@ -141,13 +141,20 @@ export class MarkdownWriter {
     const parts = [`@${ins.name}`];
     const args = ins.args || {};
     for (const p of args.positional || []) {
-      parts.push(String(p));
+      parts.push(this.#quoteDirectiveToken(String(p)));
     }
     for (const [k, v] of Object.entries(args)) {
       if (k === "positional") continue;
-      parts.push(`${k}=${this.#formatValue(v, { keyValue: true })}`);
+      const fv = this.#formatValue(v, { keyValue: true });
+      parts.push(`${k}=${this.#quoteDirectiveToken(fv)}`);
     }
     return parts.join(" ");
+  }
+
+  // 含空白的指令參數要加引號，parser 才不會切段（與 #parseDirective 對稱）
+  static #quoteDirectiveToken(s) {
+    if (/\s/.test(s) && !/^["'].*["']$/.test(s)) return `"${s}"`;
+    return s;
   }
 
   static #writeChoice(ins, indent) {

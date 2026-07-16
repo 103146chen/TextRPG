@@ -939,3 +939,17 @@ html, body {
   background: radial-gradient(ellipse at center, transparent 42%, rgba(0, 0, 0, 0.88) 100%);
   opacity: 0;
 }
+
+/* S6c：浮動文字（傷害數字/心聲式提示，往上飄並淡出） */
+.float-text {
+  position: absolute;
+  transform: translate(-50%, 0);
+  z-index: 25;
+  pointer-events: none;
+  color: #fff;
+  font-size: 22px;
+  font-weight: 700;
+  text-shadow: 0 2px 8px rgba(0, 0, 0, 0.8);
+  white-space: nowrap;
+  opacity: 0;
+}
