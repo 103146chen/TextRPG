@@ -321,7 +321,7 @@ export class StoryManager {
       const name = prompt("旗標名稱（例：charm、met_alice）：", "");
       if (!name) return;
       if (flags[name]) { alert("旗標已存在"); return; }
-      this.project.upsertFlag(name, { type: "number", default: 0, label: "" });
+      this.project.upsertFlag(name, { type: "number", default: 0, label: "", usage: "counter" });
       this.#renderFlagsPanel(el);
     });
     el.appendChild(addBtn);
@@ -337,7 +337,7 @@ export class StoryManager {
         <br><button class="tb-btn" style="margin-top:8px">一鍵登記</button>
       `;
       warn.querySelector("button").addEventListener("click", () => {
-        for (const n of missing) this.project.upsertFlag(n, { type: "number", default: 0, label: "" });
+        for (const n of missing) this.project.upsertFlag(n, { type: "number", default: 0, label: "", usage: "counter" });
         this.#renderFlagsPanel(el);
       });
       el.appendChild(warn);
@@ -397,6 +397,17 @@ export class StoryManager {
       });
     }
     row.appendChild(this.#field("預設值", defInput));
+
+    // 用途（純標註，供變量管理篩選與檢查；不影響引擎）
+    const usageSel = document.createElement("select");
+    for (const [val, txt] of [["counter", "計數"], ["switch", "開關"], ["mark", "標記"], ["other", "其他"]]) {
+      const o = document.createElement("option");
+      o.value = val; o.textContent = txt;
+      if ((def.usage || "counter") === val) o.selected = true;
+      usageSel.appendChild(o);
+    }
+    usageSel.addEventListener("change", () => this.project.upsertFlag(name, { ...def, usage: usageSel.value }));
+    row.appendChild(this.#field("用途", usageSel));
 
     const labelInput = document.createElement("input");
     labelInput.value = def.label || "";

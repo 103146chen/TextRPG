@@ -1592,3 +1592,18 @@ input, textarea, select {
 .source-status { flex: 1; font-size: 12px; color: var(--e-text-faded); }
 .source-status.ok { color: var(--e-green); }
 .source-status.err { color: var(--e-red); }
+
+
+/* 結構樹：章節分組標題（S2c 輕量分層） */
+.chapter-head {
+  list-style: none;
+  padding: 8px 10px 4px;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  color: var(--e-text-faded);
+  text-transform: none;
+  border-top: 1px solid var(--e-border);
+  margin-top: 2px;
+}
+.chapter-head:first-child { border-top: none; margin-top: 0; }

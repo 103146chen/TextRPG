@@ -144,6 +144,16 @@ export class SceneEditor {
     });
     header.appendChild(this.#field("下一場景", nextSelect));
 
+    // 所屬章節（輕量分層：只改 story.json 的 chapters，場景檔不動）
+    const chapterSelect = createSelectField({
+      value: this.project.getSceneChapter(this.currentSceneId) || "",
+      options: this.project.getChapters().map((c) => c.id),
+      placeholder: "（未分類）",
+      addLabel: "新增章節…", onAdd: () => this.onManage?.("chapters"),
+      onChange: (v) => this.project.setSceneChapter(this.currentSceneId, v || null),
+    });
+    header.appendChild(this.#field("章節", chapterSelect));
+
     // 即時預覽此場景（從開頭）
     if (this.onPlayFrom) {
       const playBtn = document.createElement("button");

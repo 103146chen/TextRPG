@@ -282,6 +282,54 @@ export class StoryProject {
     this.notify("scene-meta-updated", { sceneId });
   }
 
+  // ==================== 章節（輕量分層）====================
+  // story.json 的 chapters: [{ id, title, scenes: [sceneId...] }]
+  // 場景檔與 DSL 完全不變；未列入任何章節的場景視為「未分類」。
+
+  getChapters() {
+    return this.storyMeta?.chapters || [];
+  }
+
+  upsertChapter(chapter) {
+    this.#pushUndo();
+    if (!this.storyMeta.chapters) this.storyMeta.chapters = [];
+    const chapters = [...this.storyMeta.chapters];
+    const i = chapters.findIndex((c) => c.id === chapter.id);
+    if (i >= 0) chapters[i] = { ...chapters[i], ...chapter };
+    else chapters.push({ id: chapter.id, title: chapter.title || chapter.id, scenes: chapter.scenes || [] });
+    this.storyMeta.chapters = chapters;
+    this.notify("chapters-updated", { id: chapter.id });
+  }
+
+  removeChapter(chapterId) {
+    this.#pushUndo();
+    this.storyMeta.chapters = this.getChapters().filter((c) => c.id !== chapterId);
+    this.notify("chapters-updated", { id: chapterId, removed: true });
+  }
+
+  /** 場景所屬章節 id；未分類回 null */
+  getSceneChapter(sceneId) {
+    for (const c of this.getChapters()) {
+      if ((c.scenes || []).includes(sceneId)) return c.id;
+    }
+    return null;
+  }
+
+  /** 設定場景所屬章節（chapterId 傳 null/"" 表示移出章節）。場景只會屬於一個章節。 */
+  setSceneChapter(sceneId, chapterId) {
+    this.#pushUndo();
+    const chapters = this.getChapters().map((c) => ({
+      ...c,
+      scenes: (c.scenes || []).filter((s) => s !== sceneId),
+    }));
+    if (chapterId) {
+      const target = chapters.find((c) => c.id === chapterId);
+      if (target) target.scenes.push(sceneId);
+    }
+    this.storyMeta.chapters = chapters;
+    this.notify("chapters-updated", { sceneId, chapterId });
+  }
+
   // ==================== 旗標登記 ====================
 
   getDeclaredFlags() {

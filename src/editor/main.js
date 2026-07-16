@@ -30,7 +30,7 @@ const usingMemory = !ProjectFileSystem.isSupported();
 const fs = usingMemory ? new MemoryBackend() : new ProjectFileSystem();
 const project = new StoryProject(fs);
 const previewPanel = new PreviewPanel(project, { container: $("#preview-host") });
-const sceneEditor = new SceneEditor($("#main-content"), project, (sceneId, index) => previewPanel.play(sceneId, index), (tab) => storyManager.open(tab));
+const sceneEditor = new SceneEditor($("#main-content"), project, (sceneId, index) => previewPanel.play(sceneId, index), (tab) => handleManage(tab));
 const graphView = new GraphView($("#graph-content"), project, (sceneId) => {
   currentSceneId = sceneId;
   setPage("script");
@@ -281,6 +281,21 @@ $("#btn-delete-scene").addEventListener("click", async () => {
   }
 });
 
+// 「＋ 新增…」的統一入口：章節就地新增，其餘開資料庫 Hub
+function handleManage(tab) {
+  if (tab === "chapters") {
+    if (!project.storyMeta) { toast("請先開啟專案", "error"); return; }
+    const title = prompt("新章節名稱（例：第一章 · 相遇）", "");
+    if (!title) return;
+    const id = title.trim();
+    if (project.getChapters().some((c) => c.id === id)) { toast("章節已存在", "error"); return; }
+    project.upsertChapter({ id, title: id, scenes: [] });
+    toast(`已新增章節：${id}`, "success");
+    return;
+  }
+  storyManager.open(tab);
+}
+
 $("#btn-story-settings").addEventListener("click", () => {
   if (!fs.rootHandle) { toast("請先開啟專案", "error"); return; }
   storyManager.open();
@@ -361,7 +376,8 @@ project.subscribe((type, payload) => {
   if (type === "instruction-inserted" || type === "instruction-deleted" ||
       type === "instruction-moved" || type === "instructions-replaced" ||
       type === "undo" || type === "redo" || type === "resources-updated" ||
-      type === "characters-updated" || type === "flags-updated" || type === "story-meta-updated") {
+      type === "characters-updated" || type === "flags-updated" || type === "story-meta-updated" ||
+      type === "chapters-updated") {
     if (currentPage === "script") renderEvents();
   }
   // 影響 graph 結構的變更
@@ -399,29 +415,48 @@ function renderSidebar() {
                String(sc.meta.title || "").toLowerCase().includes(sceneFilter);
       })
     : allIds;
-  for (const id of ids) {
-    const sc = project.getScene(id);
-    const hasEnding = sc.instructions.some(i => i.type === "ending");
-    const item = document.createElement("li");
-    item.className = "scene-item";
-    if (id === currentSceneId) item.classList.add("active");
-    if (id === startId) item.classList.add("start");
-    if (hasEnding) item.classList.add("ending");
-    if (sc.dirty) item.classList.add("dirty");
-    item.innerHTML = `
-      <div style="flex:1;overflow:hidden;">
-        <div class="scene-title">${escapeHtml(sc.meta.title || id)}</div>
-        <div class="scene-subtitle">${escapeHtml(id)}</div>
-      </div>
-    `;
-    item.addEventListener("click", () => {
-      if ((viewMode === "md" || viewMode === "json") && isSourceDirty() &&
-          !confirm("原始碼有未套用的變更，切換場景後會捨棄。確定切換？")) return;
-      currentSceneId = id;
-      renderEvents();
-      renderSidebar();
-    });
-    list.appendChild(item);
+  // 依章節分組（輕量分層）：章節順序 → 未分類
+  const shown = new Set(ids);
+  const groups = [];
+  for (const ch of project.getChapters()) {
+    const inCh = (ch.scenes || []).filter((id) => shown.has(id));
+    if (inCh.length) groups.push({ title: ch.title || ch.id, ids: inCh });
+  }
+  const grouped = new Set(groups.flatMap((g) => g.ids));
+  const rest = ids.filter((id) => !grouped.has(id));
+  if (rest.length) groups.push({ title: groups.length ? "未分類" : null, ids: rest });
+
+  for (const g of groups) {
+    if (g.title) {
+      const head = document.createElement("li");
+      head.className = "chapter-head";
+      head.textContent = g.title;
+      list.appendChild(head);
+    }
+    for (const id of g.ids) {
+      const sc = project.getScene(id);
+      const hasEnding = sc.instructions.some(i => i.type === "ending");
+      const item = document.createElement("li");
+      item.className = "scene-item";
+      if (id === currentSceneId) item.classList.add("active");
+      if (id === startId) item.classList.add("start");
+      if (hasEnding) item.classList.add("ending");
+      if (sc.dirty) item.classList.add("dirty");
+      item.innerHTML = `
+        <div style="flex:1;overflow:hidden;">
+          <div class="scene-title">${escapeHtml(sc.meta.title || id)}</div>
+          <div class="scene-subtitle">${escapeHtml(id)}</div>
+        </div>
+      `;
+      item.addEventListener("click", () => {
+        if ((viewMode === "md" || viewMode === "json") && isSourceDirty() &&
+            !confirm("原始碼有未套用的變更，切換場景後會捨棄。確定切換？")) return;
+        currentSceneId = id;
+        renderEvents();
+        renderSidebar();
+      });
+      list.appendChild(item);
+    }
   }
 
   if (ids.length === 0) {
