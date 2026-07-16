@@ -93,6 +93,56 @@ export class StoryEngine {
     await this.gotoScene(this.storyMeta.start);
   }
 
+  /**
+   * 靜態求值到第 targetPc 條指令：一路執行到該點，不暫停等待玩家。
+   *
+   * 重要：刻意與正式遊玩共用同一份 #executeInstruction，避免預覽與實際遊玩語意漂移。
+   * 「不播動畫／不出聲／不等待」不在這裡處理，而是由宿主（GameRuntime.setInstant）
+   * 把時長歸零、跳過音效與 wait —— 指令的「意義」始終只有一份。
+   *
+   * @returns {{reached:boolean, stoppedAt:string, steps:number}}
+   *   stoppedAt: "target" | "choice" | "ended" | "scene-changed" | "end-of-scene" | "max-steps"
+   */
+  async evaluateTo(sceneId, targetPc, { maxSteps = 5000 } = {}) {
+    this.evaluating = true;      // 求值期間禁止一切副作用（見 #unlockEnding）
+    try {
+      return await this.#evaluateToInner(sceneId, targetPc, maxSteps);
+    } finally {
+      this.evaluating = false;
+    }
+  }
+
+  async #evaluateToInner(sceneId, targetPc, maxSteps) {
+    this.state = this.#createFreshState();
+    this.state.flags = this.#initialFlags();
+    this.history = [];
+    const scene = await this.loadScene(sceneId);
+    this.state.sceneId = sceneId;
+    this.state.pc = 0;
+    if (this.onSceneChange) {
+      await this.onSceneChange(scene.meta);
+    }
+    this.running = true;
+
+    let steps = 0;
+    let stoppedAt = "target";
+    while (this.state.pc <= targetPc) {
+      if (this.state.pc >= scene.instructions.length) { stoppedAt = "end-of-scene"; break; }
+      // goto 可能往回跳，用步數上限防止無限迴圈
+      if (++steps > maxSteps) { stoppedAt = "max-steps"; break; }
+
+      const ins = scene.instructions[this.state.pc];
+      const action = await this.#executeInstruction(ins, scene);
+
+      if (action === "jumped") continue;                 // pc 已被 goto/if 改過
+      if (action === "scene-changed") { stoppedAt = "scene-changed"; break; }
+      if (action === "ended") { stoppedAt = "ended"; break; }
+      if (action === "wait-choice") { stoppedAt = "choice"; break; }
+      this.state.pc++;
+    }
+    return { reached: stoppedAt === "target", stoppedAt, steps };
+  }
+
   // 從指定場景與指令位置開始（供即時預覽「從這行試玩」；flags 從空白起算）
   async startAtScene(sceneId, pc = 0) {
     this.state = this.#createFreshState();
@@ -265,7 +315,8 @@ export class StoryEngine {
       }
 
       case "ending": {
-        this.#unlockEnding(ins);
+        // 靜態求值（編輯器預覽）不可污染玩家的結局圖鑑
+        if (!this.evaluating) this.#unlockEnding(ins);
         if (this.onEnding) {
           await this.onEnding(ins);
         }
@@ -463,13 +514,18 @@ export class StoryEngine {
   // ============ 結局圖鑑 ============
 
   #unlockEnding(endingIns) {
-    const key = `galgame.endings.${this.storyMeta.id}`;
-    const unlocked = JSON.parse(localStorage.getItem(key) || "{}");
-    unlocked[endingIns.id] = {
-      title: endingIns.title,
-      unlockedAt: Date.now(),
-    };
-    localStorage.setItem(key, JSON.stringify(unlocked));
+    if (typeof localStorage === "undefined") return;   // 非瀏覽器環境（測試/工具）
+    try {
+      const key = `galgame.endings.${this.storyMeta.id}`;
+      const unlocked = JSON.parse(localStorage.getItem(key) || "{}");
+      unlocked[endingIns.id] = {
+        title: endingIns.title,
+        unlockedAt: Date.now(),
+      };
+      localStorage.setItem(key, JSON.stringify(unlocked));
+    } catch (e) {
+      console.warn("結局圖鑑寫入失敗", e);
+    }
   }
 
   // 場景內容雜湊（FNV-1a 32-bit），偵測存檔後劇本是否被修改

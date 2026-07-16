@@ -29,6 +29,7 @@ export class GameRuntime {
     this.dom = dom;
     this.storyMeta = storyMeta;
     this.onEndingCb = onEnding;
+    this.instant = false;   // 靜態求值模式：不播動畫、不出聲、不等待
 
     this.textBox = new TextBox({
       contentEl: dom.textContent,
@@ -83,6 +84,23 @@ export class GameRuntime {
     return false;
   }
 
+  /**
+   * 切換靜態求值模式。指令語意不變，只把「呈現」變成瞬間完成：
+   * 時長歸零、關閉 CSS 轉場、靜音、跳過 wait 與瞬時特效。
+   */
+  setInstant(on) {
+    this.instant = !!on;
+    this.dom.characterLayer?.classList.toggle("instant", this.instant);
+    this.dom.backgroundLayer?.classList.toggle("instant", this.instant);
+    this.audio.setMuted(this.instant);
+  }
+
+  /** 依模式決定時長：靜態求值時一律 0 */
+  #d(ms) { return this.instant ? 0 : ms; }
+
+  /** 靜態求值到第 pc 條指令（畫面停在該點，不播放） */
+  evaluateTo(sceneId, pc) { return this.engine.evaluateTo(sceneId, pc); }
+
   /** 停止環境效果（離開遊戲畫面時呼叫） */
   stopAmbient() {
     this.audio.stopBgm(500);
@@ -93,10 +111,12 @@ export class GameRuntime {
   async #handleText(speaker, text) {
     if (speaker) this.characterLayer.setSpeaking(speaker);
     else this.characterLayer.clearSpeaking();
+    if (this.instant) { this.textBox.showInstant(speaker, text); return; }
     await this.textBox.showText(speaker, text);
   }
 
   async #handleChoice(options) {
+    if (this.instant) { this.choiceMenu.showStatic(options); return; }
     const idx = await this.choiceMenu.show(options);
     this.engine.selectChoice(idx);
   }
@@ -105,7 +125,7 @@ export class GameRuntime {
     const { name, args } = ins;
     switch (name) {
       case "bg": {
-        await this.backgroundLayer.change(args.positional[0], args.fade ?? 800);
+        await this.backgroundLayer.change(args.positional[0], this.#d(args.fade ?? 800));
         break;
       }
       case "show": {
@@ -121,8 +141,8 @@ export class GameRuntime {
       }
       case "hide": {
         const charName = args.positional[0];
-        if (charName === "all") await this.characterLayer.hideAll(args.fade ?? 400);
-        else await this.characterLayer.hide(charName, args.fade ?? 400);
+        if (charName === "all") await this.characterLayer.hideAll(this.#d(args.fade ?? 400));
+        else await this.characterLayer.hide(charName, this.#d(args.fade ?? 400));
         break;
       }
       case "move": {
@@ -140,23 +160,28 @@ export class GameRuntime {
         break;
       }
       case "bgm": {
+        if (this.instant) break;                       // 靜態求值不出聲
         await this.audio.playBgm(args.positional[0], { fadeIn: args.fade ?? 1000 });
         break;
       }
       case "bgm-stop":
       case "stopbgm": {
+        if (this.instant) break;
         await this.audio.stopBgm(args.fade ?? 500);
         break;
       }
       case "se": {
+        if (this.instant) break;
         this.audio.playSe(args.positional[0]);
         break;
       }
       case "wait": {
+        if (this.instant) break;                       // 靜態求值不等待
         await wait(parseInt(args.positional[0] || "500", 10));
         break;
       }
       case "shake": {
+        if (this.instant) break;                       // 瞬時特效在靜態求值中無意義
         if (this.effects) {
           const intensity = Number(args.positional[0]) || Number(args.intensity) || 8;
           const duration = args.duration ?? args.fade ?? 500;
@@ -165,6 +190,7 @@ export class GameRuntime {
         break;
       }
       case "flash": {
+        if (this.instant) break;
         if (this.effects) {
           const color = args.color || args.positional[0] || "#ffffff";
           const duration = args.duration ?? args.fade ?? 400;
@@ -173,17 +199,18 @@ export class GameRuntime {
         break;
       }
       case "tint": {
+        // 染色是「持續狀態」，靜態求值要保留，只是瞬間套用
         if (this.effects) {
           const color = args.color || args.positional[0] || "#000000";
           const opacity = args.opacity != null ? Number(args.opacity) : 0.4;
-          const duration = args.duration ?? args.fade ?? 600;
+          const duration = this.#d(args.duration ?? args.fade ?? 600);
           this.effects.tint({ color, opacity, duration });
         }
         break;
       }
       case "tint-clear":
       case "cleartint": {
-        if (this.effects) this.effects.clearTint({ duration: args.duration ?? args.fade ?? 600 });
+        if (this.effects) this.effects.clearTint({ duration: this.#d(args.duration ?? args.fade ?? 600) });
         break;
       }
       default:
@@ -192,11 +219,15 @@ export class GameRuntime {
   }
 
   async #handleSceneChange(sceneMeta) {
-    if (sceneMeta.background) await this.backgroundLayer.change(sceneMeta.background, 600);
-    if (sceneMeta.bgm) await this.audio.playBgm(sceneMeta.bgm, { fadeIn: 800 });
+    if (sceneMeta.background) await this.backgroundLayer.change(sceneMeta.background, this.#d(600));
+    if (sceneMeta.bgm && !this.instant) await this.audio.playBgm(sceneMeta.bgm, { fadeIn: 800 });
   }
 
   async #handleEnding(endingIns) {
+    if (this.instant) {
+      this.textBox.showInstant("", `—— 結局：${endingIns.title} ——`);
+      return;
+    }
     await wait(500);
     await this.textBox.showText("", `—— 結局：${endingIns.title} ——`);
     await wait(1500);

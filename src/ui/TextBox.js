@@ -51,6 +51,20 @@ export class TextBox {
     });
   }
 
+  /**
+   * 即時顯示（靜態求值用）：不跑打字機、不等待點擊。
+   * 與 showText 的差別只在「呈現方式」，內容語意相同。
+   */
+  showInstant(speaker, text) {
+    this.clearTimers();
+    this.isTyping = false;
+    this.onTypingComplete = null;
+    this.currentFullText = text;
+    this.speakerEl.textContent = speaker || "";
+    this.contentEl.textContent = text;
+    this.indicatorEl.classList.add("show");
+  }
+
   handleClick() {
     if (this.isTyping) {
       return false; // 文字還沒跑完，點擊無效

@@ -896,3 +896,13 @@ html, body {
   max-width: none;
   max-height: none;
 }
+
+
+/* ===================== 靜態求值模式（S3a）=====================
+   由 GameRuntime.setInstant 切換：關閉所有轉場，讓畫面瞬間到位。 */
+.char-layer.instant .char-slot,
+.char-layer.instant .char-slot img,
+.char-layer.instant .char-slot svg,
+.bg-layer.instant {
+  transition: none !important;
+}
