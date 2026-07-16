@@ -302,6 +302,15 @@ export class SceneParser {
   }
 
   /**
+   * 重建 if/elif/else/endif 的跳轉索引。
+   * parse() 內部會自動呼叫；從 JSON 還原 AST 時需手動呼叫（那些索引是推導值，不序列化）。
+   */
+  static link(instructions) {
+    this.#linkControlFlow(instructions);
+    return instructions;
+  }
+
+  /**
    * 建立 if/elif/else/endif 的跳轉索引
    */
   static #linkControlFlow(instructions) {
