@@ -16,6 +16,7 @@
 """
 
 import argparse
+import functools
 import http.server
 import socketserver
 
@@ -43,9 +44,12 @@ def main():
     ap = argparse.ArgumentParser(description="開發用靜態伺服器（不快取）")
     ap.add_argument("--port", type=int, default=8123)
     ap.add_argument("--bind", default="127.0.0.1")
+    ap.add_argument("--dir", default=None, help="服務的根目錄（預設：目前工作目錄）")
     args = ap.parse_args()
 
-    with ThreadingServer((args.bind, args.port), NoCacheHandler) as httpd:
+    handler = (functools.partial(NoCacheHandler, directory=args.dir)
+               if args.dir else NoCacheHandler)
+    with ThreadingServer((args.bind, args.port), handler) as httpd:
         print(f"開發伺服器（不快取）啟動：http://{args.bind}:{args.port}/")
         print("  遊戲：/index.html?story=demo_story    編輯器：/editor.html")
         print("  改完 .js 直接重整即可，不需要硬重整。Ctrl+C 結束。")

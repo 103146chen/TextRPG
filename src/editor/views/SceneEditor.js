@@ -11,7 +11,7 @@ export class SceneEditor {
     this.containerEl = containerEl;
     this.project = project;
     this.onPlayFrom = onPlayFrom;   // (sceneId, index) => void，實際播放
-    this.onManage = onManage;       // (tab) => void，開啟資料庫 Hub
+    this.onManage = onManage;       // (tab) => void，跳到對應的管理分頁
     this.onSelect = onSelect;       // (sceneId, index) => void，選取指令（靜態預覽跟隨）
     this.selectedIndex = null;
     this.currentSceneId = null;

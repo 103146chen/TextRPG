@@ -25,7 +25,7 @@ export class InstructionRow {
     this.onChange = onChange;
     this.onDelete = onDelete;
     this.onPlayFrom = onPlayFrom;   // 可選：(index) => void，「從這裡試玩」
-    this.onManage = onManage;       // 可選：(tab) => void，開啟資料庫 Hub 對應分頁
+    this.onManage = onManage;       // 可選：(tab) => void，跳到對應的管理分頁
     this.selected = selected;
     this.onSelect = onSelect;       // 可選：() => void，點列選取（靜態預覽跟隨）
     this.el = null;

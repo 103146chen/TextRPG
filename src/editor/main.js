@@ -10,7 +10,10 @@ import { PreviewPanel } from "./views/PreviewPanel.js";
 import { GraphView } from "./views/GraphView.js";
 import { LintPanel } from "./views/LintPanel.js";
 import { FlagInspector } from "./views/FlagInspector.js";
-import { StoryManager } from "./views/StoryManager.js";
+import { CharacterManager } from "./views/CharacterManager.js";
+import { FlagManager } from "./views/FlagManager.js";
+import { EndingManager } from "./views/EndingManager.js";
+import { ProjectSettings } from "./views/ProjectSettings.js";
 import { AssetPanel } from "./views/AssetPanel.js";
 import { PositionEditor } from "./views/PositionEditor.js";
 import { MemoryBackend } from "./core/MemoryBackend.js";
@@ -75,7 +78,12 @@ const flagInspector = new FlagInspector($("#flag-panel"), project, (sceneId, ind
   }, 100);
 });
 
-const storyManager = new StoryManager(project);
+// 原「資料庫 Hub」拆分後的常駐視圖（S4.5）：
+// 角色→資產頁、旗標/結局→敘事地圖、基本資訊→設定頁
+new CharacterManager($("#character-manager"), project);
+new FlagManager($("#var-manage"), project);
+new EndingManager($("#ending-manage"), project);
+new ProjectSettings($("#project-settings"), project);
 const assetPanel = new AssetPanel($("#asset-panel"), project);
 const positionEditor = new PositionEditor($("#position-editor"), project, {
   // 改完位置立刻在劇本頁的預覽看到（若目前選著某條指令）
@@ -295,7 +303,8 @@ $("#btn-delete-scene").addEventListener("click", async () => {
   }
 });
 
-// 「＋ 新增…」的統一入口：章節就地新增，其餘開資料庫 Hub
+// 「＋ 新增…」的統一入口：章節就地新增，其餘跳到對應的主分頁
+// （資料庫 Hub 已拆分：characters→資產頁「角色」、flags→敘事地圖、assets→資產頁）
 function handleManage(tab) {
   if (tab === "chapters") {
     if (!project.storyMeta) { toast("請先開啟專案", "error"); return; }
@@ -307,13 +316,11 @@ function handleManage(tab) {
     toast(`已新增章節：${id}`, "success");
     return;
   }
-  storyManager.open(tab);
+  if (!project.storyMeta) { toast("請先開啟專案", "error"); return; }
+  if (tab === "flags") { setPage("map"); setVarsTab("flags"); return; }
+  if (tab === "characters") { setPage("assets"); setAssetView("characters"); return; }
+  if (tab === "assets") { setPage("assets"); setAssetView("files"); return; }
 }
-
-$("#btn-story-settings").addEventListener("click", () => {
-  if (!fs.rootHandle) { toast("請先開啟專案", "error"); return; }
-  storyManager.open();
-});
 
 // 頂部主分頁
 document.querySelectorAll(".main-tab").forEach((tab) => {
@@ -333,14 +340,28 @@ $("#source-text").addEventListener("input", () => {
   setSourceStatus(isSourceDirty() ? "有未套用的變更" : "", isSourceDirty() ? "err" : "");
 });
 
-// 資產頁分類（資產檔案 / 位置與錨點）
+// 資產頁分類（資產檔案 / 角色 / 位置與錨點）
+const ASSET_VIEWS = { files: "#asset-panel", characters: "#character-manager", positions: "#position-editor" };
+function setAssetView(view) {
+  document.querySelectorAll(".asset-nav-btn").forEach((b) =>
+    b.classList.toggle("active", b.dataset.assetView === view));
+  for (const [v, sel] of Object.entries(ASSET_VIEWS)) {
+    $(sel).style.display = v === view ? "" : "none";
+  }
+}
 document.querySelectorAll(".asset-nav-btn").forEach((btn) => {
-  btn.addEventListener("click", () => {
-    const view = btn.dataset.assetView;
-    document.querySelectorAll(".asset-nav-btn").forEach((b) => b.classList.toggle("active", b === btn));
-    $("#asset-panel").style.display = view === "files" ? "" : "none";
-    $("#position-editor").style.display = view === "positions" ? "" : "none";
-  });
+  btn.addEventListener("click", () => setAssetView(btn.dataset.assetView));
+});
+
+// 敘事地圖左欄分頁（變量管理 / 結局）
+function setVarsTab(tab) {
+  document.querySelectorAll(".vars-tab").forEach((b) =>
+    b.classList.toggle("active", b.dataset.vars === tab));
+  $("#vars-flags-panel").style.display = tab === "flags" ? "" : "none";
+  $("#vars-endings-panel").style.display = tab === "endings" ? "" : "none";
+}
+document.querySelectorAll(".vars-tab").forEach((btn) => {
+  btn.addEventListener("click", () => setVarsTab(btn.dataset.vars));
 });
 
 // 檢查器分頁（問題 / 檢查器）
