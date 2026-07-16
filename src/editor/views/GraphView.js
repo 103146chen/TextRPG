@@ -1,7 +1,20 @@
 // ============================================
 // GraphView.js
-// 場景關係圖：節點是場景，連線是 goto/next/choice
+// 敘事地圖：節點是場景，連線是 next / @goto / 選項分支。
+//
+// S5 升級：
+//   - 分支節點：選項直接列在節點內，各自從自己那一列拉出連線
+//   - 未引用場景：虛線紅框 + 徽章（從起點 BFS 不可達）
+//   - 工具列：放大／縮小／適應畫面／1:1
+//   - 圖例改為 HTML 浮層（不再跟著畫布平移縮放）
 // ============================================
+
+const NODE_W = 200;
+const BASE_H = 66;      // 標題 + id + 統計列
+const ROW_H = 16;       // 每列選項高度
+const MAX_ROWS = 5;     // 節點內最多列出的選項數（超過折疊成一列）
+const X_GAP = 40;
+const Y_GAP = 110;
 
 export class GraphView {
   constructor(containerEl, project, onSelectScene) {
@@ -20,52 +33,108 @@ export class GraphView {
     this.containerEl.innerHTML = "";
     this.containerEl.className = "graph-view";
 
+    if (!this.project.storyMeta || this.project.getAllSceneIds().length === 0) {
+      this.containerEl.innerHTML = `<div class="graph-empty">開啟專案後，這裡會顯示場景之間的分支結構</div>`;
+      return;
+    }
+
     const layout = this.#computeLayout();
     const svg = this.#renderSvg(layout);
     this.containerEl.appendChild(svg);
 
-    this.#setupPanZoom(svg);
+    const api = this.#setupPanZoom(svg, layout);
+    this.containerEl.appendChild(this.#renderToolbar(api));
+    this.containerEl.appendChild(this.#renderLegend());
+
+    // 初次渲染直接適應畫面，大型劇本不用先手動縮
+    api.fit();
+  }
+
+  // ==================== 資料蒐集 ====================
+
+  /** 場景內所有選項列（含沒有 goto 的場內分支，顯示但不拉線） */
+  #collectOptions(scene) {
+    const rows = [];
+    for (const ins of scene.instructions) {
+      if (ins.type !== "choice") continue;
+      for (const opt of ins.options) {
+        const target = opt.goto && this.project.getScene(opt.goto) ? opt.goto : null;
+        rows.push({ text: opt.text || "(選項)", target });
+      }
+    }
+    return rows;
+  }
+
+  /** 節點高度：基礎 + 選項列（超過 MAX_ROWS 折疊成「…還有 N 個」一列） */
+  #shownRows(scene) {
+    const opts = this.#collectOptions(scene);
+    if (opts.length <= MAX_ROWS) return { rows: opts, more: 0 };
+    return { rows: opts.slice(0, MAX_ROWS), more: opts.length - MAX_ROWS };
+  }
+
+  #nodeHeight(scene) {
+    const { rows, more } = this.#shownRows(scene);
+    const n = rows.length + (more ? 1 : 0);
+    return BASE_H + (n ? n * ROW_H + 8 : 6);
+  }
+
+  /** next / @goto 邊（選項邊另外從選項列產生） */
+  #getFlowEdges(scene) {
+    const edges = [];
+    const seen = new Set();
+    const add = (target, type) => {
+      const key = `${target}|${type}`;
+      if (seen.has(key)) return;
+      seen.add(key);
+      edges.push({ target, type });
+    };
+    if (scene.meta.next && this.project.getScene(scene.meta.next)) add(scene.meta.next, "next");
+    for (const ins of scene.instructions) {
+      if (ins.type === "goto" && ins.target && this.project.getScene(ins.target)) {
+        add(ins.target, "goto");
+      }
+    }
+    return edges;
+  }
+
+  /** 全部出邊（含選項），供 BFS 與可達性分析 */
+  #getOutgoingTargets(scene) {
+    const t = this.#getFlowEdges(scene).map((e) => e.target);
+    for (const o of this.#collectOptions(scene)) if (o.target) t.push(o.target);
+    return t;
   }
 
   // ==================== 佈局演算 ====================
 
   /**
-   * 簡易 BFS 分層佈局：
-   * - 從 start 開始 BFS，每層放在同一個 y 座標
-   * - 同層節點水平分散
-   * - 無法到達的孤兒節點放在最下方
+   * 簡易 BFS 分層佈局：從 start 逐層往下，同層水平置中分散。
+   * 節點高度不再固定（選項列數不同），每層以該層最高者決定下一層的 y。
+   * 從起點不可達的場景放在最下層，虛線標示「未引用」。
    */
   #computeLayout() {
     const startId = this.project.storyMeta?.start;
     const allIds = this.project.getAllSceneIds();
-    const nodeWidth = 200;
-    const nodeHeight = 72;
-    const xGap = 40;
-    const yGap = 110;
 
-    const levels = new Map();  // sceneId -> 層級
-    const queue = startId ? [[startId, 0]] : [];
+    const levels = new Map();
+    const queue = startId && this.project.getScene(startId) ? [[startId, 0]] : [];
     const visited = new Set();
 
     while (queue.length > 0) {
       const [id, lv] = queue.shift();
       if (visited.has(id)) continue;
       visited.add(id);
-      // 若已有較小層級則保留較小的（拓撲往前）
       const existing = levels.get(id);
       levels.set(id, existing === undefined ? lv : Math.min(existing, lv));
 
       const scene = this.project.getScene(id);
       if (!scene) continue;
-      const nexts = this.#getOutgoingEdges(scene);
-      for (const e of nexts) {
-        if (allIds.includes(e.target) && !visited.has(e.target)) {
-          queue.push([e.target, lv + 1]);
-        }
+      for (const target of this.#getOutgoingTargets(scene)) {
+        if (!visited.has(target)) queue.push([target, lv + 1]);
       }
     }
 
-    // 無法到達的場景放在一個特別的層級（最大層級 + 1）
+    // 不可達場景 → 最下層（未引用）
+    const reachable = new Set(levels.keys());
     const maxLv = Math.max(-1, ...levels.values());
     const orphanLv = maxLv + 1;
     for (const id of allIds) {
@@ -78,90 +147,62 @@ export class GraphView {
       if (!byLevel.has(lv)) byLevel.set(lv, []);
       byLevel.get(lv).push(id);
     }
+    const sortedLevels = [...byLevel.keys()].sort((a, b) => a - b);
 
-    // 計算每個節點的座標
-    const positions = new Map();
+    // 每層 y = 前面各層「最高節點」的累計
+    const heights = new Map();
+    for (const id of allIds) heights.set(id, this.#nodeHeight(this.project.getScene(id)));
+
     let maxWidth = 0;
-    for (const [lv, ids] of byLevel) {
-      const totalW = ids.length * nodeWidth + (ids.length - 1) * xGap;
-      maxWidth = Math.max(maxWidth, totalW);
+    for (const ids of byLevel.values()) {
+      maxWidth = Math.max(maxWidth, ids.length * NODE_W + (ids.length - 1) * X_GAP);
     }
 
-    for (const [lv, ids] of byLevel) {
-      const totalW = ids.length * nodeWidth + (ids.length - 1) * xGap;
+    const positions = new Map();
+    let y = 40;
+    for (const lv of sortedLevels) {
+      const ids = byLevel.get(lv);
+      const totalW = ids.length * NODE_W + (ids.length - 1) * X_GAP;
       const startX = (maxWidth - totalW) / 2;
+      let levelMaxH = 0;
       ids.forEach((id, i) => {
+        const h = heights.get(id);
+        levelMaxH = Math.max(levelMaxH, h);
         positions.set(id, {
-          x: startX + i * (nodeWidth + xGap),
-          y: lv * (nodeHeight + yGap) + 40,
-          width: nodeWidth,
-          height: nodeHeight,
-          isOrphan: lv === orphanLv && !this.#isReachable(id),
+          x: startX + i * (NODE_W + X_GAP),
+          y,
+          width: NODE_W,
+          height: h,
+          isOrphan: !reachable.has(id),
         });
       });
+      y += levelMaxH + Y_GAP;
     }
 
-    // 收集所有邊
+    // 邊：流程邊（節點底部出發）＋ 選項邊（各自的選項列出發）
     const edges = [];
     for (const id of allIds) {
       const scene = this.project.getScene(id);
       if (!scene) continue;
-      for (const edge of this.#getOutgoingEdges(scene)) {
-        if (positions.has(edge.target)) {
-          edges.push({ from: id, ...edge });
-        }
+      for (const e of this.#getFlowEdges(scene)) {
+        if (positions.has(e.target)) edges.push({ from: id, target: e.target, type: e.type, row: null });
       }
+      const { rows } = this.#shownRows(scene);
+      const all = this.#collectOptions(scene);
+      all.forEach((opt, idx) => {
+        if (!opt.target || !positions.has(opt.target)) return;
+        // 前 MAX_ROWS 個從自己那一列出發；被折疊的從節點底部出發
+        edges.push({ from: id, target: opt.target, type: "choice", row: idx < rows.length ? idx : null });
+      });
     }
 
     return {
       positions,
       edges,
       width: Math.max(800, maxWidth + 80),
-      height: Math.max(400, (maxLv + 2) * (nodeHeight + yGap) + 80),
+      height: Math.max(400, y - Y_GAP + 80),
       startId,
     };
-  }
-
-  #getOutgoingEdges(scene) {
-    const edges = [];
-    const seen = new Set();
-    const add = (target, type, label) => {
-      const key = `${target}|${type}`;
-      if (seen.has(key)) return;
-      seen.add(key);
-      edges.push({ target, type, label });
-    };
-    if (scene.meta.next) add(scene.meta.next, "next", "");
-    for (const ins of scene.instructions) {
-      if (ins.type === "goto" && ins.target && this.project.getScene(ins.target)) {
-        add(ins.target, "goto", "");
-      }
-      if (ins.type === "choice") {
-        for (const opt of ins.options) {
-          if (opt.goto && this.project.getScene(opt.goto)) {
-            add(opt.goto, "choice", opt.text || "(選項)");
-          }
-        }
-      }
-    }
-    return edges;
-  }
-
-  #isReachable(sceneId) {
-    const start = this.project.storyMeta?.start;
-    if (!start) return false;
-    const visited = new Set();
-    const queue = [start];
-    while (queue.length > 0) {
-      const id = queue.shift();
-      if (id === sceneId) return true;
-      if (visited.has(id)) continue;
-      visited.add(id);
-      const sc = this.project.getScene(id);
-      if (!sc) continue;
-      for (const e of this.#getOutgoingEdges(sc)) queue.push(e.target);
-    }
-    return false;
   }
 
   // ==================== SVG 渲染 ====================
@@ -174,7 +215,6 @@ export class GraphView {
     svg.setAttribute("viewBox", `0 0 ${layout.width} ${layout.height}`);
     svg.style.cursor = "grab";
 
-    // defs：箭頭
     const defs = document.createElementNS(svgns, "defs");
     defs.innerHTML = `
       <marker id="arr-next" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
@@ -208,60 +248,53 @@ export class GraphView {
     }
     svg.appendChild(grid);
 
-    // 邊
+    // 邊（記下每條 path 連到哪兩個節點，供 hover 高亮）
     const edgesLayer = document.createElementNS(svgns, "g");
+    const edgesByScene = new Map();   // sceneId -> path[]
+    const linkEdge = (id, path) => {
+      if (!edgesByScene.has(id)) edgesByScene.set(id, []);
+      edgesByScene.get(id).push(path);
+    };
+
+    const styles = {
+      next:   { color: "#6b9dc0", dash: null,  marker: "arr-next" },
+      goto:   { color: "#a88bd4", dash: "2 3", marker: "arr-goto" },
+      choice: { color: "#d4a060", dash: "6 4", marker: "arr-choice" },
+    };
+
     for (const edge of layout.edges) {
       const from = layout.positions.get(edge.from);
       const to = layout.positions.get(edge.target);
       if (!from || !to) continue;
 
-      const x1 = from.x + from.width / 2;
-      const y1 = from.y + from.height;
       const x2 = to.x + to.width / 2;
       const y2 = to.y;
-
-      // 貝茲曲線
-      const cy = (y1 + y2) / 2;
       const path = document.createElementNS(svgns, "path");
-      path.setAttribute("d", `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${cy}, ${x2} ${y2}`);
-      path.setAttribute("fill", "none");
-      const styles = {
-        next:   { color: "#6b9dc0", dash: null, marker: "arr-next" },
-        goto:   { color: "#a88bd4", dash: "2 3", marker: "arr-goto" },
-        choice: { color: "#d4a060", dash: "6 4", marker: "arr-choice" },
-      };
+
+      if (edge.type === "choice" && edge.row != null) {
+        // 從自己那一列選項的右緣出發
+        const x1 = from.x + from.width;
+        const y1 = from.y + BASE_H + edge.row * ROW_H + ROW_H / 2 + 2;
+        const cy = Math.max(y1, y2 - 60);
+        path.setAttribute("d", `M ${x1} ${y1} C ${x1 + 60} ${y1}, ${x2} ${cy}, ${x2} ${y2}`);
+      } else {
+        // 節點底部中央出發
+        const x1 = from.x + from.width / 2;
+        const y1 = from.y + from.height;
+        const cy = (y1 + y2) / 2;
+        path.setAttribute("d", `M ${x1} ${y1} C ${x1} ${cy}, ${x2} ${cy}, ${x2} ${y2}`);
+      }
+
       const s = styles[edge.type] || styles.next;
+      path.setAttribute("fill", "none");
       path.setAttribute("stroke", s.color);
       path.setAttribute("stroke-width", "1.5");
       if (s.dash) path.setAttribute("stroke-dasharray", s.dash);
       path.setAttribute("marker-end", `url(#${s.marker})`);
-      path.setAttribute("opacity", "0.7");
+      path.setAttribute("opacity", "0.55");
       edgesLayer.appendChild(path);
-
-      // 選項文字標示（只在中點顯示）
-      if (edge.type === "choice" && edge.label) {
-        const mx = (x1 + x2) / 2;
-        const my = cy;
-        const text = document.createElementNS(svgns, "text");
-        text.setAttribute("x", mx);
-        text.setAttribute("y", my);
-        text.setAttribute("text-anchor", "middle");
-        text.setAttribute("fill", "#d4a060");
-        text.setAttribute("font-size", "11");
-        text.setAttribute("font-family", "sans-serif");
-        // 背景襯底讓文字可讀
-        const bg = document.createElementNS(svgns, "rect");
-        const approxW = Math.min(edge.label.length * 7 + 12, 180);
-        bg.setAttribute("x", mx - approxW / 2);
-        bg.setAttribute("y", my - 9);
-        bg.setAttribute("width", approxW);
-        bg.setAttribute("height", 14);
-        bg.setAttribute("fill", "#1a1d23");
-        bg.setAttribute("rx", "2");
-        edgesLayer.appendChild(bg);
-        text.textContent = edge.label.length > 20 ? edge.label.slice(0, 18) + "…" : edge.label;
-        edgesLayer.appendChild(text);
-      }
+      linkEdge(edge.from, path);
+      linkEdge(edge.target, path);
     }
     svg.appendChild(edgesLayer);
 
@@ -270,137 +303,146 @@ export class GraphView {
     for (const [sceneId, pos] of layout.positions) {
       const scene = this.project.getScene(sceneId);
       if (!scene) continue;
-
-      const g = document.createElementNS(svgns, "g");
-      g.setAttribute("transform", `translate(${pos.x}, ${pos.y})`);
-      g.style.cursor = "pointer";
-
-      const isStart = sceneId === layout.startId;
-      const hasEnding = scene.instructions.some(i => i.type === "ending");
-      const isDirty = scene.dirty;
-
-      // 節點主體
-      const rect = document.createElementNS(svgns, "rect");
-      rect.setAttribute("x", 0);
-      rect.setAttribute("y", 0);
-      rect.setAttribute("width", pos.width);
-      rect.setAttribute("height", pos.height);
-      rect.setAttribute("rx", 6);
-      if (pos.isOrphan) {
-        rect.setAttribute("fill", "#2a1a1a");
-        rect.setAttribute("stroke", "#d46565");
-      } else if (isStart) {
-        rect.setAttribute("fill", "#2a2618");
-        rect.setAttribute("stroke", "#d4a060");
-      } else if (hasEnding) {
-        rect.setAttribute("fill", "#1f2a26");
-        rect.setAttribute("stroke", "#a88bd4");
-      } else {
-        rect.setAttribute("fill", "#22262d");
-        rect.setAttribute("stroke", "#3a3f4a");
-      }
-      rect.setAttribute("stroke-width", "1.5");
-      g.appendChild(rect);
-
-      // 標題
-      const title = document.createElementNS(svgns, "text");
-      title.setAttribute("x", 12);
-      title.setAttribute("y", 24);
-      title.setAttribute("fill", "#e8e9ed");
-      title.setAttribute("font-size", "13");
-      title.setAttribute("font-weight", "500");
-      title.setAttribute("font-family", "sans-serif");
-      const titleText = scene.meta.title || sceneId;
-      title.textContent = titleText.length > 22 ? titleText.slice(0, 20) + "…" : titleText;
-      g.appendChild(title);
-
-      // ID
-      const idText = document.createElementNS(svgns, "text");
-      idText.setAttribute("x", 12);
-      idText.setAttribute("y", 42);
-      idText.setAttribute("fill", "#6b6f7a");
-      idText.setAttribute("font-size", "11");
-      idText.setAttribute("font-family", "monospace");
-      idText.textContent = sceneId;
-      g.appendChild(idText);
-
-      // 統計標示（選項數、指令數）
-      const stats = document.createElementNS(svgns, "text");
-      stats.setAttribute("x", 12);
-      stats.setAttribute("y", 60);
-      stats.setAttribute("fill", "#9ca0ab");
-      stats.setAttribute("font-size", "10");
-      stats.setAttribute("font-family", "monospace");
-      const choiceCount = scene.instructions.filter(i => i.type === "choice").length;
-      const insCount = scene.instructions.length;
-      stats.textContent = `${insCount} 指令${choiceCount > 0 ? ` · ${choiceCount} 選項` : ""}`;
-      g.appendChild(stats);
-
-      // 徽章：起點/結局/未存檔
-      if (isStart) {
-        const badge = this.#renderBadge("起點", "#d4a060", "#1a1d23");
-        badge.setAttribute("transform", `translate(${pos.width - 50}, 8)`);
-        g.appendChild(badge);
-      } else if (hasEnding) {
-        const badge = this.#renderBadge("結局", "#a88bd4", "#1a1d23");
-        badge.setAttribute("transform", `translate(${pos.width - 50}, 8)`);
-        g.appendChild(badge);
-      }
-      if (isDirty) {
-        const dot = document.createElementNS(svgns, "circle");
-        dot.setAttribute("cx", 8);
-        dot.setAttribute("cy", 8);
-        dot.setAttribute("r", 3.5);
-        dot.setAttribute("fill", "#d4a060");
-        g.appendChild(dot);
-      }
-
-      // 點擊事件
-      g.addEventListener("click", (e) => {
-        e.stopPropagation();
-        if (this.onSelectScene) this.onSelectScene(sceneId);
-      });
-
-      // hover 效果
-      g.addEventListener("mouseenter", () => {
-        rect.setAttribute("stroke-width", "2.5");
-      });
-      g.addEventListener("mouseleave", () => {
-        rect.setAttribute("stroke-width", "1.5");
-      });
-
-      nodesLayer.appendChild(g);
+      nodesLayer.appendChild(this.#renderNode(sceneId, scene, pos, layout, edgesByScene));
     }
     svg.appendChild(nodesLayer);
 
-    // 圖例
-    const legend = document.createElementNS(svgns, "g");
-    legend.setAttribute("transform", `translate(16, ${layout.height - 80})`);
-    legend.innerHTML = `
-      <rect x="0" y="0" width="200" height="68" fill="#22262d" stroke="#3a3f4a" rx="4"/>
-      <text x="10" y="18" fill="#e8e9ed" font-size="11" font-family="sans-serif" font-weight="500">圖例</text>
-      <line x1="10" y1="32" x2="40" y2="32" stroke="#6b9dc0" stroke-width="1.5"/>
-      <text x="48" y="35" fill="#9ca0ab" font-size="10" font-family="sans-serif">next (下一場景)</text>
-      <line x1="10" y1="46" x2="40" y2="46" stroke="#a88bd4" stroke-width="1.5" stroke-dasharray="2 3"/>
-      <text x="48" y="49" fill="#9ca0ab" font-size="10" font-family="sans-serif">@goto</text>
-      <line x1="10" y1="60" x2="40" y2="60" stroke="#d4a060" stroke-width="1.5" stroke-dasharray="6 4"/>
-      <text x="48" y="63" fill="#9ca0ab" font-size="10" font-family="sans-serif">選項分支</text>
-    `;
-    svg.appendChild(legend);
-
     return svg;
+  }
+
+  #renderNode(sceneId, scene, pos, layout, edgesByScene) {
+    const svgns = "http://www.w3.org/2000/svg";
+    const g = document.createElementNS(svgns, "g");
+    g.setAttribute("transform", `translate(${pos.x}, ${pos.y})`);
+    g.style.cursor = "pointer";
+
+    const isStart = sceneId === layout.startId;
+    const hasEnding = scene.instructions.some((i) => i.type === "ending");
+
+    const rect = document.createElementNS(svgns, "rect");
+    rect.setAttribute("x", 0);
+    rect.setAttribute("y", 0);
+    rect.setAttribute("width", pos.width);
+    rect.setAttribute("height", pos.height);
+    rect.setAttribute("rx", 6);
+    if (pos.isOrphan) {
+      // 未引用：虛線紅框，一眼看出「沒有任何路徑會走到這裡」
+      rect.setAttribute("fill", "#26211f");
+      rect.setAttribute("stroke", "#d46565");
+      rect.setAttribute("stroke-dasharray", "5 4");
+    } else if (isStart) {
+      rect.setAttribute("fill", "#2a2618");
+      rect.setAttribute("stroke", "#d4a060");
+    } else if (hasEnding) {
+      rect.setAttribute("fill", "#1f2a26");
+      rect.setAttribute("stroke", "#a88bd4");
+    } else {
+      rect.setAttribute("fill", "#22262d");
+      rect.setAttribute("stroke", "#3a3f4a");
+    }
+    rect.setAttribute("stroke-width", "1.5");
+    g.appendChild(rect);
+
+    const txt = (x, y, fill, size, content, { weight, family = "sans-serif" } = {}) => {
+      const t = document.createElementNS(svgns, "text");
+      t.setAttribute("x", x); t.setAttribute("y", y);
+      t.setAttribute("fill", fill);
+      t.setAttribute("font-size", size);
+      t.setAttribute("font-family", family);
+      if (weight) t.setAttribute("font-weight", weight);
+      t.textContent = content;
+      g.appendChild(t);
+      return t;
+    };
+
+    const titleText = scene.meta.title || sceneId;
+    txt(12, 22, "#e8e9ed", 13, titleText.length > 22 ? titleText.slice(0, 20) + "…" : titleText, { weight: "500" });
+    txt(12, 39, "#6b6f7a", 11, sceneId, { family: "monospace" });
+
+    const insCount = scene.instructions.length;
+    const optCount = this.#collectOptions(scene).length;
+    txt(12, 56, "#9ca0ab", 10, `${insCount} 指令${optCount > 0 ? ` · ${optCount} 選項` : ""}`, { family: "monospace" });
+
+    // 選項列：分支一目瞭然，各列右緣就是連線起點
+    const { rows, more } = this.#shownRows(scene);
+    if (rows.length) {
+      const sep = document.createElementNS(svgns, "line");
+      sep.setAttribute("x1", 8); sep.setAttribute("y1", BASE_H - 2);
+      sep.setAttribute("x2", pos.width - 8); sep.setAttribute("y2", BASE_H - 2);
+      sep.setAttribute("stroke", "#3a3f4a"); sep.setAttribute("stroke-width", "1");
+      g.appendChild(sep);
+
+      rows.forEach((opt, i) => {
+        const y = BASE_H + i * ROW_H + ROW_H / 2 + 6;
+        const label = opt.text.length > 13 ? opt.text.slice(0, 12) + "…" : opt.text;
+        // 有 goto 的亮橘＋右緣接點；場內分支灰字
+        txt(14, y, opt.target ? "#d4a060" : "#7d818c", 10, `◇ ${label}`);
+        if (opt.target) {
+          const dot = document.createElementNS(svgns, "circle");
+          dot.setAttribute("cx", pos.width);
+          dot.setAttribute("cy", BASE_H + i * ROW_H + ROW_H / 2 + 2);
+          dot.setAttribute("r", 2.5);
+          dot.setAttribute("fill", "#d4a060");
+          g.appendChild(dot);
+        }
+      });
+      if (more) {
+        txt(14, BASE_H + rows.length * ROW_H + ROW_H / 2 + 6, "#7d818c", 10, `…還有 ${more} 個選項`);
+      }
+    }
+
+    // 徽章
+    if (pos.isOrphan) {
+      const badge = this.#renderBadge("未引用", "#d46565", "#1a1d23");
+      badge.setAttribute("transform", `translate(${pos.width - 56}, 8)`);
+      g.appendChild(badge);
+    } else if (isStart) {
+      const badge = this.#renderBadge("起點", "#d4a060", "#1a1d23");
+      badge.setAttribute("transform", `translate(${pos.width - 50}, 8)`);
+      g.appendChild(badge);
+    } else if (hasEnding) {
+      const badge = this.#renderBadge("結局", "#a88bd4", "#1a1d23");
+      badge.setAttribute("transform", `translate(${pos.width - 50}, 8)`);
+      g.appendChild(badge);
+    }
+    if (scene.dirty) {
+      const dot = document.createElementNS(svgns, "circle");
+      dot.setAttribute("cx", 8); dot.setAttribute("cy", 8);
+      dot.setAttribute("r", 3.5);
+      dot.setAttribute("fill", "#d4a060");
+      g.appendChild(dot);
+    }
+
+    g.addEventListener("click", (e) => {
+      e.stopPropagation();
+      if (this.onSelectScene) this.onSelectScene(sceneId);
+    });
+
+    // hover：自己加粗，相連的邊高亮
+    const related = () => edgesByScene.get(sceneId) || [];
+    g.addEventListener("mouseenter", () => {
+      rect.setAttribute("stroke-width", "2.5");
+      for (const p of related()) { p.setAttribute("opacity", "1"); p.setAttribute("stroke-width", "2.5"); }
+    });
+    g.addEventListener("mouseleave", () => {
+      rect.setAttribute("stroke-width", "1.5");
+      for (const p of related()) { p.setAttribute("opacity", "0.55"); p.setAttribute("stroke-width", "1.5"); }
+    });
+
+    return g;
   }
 
   #renderBadge(text, bg, fg) {
     const svgns = "http://www.w3.org/2000/svg";
     const g = document.createElementNS(svgns, "g");
+    const w = text.length > 2 ? 44 : 38;
     const rect = document.createElementNS(svgns, "rect");
     rect.setAttribute("x", 0); rect.setAttribute("y", 0);
-    rect.setAttribute("width", 38); rect.setAttribute("height", 16);
+    rect.setAttribute("width", w); rect.setAttribute("height", 16);
     rect.setAttribute("rx", 2); rect.setAttribute("fill", bg);
     g.appendChild(rect);
     const t = document.createElementNS(svgns, "text");
-    t.setAttribute("x", 19); t.setAttribute("y", 12);
+    t.setAttribute("x", w / 2); t.setAttribute("y", 12);
     t.setAttribute("text-anchor", "middle");
     t.setAttribute("fill", fg);
     t.setAttribute("font-size", "10");
@@ -411,9 +453,44 @@ export class GraphView {
     return g;
   }
 
+  // ==================== 工具列與圖例（HTML 浮層）====================
+
+  #renderToolbar(api) {
+    const bar = document.createElement("div");
+    bar.className = "graph-toolbar";
+    const btn = (label, title, fn) => {
+      const b = document.createElement("button");
+      b.textContent = label;
+      b.title = title;
+      b.addEventListener("click", fn);
+      bar.appendChild(b);
+      return b;
+    };
+    btn("＋", "放大", () => api.zoomBy(1.25));
+    btn("－", "縮小", () => api.zoomBy(0.8));
+    btn("⤢", "適應畫面", () => api.fit());
+    btn("1:1", "原始大小", () => api.reset());
+    return bar;
+  }
+
+  #renderLegend() {
+    const box = document.createElement("div");
+    box.className = "graph-legend";
+    box.innerHTML = `
+      <div class="gl-title">圖例</div>
+      <div class="gl-row"><svg width="30" height="8"><line x1="0" y1="4" x2="30" y2="4" stroke="#6b9dc0" stroke-width="1.5"/></svg>next（下一場景）</div>
+      <div class="gl-row"><svg width="30" height="8"><line x1="0" y1="4" x2="30" y2="4" stroke="#a88bd4" stroke-width="1.5" stroke-dasharray="2 3"/></svg>@goto 跳轉</div>
+      <div class="gl-row"><svg width="30" height="8"><line x1="0" y1="4" x2="30" y2="4" stroke="#d4a060" stroke-width="1.5" stroke-dasharray="6 4"/></svg>選項分支</div>
+      <div class="gl-row"><span class="gl-swatch" style="border-color:#d4a060"></span>起點</div>
+      <div class="gl-row"><span class="gl-swatch" style="border-color:#a88bd4"></span>含結局</div>
+      <div class="gl-row"><span class="gl-swatch" style="border-color:#d46565;border-style:dashed"></span>未引用（不可達）</div>
+    `;
+    return box;
+  }
+
   // ==================== 平移/縮放 ====================
 
-  #setupPanZoom(svg) {
+  #setupPanZoom(svg, layout) {
     // 記錄原始 viewBox 尺寸，之後縮放都以此為基準，避免公式累積誤差
     const origW = svg.viewBox.baseVal.width;
     const origH = svg.viewBox.baseVal.height;
@@ -424,14 +501,12 @@ export class GraphView {
         `${-state.panX} ${-state.panY} ${origW / state.scale} ${origH / state.scale}`);
     };
 
-    // AbortController 讓 render() 重新呼叫時能清除舊監聽
     const abort = new AbortController();
     const { signal } = abort;
     this._panZoomAbort = abort;
 
     svg.addEventListener("mousedown", (e) => {
-      // 只在背景（svg 元素本身）啟動平移，不影響節點點擊
-      if (e.target === svg || e.target.closest?.('.graph-grid')) {
+      if (e.target === svg || e.target.closest?.(".graph-grid")) {
         state.isPanning = true;
         state.startX = e.clientX;
         state.startY = e.clientY;
@@ -444,12 +519,9 @@ export class GraphView {
       if (!state.isPanning) return;
       const dx = e.clientX - state.startX;
       const dy = e.clientY - state.startY;
-      // 將螢幕像素轉換為 viewBox 座標單位（縮放後平移速度保持一致）
       const svgRect = svg.getBoundingClientRect();
-      const vbW = origW / state.scale;
-      const vbH = origH / state.scale;
-      state.panX += dx * (vbW / svgRect.width);
-      state.panY += dy * (vbH / svgRect.height);
+      state.panX += dx * ((origW / state.scale) / svgRect.width);
+      state.panY += dy * ((origH / state.scale) / svgRect.height);
       state.startX = e.clientX;
       state.startY = e.clientY;
       updateTransform();
@@ -462,22 +534,51 @@ export class GraphView {
       }
     }, { signal });
 
-    svg.addEventListener("wheel", (e) => {
-      e.preventDefault();
-      // 縮放至滑鼠游標位置，速度降低為原本的 0.6 倍
-      const delta = -e.deltaY * 0.0006;
-      const newScale = Math.max(0.2, Math.min(4, state.scale * (1 + delta)));
-      const svgRect = svg.getBoundingClientRect();
-      const mouseRatioX = (e.clientX - svgRect.left) / svgRect.width;
-      const mouseRatioY = (e.clientY - svgRect.top) / svgRect.height;
-      const oldVbW = origW / state.scale;
-      const oldVbH = origH / state.scale;
-      const newVbW = origW / newScale;
-      const newVbH = origH / newScale;
-      state.panX += mouseRatioX * (newVbW - oldVbW);
-      state.panY += mouseRatioY * (newVbH - oldVbH);
+    // 以「viewBox 中某比例點」為中心的縮放（滑鼠位置或畫面中央）
+    const zoomAt = (newScale, ratioX, ratioY) => {
+      newScale = Math.max(0.15, Math.min(4, newScale));
+      const oldVbW = origW / state.scale, oldVbH = origH / state.scale;
+      const newVbW = origW / newScale, newVbH = origH / newScale;
+      state.panX += ratioX * (newVbW - oldVbW);
+      state.panY += ratioY * (newVbH - oldVbH);
       state.scale = newScale;
       updateTransform();
+    };
+
+    svg.addEventListener("wheel", (e) => {
+      e.preventDefault();
+      const delta = -e.deltaY * 0.0006;
+      const svgRect = svg.getBoundingClientRect();
+      zoomAt(state.scale * (1 + delta),
+        (e.clientX - svgRect.left) / svgRect.width,
+        (e.clientY - svgRect.top) / svgRect.height);
     }, { passive: false });
+
+    // ---- 工具列 API ----
+    const api = {
+      zoomBy: (f) => zoomAt(state.scale * f, 0.5, 0.5),
+      reset: () => { state.scale = 1; state.panX = 0; state.panY = 0; updateTransform(); },
+      fit: () => {
+        // 內容外接框 + 邊距，挑一個能整個放進 viewBox 的縮放
+        let minX = Infinity, minY = Infinity, maxX = -Infinity, maxY = -Infinity;
+        for (const pos of layout.positions.values()) {
+          minX = Math.min(minX, pos.x);
+          minY = Math.min(minY, pos.y);
+          maxX = Math.max(maxX, pos.x + pos.width);
+          maxY = Math.max(maxY, pos.y + pos.height);
+        }
+        if (!isFinite(minX)) return;
+        const pad = 60;
+        const bw = maxX - minX + pad * 2;
+        const bh = maxY - minY + pad * 2;
+        // 小圖不放大超過 1.2 倍，避免兩三個節點糊滿全螢幕
+        state.scale = Math.min(origW / bw, origH / bh, 1.2);
+        const vbW = origW / state.scale, vbH = origH / state.scale;
+        state.panX = -(minX - pad - (vbW - bw) / 2);
+        state.panY = -(minY - pad - (vbH - bh) / 2);
+        updateTransform();
+      },
+    };
+    return api;
   }
 }

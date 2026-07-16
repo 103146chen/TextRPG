@@ -1,9 +1,10 @@
 // ============================================
 // FlagManager.js
-// 變量（旗標）登記管理：型別／預設值／用途／說明，
-// 以及「劇本用到但未登記」的一鍵補登。
+// 變量（旗標）管理：登記 CRUD ＋ 搜尋 ＋ 用途/型別篩選（S5）。
 // 常駐於「敘事地圖」頁的變量管理欄，與 FlagInspector（使用情況）同欄。
-// 原為資料庫 Hub 的「旗標」分頁；S5 會在此基礎上加搜尋與篩選。
+//
+// 搜尋與篩選只重繪清單區（#renderList），不動搜尋框本身——
+// 否則每敲一個字輸入框就被重建、焦點消失。
 // ============================================
 
 import { field, subLabel, escapeHtml } from "../widgets/formFields.js";
@@ -15,11 +16,15 @@ const EVENTS = new Set([
   "instruction-deleted", "scene-created", "scene-deleted",
 ]);
 
+const USAGE_LABELS = { counter: "計數", switch: "開關", mark: "標記", other: "其他" };
+
 export class FlagManager {
   constructor(containerEl, project) {
     this.containerEl = containerEl;
     this.project = project;
     this._writing = false;
+    this.search = "";          // 搜尋字串（名稱/說明）
+    this.usageFilter = "all";  // all | counter | switch | mark | other
     this._unsub = project.subscribe((t) => {
       if (this._writing) return;
       if (EVENTS.has(t)) this.render();
@@ -30,6 +35,18 @@ export class FlagManager {
   destroy() { this._unsub?.(); this.containerEl.innerHTML = ""; }
 
   #write(fn) { this._writing = true; try { fn(); } finally { this._writing = false; } }
+
+  #filtered() {
+    const flags = this.project.getDeclaredFlags();
+    const q = this.search.trim().toLowerCase();
+    return Object.keys(flags).filter((name) => {
+      const def = flags[name];
+      if (this.usageFilter !== "all" && (def.usage || "counter") !== this.usageFilter) return false;
+      if (!q) return true;
+      return name.toLowerCase().includes(q) ||
+             String(def.label || "").toLowerCase().includes(q);
+    });
+  }
 
   render() {
     this.containerEl.innerHTML = "";
@@ -44,28 +61,44 @@ export class FlagManager {
       return;
     }
 
-    const flags = this.project.getDeclaredFlags();
-    const names = Object.keys(flags);
-    head.innerHTML = `<span>旗標登記</span><span class="panel-count">${names.length}</span>`;
+    const total = Object.keys(this.project.getDeclaredFlags()).length;
+    head.innerHTML = `<span>旗標登記</span><span class="panel-count">${total}</span>`;
 
     const body = document.createElement("div");
     body.className = "mgr-panel flag-mgr-body";
 
-    const intro = subLabel("登記後，寫劇本（@set、選項、條件）時可下拉選取，並在開場套用預設值。");
-    intro.style.display = "block";
-    intro.style.marginBottom = "10px";
-    body.appendChild(intro);
+    // ---- 搜尋 + 篩選（S5）----
+    const controls = document.createElement("div");
+    controls.className = "flag-controls";
 
-    const list = document.createElement("div");
-    list.className = "flag-decl-list";
-    if (names.length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "panel-empty";
-      empty.textContent = "還沒登記任何旗標。";
-      list.appendChild(empty);
+    const searchIn = document.createElement("input");
+    searchIn.type = "search";
+    searchIn.placeholder = "搜尋名稱或說明…";
+    searchIn.value = this.search;
+    searchIn.addEventListener("input", () => {
+      this.search = searchIn.value;
+      this.#renderList();
+    });
+    controls.appendChild(searchIn);
+
+    const usageSel = document.createElement("select");
+    for (const [val, txt] of [["all", "全部用途"], ["counter", "計數"], ["switch", "開關"], ["mark", "標記"], ["other", "其他"]]) {
+      const o = document.createElement("option");
+      o.value = val; o.textContent = txt;
+      if (this.usageFilter === val) o.selected = true;
+      usageSel.appendChild(o);
     }
-    for (const name of names) list.appendChild(this.#renderFlagRow(name, flags[name]));
-    body.appendChild(list);
+    usageSel.addEventListener("change", () => {
+      this.usageFilter = usageSel.value;
+      this.#renderList();
+    });
+    controls.appendChild(usageSel);
+    body.appendChild(controls);
+
+    // ---- 清單區（搜尋/篩選只重繪這一塊）----
+    this.listHost = document.createElement("div");
+    body.appendChild(this.listHost);
+    this.#renderList();
 
     const addBtn = document.createElement("button");
     addBtn.className = "tb-btn";
@@ -80,8 +113,8 @@ export class FlagManager {
     });
     body.appendChild(addBtn);
 
-    // 劇本用到但未登記的旗標 → 一鍵補登
-    const declared = new Set(names);
+    // 劇本用到但未登記的旗標 → 一鍵補登（不受搜尋/篩選影響）
+    const declared = new Set(Object.keys(this.project.getDeclaredFlags()));
     const missing = [...this.project.collectUsedFlagNames()].filter((n) => !declared.has(n));
     if (missing.length > 0) {
       const warn = document.createElement("div");
@@ -103,13 +136,48 @@ export class FlagManager {
     this.containerEl.appendChild(body);
   }
 
+  #renderList() {
+    this.listHost.innerHTML = "";
+    const flags = this.project.getDeclaredFlags();
+    const names = this.#filtered();
+    const total = Object.keys(flags).length;
+    const filtering = this.search.trim() !== "" || this.usageFilter !== "all";
+
+    if (filtering) {
+      const info = subLabel(`顯示 ${names.length} / ${total} 個`);
+      info.style.display = "block";
+      info.style.marginBottom = "8px";
+      this.listHost.appendChild(info);
+    } else if (total === 0) {
+      const intro = subLabel("登記後，寫劇本（@set、選項、條件）時可下拉選取，並在開場套用預設值。");
+      intro.style.display = "block";
+      intro.style.marginBottom = "10px";
+      this.listHost.appendChild(intro);
+    }
+
+    const list = document.createElement("div");
+    list.className = "flag-decl-list";
+    if (names.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "panel-empty";
+      empty.textContent = total === 0 ? "還沒登記任何旗標。" : "沒有符合搜尋/篩選的旗標。";
+      list.appendChild(empty);
+    }
+    for (const name of names) list.appendChild(this.#renderFlagRow(name, flags[name]));
+    this.listHost.appendChild(list);
+  }
+
   #renderFlagRow(name, def) {
     const row = document.createElement("div");
     row.className = "flag-decl-row char-row";
 
     const header = document.createElement("div");
     header.className = "char-row-header";
-    header.innerHTML = `<strong class="char-name">${escapeHtml(name)}</strong><button class="char-delete" title="刪除旗標登記">×</button>`;
+    const usageTag = USAGE_LABELS[def.usage || "counter"] || "計數";
+    header.innerHTML =
+      `<strong class="char-name">${escapeHtml(name)}</strong>` +
+      `<span class="flag-usage-tag">${usageTag}</span>` +
+      `<button class="char-delete" title="刪除旗標登記">×</button>`;
     header.querySelector(".char-delete").addEventListener("click", () => {
       if (!confirm(`刪除旗標登記「${name}」？\n不會刪除劇本中的引用。`)) return;
       this.#write(() => this.project.removeFlag(name));
@@ -132,7 +200,7 @@ export class FlagManager {
       else if (typeSel.value === "boolean" && typeof nd.default !== "boolean") nd.default = false;
       else if (typeSel.value === "string" && typeof nd.default !== "string") nd.default = "";
       this.#write(() => this.project.upsertFlag(name, nd));
-      this.render();   // 型別變了，預設值輸入元件要換
+      this.#renderList();   // 型別變了，預設值輸入元件要換
     });
     row.appendChild(field("型別", typeSel));
 
@@ -145,36 +213,45 @@ export class FlagManager {
         if (String(def.default) === val) o.selected = true;
         defInput.appendChild(o);
       }
-      defInput.addEventListener("change", () =>
-        this.#write(() => this.project.upsertFlag(name, { ...def, default: defInput.value === "true" })));
+      defInput.addEventListener("change", () => {
+        def = { ...def, default: defInput.value === "true" };
+        this.#write(() => this.project.upsertFlag(name, def));
+      });
     } else {
       defInput = document.createElement("input");
       defInput.type = type === "number" ? "number" : "text";
       defInput.value = def.default ?? (type === "number" ? 0 : "");
       defInput.addEventListener("change", () => {
         const v = type === "number" ? (parseFloat(defInput.value) || 0) : defInput.value;
-        this.#write(() => this.project.upsertFlag(name, { ...def, default: v }));
+        def = { ...def, default: v };
+        this.#write(() => this.project.upsertFlag(name, def));
       });
     }
     row.appendChild(field("預設值", defInput));
 
-    // 用途（純標註，供變量管理篩選與檢查；不影響引擎）
+    // 用途（純標註，供篩選與檢查；不影響引擎）
     const usageSel = document.createElement("select");
-    for (const [val, txt] of [["counter", "計數"], ["switch", "開關"], ["mark", "標記"], ["other", "其他"]]) {
+    for (const [val, txt] of Object.entries(USAGE_LABELS)) {
       const o = document.createElement("option");
       o.value = val; o.textContent = txt;
       if ((def.usage || "counter") === val) o.selected = true;
       usageSel.appendChild(o);
     }
-    usageSel.addEventListener("change", () =>
-      this.#write(() => this.project.upsertFlag(name, { ...def, usage: usageSel.value })));
+    usageSel.addEventListener("change", () => {
+      def = { ...def, usage: usageSel.value };
+      this.#write(() => this.project.upsertFlag(name, def));
+      // 更新列首的用途標籤（不整列重建，保住焦點）
+      header.querySelector(".flag-usage-tag").textContent = USAGE_LABELS[usageSel.value];
+    });
     row.appendChild(field("用途", usageSel));
 
     const labelInput = document.createElement("input");
     labelInput.value = def.label || "";
     labelInput.placeholder = "說明（例：好感度）";
-    labelInput.addEventListener("change", () =>
-      this.#write(() => this.project.upsertFlag(name, { ...def, label: labelInput.value })));
+    labelInput.addEventListener("change", () => {
+      def = { ...def, label: labelInput.value };
+      this.#write(() => this.project.upsertFlag(name, def));
+    });
     row.appendChild(field("說明", labelInput));
 
     return row;

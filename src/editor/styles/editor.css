@@ -694,6 +694,7 @@ input, textarea, select {
    ============================================ */
 
 .graph-view {
+  position: relative;   /* 工具列與圖例浮層的定位基準 */
   width: 100%;
   height: 100%;
   overflow: hidden;
@@ -1711,3 +1712,92 @@ input, textarea, select {
   margin: 12px 0 8px;
 }
 .settings-sub { margin-top: 36px; }
+
+/* S5：敘事地圖工具列 / 圖例浮層 / 變量搜尋篩選 */
+.graph-toolbar {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  display: flex;
+  gap: 4px;
+  background: rgba(34, 38, 45, 0.92);
+  border: 1px solid var(--e-border-2);
+  border-radius: 5px;
+  padding: 4px;
+}
+.graph-toolbar button {
+  min-width: 30px;
+  height: 28px;
+  padding: 0 8px;
+  background: transparent;
+  border: none;
+  border-radius: 3px;
+  color: var(--e-text-dim);
+  font-size: 13px;
+  cursor: pointer;
+}
+.graph-toolbar button:hover { background: var(--e-bg-4); color: var(--e-text); }
+
+.graph-legend {
+  position: absolute;
+  left: 12px;
+  bottom: 12px;
+  background: rgba(34, 38, 45, 0.92);
+  border: 1px solid var(--e-border-2);
+  border-radius: 5px;
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--e-text-dim);
+  pointer-events: none;
+}
+.graph-legend .gl-title { color: var(--e-text); font-weight: 600; margin-bottom: 6px; }
+.graph-legend .gl-row { display: flex; align-items: center; gap: 8px; margin: 3px 0; }
+.graph-legend .gl-swatch {
+  display: inline-block;
+  width: 26px; height: 12px;
+  border: 1.5px solid;
+  border-radius: 3px;
+  background: transparent;
+}
+
+.graph-empty {
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--e-text-faded);
+  font-size: 13px;
+}
+
+.flag-controls {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.flag-controls input[type="search"] {
+  flex: 1;
+  min-width: 0;
+  background: var(--e-bg);
+  border: 1px solid var(--e-border);
+  border-radius: 3px;
+  padding: 5px 8px;
+  font-size: 12px;
+}
+.flag-controls input[type="search"]:focus { outline: none; border-color: var(--e-accent); }
+.flag-controls select {
+  background: var(--e-bg);
+  border: 1px solid var(--e-border);
+  border-radius: 3px;
+  font-size: 12px;
+  padding: 0 4px;
+}
+
+.flag-usage-tag {
+  font-size: 10px;
+  color: var(--e-accent);
+  border: 1px solid var(--e-border-2);
+  border-radius: 3px;
+  padding: 1px 6px;
+  margin-left: auto;
+  margin-right: 8px;
+}
