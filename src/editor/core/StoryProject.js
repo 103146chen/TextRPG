@@ -282,6 +282,83 @@ export class StoryProject {
     this.notify("scene-meta-updated", { sceneId });
   }
 
+  // ==================== 資產引用追蹤 ====================
+
+  /**
+   * 找出某個資產檔被引用的所有位置。
+   *
+   * 注意「立繪」是間接引用：劇本的 @show 指的是**角色名**而非檔名，
+   * 檔案是透過 story.json 的 characters[名].default / emotions[*] 才被用到。
+   * 若照別的類型那樣去比對指令參數，會把所有立繪誤判成游離。
+   *
+   * @returns {Array<{sceneId?:string, index?:number, where?:string, detail:string}>}
+   */
+  findAssetUsages(kind, file) {
+    const hits = [];
+
+    if (kind === "characters") {
+      for (const [name, data] of Object.entries(this.storyMeta?.characters || {})) {
+        if (data?.default === file) {
+          hits.push({ where: "story.json", detail: `角色「${name}」的預設立繪` });
+        }
+        for (const [emo, f] of Object.entries(data?.emotions || {})) {
+          if (f === file) hits.push({ where: "story.json", detail: `角色「${name}」的表情「${emo}」` });
+        }
+      }
+      return hits;
+    }
+
+    for (const [sceneId, sc] of this.scenes) {
+      if (kind === "backgrounds" && sc.meta.background === file) {
+        hits.push({ sceneId, index: null, detail: "場景 front matter 的背景" });
+      }
+      if (kind === "bgm" && sc.meta.bgm === file) {
+        hits.push({ sceneId, index: null, detail: "場景 front matter 的 BGM" });
+      }
+      sc.instructions.forEach((ins, index) => {
+        if (ins.type !== "directive") return;
+        const p0 = (ins.args?.positional || [])[0];
+        if (p0 !== file) return;
+        if (kind === "backgrounds" && ins.name === "bg") hits.push({ sceneId, index, detail: "@bg" });
+        if (kind === "bgm" && ins.name === "bgm") hits.push({ sceneId, index, detail: "@bgm" });
+        if (kind === "se" && ins.name === "se") hits.push({ sceneId, index, detail: "@se" });
+      });
+    }
+    return hits;
+  }
+
+  /** 各類型中沒有任何引用的資產（游離） */
+  findOrphanAssets() {
+    const out = {};
+    for (const kind of ["backgrounds", "characters", "bgm", "se"]) {
+      out[kind] = (this.resources[kind] || []).filter(
+        (f) => this.findAssetUsages(kind, f).length === 0
+      );
+    }
+    return out;
+  }
+
+  /** 找出角色「名稱」被劇本引用的位置（@show/@hide/@move 與對話 speaker） */
+  findCharacterUsages(name) {
+    const hits = [];
+    for (const [sceneId, sc] of this.scenes) {
+      sc.instructions.forEach((ins, index) => {
+        if (ins.type === "text" && ins.speaker) {
+          // speaker 可能寫成「小鈴(心聲)」，取括號前比對
+          const base = String(ins.speaker).replace(/[（(].*$/, "").trim();
+          if (base === name) hits.push({ sceneId, index, detail: `對話：${ins.speaker}` });
+          return;
+        }
+        if (ins.type !== "directive") return;
+        if (!["show", "hide", "move"].includes(ins.name)) return;
+        if ((ins.args?.positional || [])[0] === name) {
+          hits.push({ sceneId, index, detail: `@${ins.name}` });
+        }
+      });
+    }
+    return hits;
+  }
+
   // ==================== 章節（輕量分層）====================
   // story.json 的 chapters: [{ id, title, scenes: [sceneId...] }]
   // 場景檔與 DSL 完全不變；未列入任何章節的場景視為「未分類」。

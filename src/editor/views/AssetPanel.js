@@ -42,6 +42,9 @@ export class AssetPanel {
       return;
     }
 
+    // 一次算好游離清單，避免每個項目重算
+    this.orphans = this.project.findOrphanAssets?.() || {};
+
     for (const sec of SECTIONS) {
       this.containerEl.appendChild(this.#renderSection(sec));
     }
@@ -52,9 +55,11 @@ export class AssetPanel {
     const wrap = document.createElement("div");
     wrap.className = "asset-section";
 
+    const orphanCount = (this.orphans?.[sec.kind] || []).length;
     const head = document.createElement("div");
     head.className = "asset-section-head";
-    head.innerHTML = `<span>${sec.label}</span><span class="asset-count">${files.length}</span>`;
+    head.innerHTML = `<span>${sec.label}</span><span class="asset-count">${files.length}</span>` +
+      (orphanCount ? `<span class="asset-orphan-count" title="沒有任何地方引用">⚠ ${orphanCount} 個游離</span>` : "");
 
     // 匯入按鈕
     const importBtn = document.createElement("button");
@@ -103,9 +108,16 @@ export class AssetPanel {
   }
 
   #renderItem(sec, file) {
+    const usages = this.project.findAssetUsages?.(sec.kind, file) || [];
+    const isOrphan = usages.length === 0;
+
     const item = document.createElement("div");
-    item.className = "asset-item";
-    item.title = file;
+    item.className = "asset-item" + (isOrphan ? " orphan" : "");
+    item.title = isOrphan
+      ? `${file}\n\n⚠ 沒有任何地方引用`
+      : `${file}\n\n引用 ${usages.length} 處：\n` +
+        usages.slice(0, 8).map((u) => `· ${u.sceneId ? u.sceneId + " → " : ""}${u.detail}`).join("\n") +
+        (usages.length > 8 ? `\n…共 ${usages.length} 處` : "");
 
     if (sec.type === "image") {
       const img = document.createElement("img");
@@ -128,13 +140,25 @@ export class AssetPanel {
     name.textContent = file;
     item.appendChild(name);
 
+    const badge = document.createElement("div");
+    badge.className = "asset-usage" + (isOrphan ? " orphan" : "");
+    badge.textContent = isOrphan ? "⚠ 游離" : `${usages.length} 處引用`;
+    item.appendChild(badge);
+
     const del = document.createElement("button");
     del.className = "asset-del";
     del.textContent = "×";
     del.title = "刪除";
     del.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (!confirm(`刪除「${file}」？\n這會直接刪除檔案，無法復原。`)) return;
+      // 刪除前先講清楚影響範圍
+      const warn = usages.length
+        ? `「${file}」目前有 ${usages.length} 處引用：\n` +
+          usages.slice(0, 6).map((u) => `· ${u.sceneId ? u.sceneId + " → " : ""}${u.detail}`).join("\n") +
+          (usages.length > 6 ? `\n…共 ${usages.length} 處` : "") +
+          `\n\n刪除後這些地方會找不到檔案。確定刪除？`
+        : `刪除「${file}」？\n此檔案沒有任何地方引用。\n這會直接刪除檔案，無法復原。`;
+      if (!confirm(warn)) return;
       await this.project.deleteAsset(sec.kind, file);
     });
     item.appendChild(del);

@@ -1666,3 +1666,22 @@ input, textarea, select {
 .insp-field input:focus, .insp-field select:focus { outline: none; border-color: var(--e-accent); }
 .insp-xy { display: flex; gap: 6px; }
 .insp-xy input { flex: 1; }
+
+
+/* 資產引用追蹤／游離偵測（S4e） */
+.asset-orphan-count {
+  margin-left: 6px;
+  padding: 0 6px;
+  border-radius: 8px;
+  font-size: 10.5px;
+  color: #1a1d23;
+  background: var(--e-accent);
+}
+.asset-item.orphan { border-color: var(--e-accent); }
+.asset-usage {
+  width: 100%;
+  text-align: center;
+  font-size: 9.5px;
+  color: var(--e-text-faded);
+}
+.asset-usage.orphan { color: var(--e-accent); font-weight: 600; }
