@@ -136,24 +136,58 @@ export class PositionEditor {
     cross.innerHTML = `<span class="pos-cross-label">${x}%, ${y}%</span>`;
     stage.appendChild(cross);
 
-    // 拖曳 / 點擊設定座標
-    const setFromEvent = (e) => {
+    // 拖曳設定座標。
+    // 重要：拖曳「過程」只更新視覺（inline style），**放開時才 commit 一次**。
+    // 若每個 move 都 upsertPosition，通知會觸發 render() 重建 DOM——
+    // 手上的 stage 被銷毀、拖曳當場斷掉（症狀：只能點擊跳過去）；
+    // 而且每個 move 都 #pushUndo，拖一次就塞爆 undo 堆疊。
+    const coordsFrom = (e) => {
       const r = stage.getBoundingClientRect();
-      const nx = Math.round(clamp(((e.clientX - r.left) / r.width) * 100, 0, 100));
-      const ny = Math.round(clamp(((e.clientY - r.top) / r.height) * 100, 0, 100));
+      return [
+        Math.round(clamp(((e.clientX - r.left) / r.width) * 100, 0, 100)),
+        Math.round(clamp(((e.clientY - r.top) / r.height) * 100, 0, 100)),
+      ];
+    };
+    const label = cross.querySelector(".pos-cross-label");
+    const applyVisual = (nx, ny) => {
+      cross.style.left = `${nx}%`;
+      cross.style.top = `${ny}%`;
+      if (label) label.textContent = `${nx}%, ${ny}%`;
+      sprite.style.left = `${nx}%`;
+      sprite.style.top = `${ny}%`;
+      stage.classList.remove("inherited");   // 拖了就代表要自訂
+    };
+
+    let dragging = false;
+    let last = { x, y };
+
+    stage.addEventListener("pointerdown", (e) => {
+      dragging = true;
+      stage.setPointerCapture(e.pointerId);
+      const [nx, ny] = coordsFrom(e);
+      last = { x: nx, y: ny };
+      applyVisual(nx, ny);
+    });
+    stage.addEventListener("pointermove", (e) => {
+      if (!dragging) return;
+      const [nx, ny] = coordsFrom(e);
+      last = { x: nx, y: ny };
+      applyVisual(nx, ny);
+    });
+    const commit = () => {
+      if (!dragging) return;
+      dragging = false;
+      const cur = this.#defOf(this.selected);
+      // upsertPosition 是合併語意：只送 x/y，既有的 anchor/scale 會保留；
+      // 首次自訂（原本沿用內建版面）時補上預設錨點，讓宣告完整。
       this.project.upsertPosition(this.selected, {
-        x: nx, y: ny,
-        anchor: this.#defOf(this.selected)?.anchor || anchor,
-        ...(this.#defOf(this.selected)?.scale != null ? {} : {}),
+        x: last.x, y: last.y,
+        ...(cur ? {} : { anchor: DEFAULT_ANCHOR }),
       });
       this.onChange?.();
     };
-    let dragging = false;
-    stage.addEventListener("pointerdown", (e) => {
-      dragging = true; stage.setPointerCapture(e.pointerId); setFromEvent(e);
-    });
-    stage.addEventListener("pointermove", (e) => { if (dragging) setFromEvent(e); });
-    stage.addEventListener("pointerup", () => { dragging = false; });
+    stage.addEventListener("pointerup", commit);
+    stage.addEventListener("pointercancel", commit);
 
     box.appendChild(stage);
 
