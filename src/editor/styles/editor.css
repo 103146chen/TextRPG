@@ -1685,3 +1685,107 @@ input, textarea, select {
   color: var(--e-text-faded);
 }
 .asset-usage.orphan { color: var(--e-accent); font-weight: 600; }
+
+
+/* ============================================
+   S4c 位置與錨點編輯器
+   ============================================ */
+
+.page-assets.active { display: grid; grid-template-columns: 180px minmax(0, 1fr); }
+.col-asset-nav { background: var(--e-bg-2); border-right: 1px solid var(--e-border); }
+.col-asset-main { overflow-y: auto; }
+.asset-nav-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  background: transparent;
+  color: var(--e-text-dim);
+  border: none;
+  border-left: 2px solid transparent;
+  font-size: 12.5px;
+}
+.asset-nav-btn:hover { color: var(--e-text); background: var(--e-bg-3); }
+.asset-nav-btn.active {
+  color: var(--e-accent);
+  border-left-color: var(--e-accent);
+  background: var(--e-bg);
+}
+
+.pos-editor { padding: 4px 0 20px; }
+.pos-presets { margin-bottom: 14px; }
+.pos-presets-title { font-size: 12px; color: var(--e-text-dim); margin-bottom: 6px; }
+.pos-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 8px; }
+.pos-chip {
+  display: flex; flex-direction: column; gap: 2px;
+  padding: 6px 12px;
+  background: var(--e-bg-2);
+  border: 1px solid var(--e-border);
+  border-radius: var(--e-radius);
+  color: var(--e-text-dim);
+  text-align: left;
+}
+.pos-chip:hover { border-color: var(--e-border-2); color: var(--e-text); }
+.pos-chip.active { border-color: var(--e-accent); color: var(--e-text); background: var(--e-bg-3); }
+.pos-chip.custom .pos-chip-sub { color: var(--e-accent); }
+.pos-chip-name { font-size: 12.5px; font-weight: 600; }
+.pos-chip-sub { font-size: 10.5px; font-family: var(--e-font-mono); color: var(--e-text-faded); }
+
+.pos-stage-wrap { margin-bottom: 14px; }
+.pos-stage {
+  position: relative;
+  aspect-ratio: 16 / 9;
+  max-width: 640px;
+  background:
+    linear-gradient(var(--e-border) 1px, transparent 1px) 0 0 / 100% 25%,
+    linear-gradient(90deg, var(--e-border) 1px, transparent 1px) 0 0 / 25% 100%,
+    var(--e-bg-4);
+  border: 1px solid var(--e-border-2);
+  border-radius: var(--e-radius);
+  cursor: crosshair;
+  overflow: hidden;
+  touch-action: none;
+}
+.pos-stage.inherited { opacity: 0.75; }
+.pos-sprite {
+  position: absolute;
+  border: 1px dashed var(--e-accent);
+  background: rgba(212, 160, 96, 0.12);
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: none;
+}
+.pos-sprite span { font-size: 11px; color: var(--e-accent); }
+.pos-cross { position: absolute; pointer-events: none; }
+.pos-cross::before, .pos-cross::after {
+  content: ""; position: absolute; background: var(--e-red);
+}
+.pos-cross::before { left: -7px; top: -1px; width: 15px; height: 2px; }
+.pos-cross::after { left: -1px; top: -7px; width: 2px; height: 15px; }
+.pos-cross-label {
+  position: absolute; left: 10px; top: -8px;
+  font-size: 10.5px; font-family: var(--e-font-mono);
+  color: #fff; background: var(--e-red);
+  padding: 1px 5px; border-radius: 3px; white-space: nowrap;
+}
+.pos-hint { margin-top: 6px; font-size: 11px; color: var(--e-text-faded); line-height: 1.6; }
+
+.pos-controls { display: flex; flex-wrap: wrap; align-items: flex-start; gap: 16px; }
+.pos-field { display: flex; flex-direction: column; gap: 4px; }
+.pos-field label { font-size: 11px; color: var(--e-text-dim); }
+.pos-field small { font-size: 10.5px; color: var(--e-text-faded); max-width: 200px; line-height: 1.5; }
+.pos-field input {
+  width: 90px; padding: 5px 8px;
+  background: var(--e-bg); border: 1px solid var(--e-border);
+  border-radius: 3px; font-size: 12px;
+}
+.pos-anchor-grid { display: grid; grid-template-columns: repeat(3, 46px); gap: 3px; }
+.pos-anchor {
+  padding: 6px 0;
+  background: var(--e-bg-2);
+  border: 1px solid var(--e-border);
+  border-radius: 3px;
+  color: var(--e-text-dim);
+  font-size: 11px;
+}
+.pos-anchor:hover { color: var(--e-text); border-color: var(--e-border-2); }
+.pos-anchor.active { background: var(--e-accent); color: #1a1d23; border-color: var(--e-accent); font-weight: 600; }

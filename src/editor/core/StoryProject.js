@@ -282,6 +282,45 @@ export class StoryProject {
     this.notify("scene-meta-updated", { sceneId });
   }
 
+  // ==================== 立繪位置預設 ====================
+  // story.json 的 positions: { 名稱: { x, y, anchor, scale } }
+  // 對應 S2d 的引擎規則：**沒宣告就沿用內建三格版面**，
+  // 所以「恢復預設」等於移除宣告，不需要硬編一組假的預設值。
+
+  getPositions() {
+    return this.storyMeta?.positions || {};
+  }
+
+  upsertPosition(name, def) {
+    this.#pushUndo();
+    if (!this.storyMeta.positions) this.storyMeta.positions = {};
+    this.storyMeta.positions[name] = { ...this.storyMeta.positions[name], ...def };
+    this.notify("positions-updated", { name });
+  }
+
+  removePosition(name) {
+    this.#pushUndo();
+    if (this.storyMeta.positions) {
+      delete this.storyMeta.positions[name];
+      if (Object.keys(this.storyMeta.positions).length === 0) delete this.storyMeta.positions;
+    }
+    this.notify("positions-updated", { name, removed: true });
+  }
+
+  /** 劇本中實際用到的位置槽名稱（@show 的第二個參數） */
+  collectUsedSlots() {
+    const used = new Set();
+    for (const sc of this.scenes.values()) {
+      for (const ins of sc.instructions) {
+        if (ins.type === "directive" && ins.name === "show") {
+          const slot = (ins.args?.positional || [])[1];
+          if (slot) used.add(slot);
+        }
+      }
+    }
+    return used;
+  }
+
   // ==================== 資產引用追蹤 ====================
 
   /**

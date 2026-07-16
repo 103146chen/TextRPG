@@ -3,21 +3,8 @@
 // 立繪管理：顯示/隱藏/移動/表情切換
 // ============================================
 
-// 錨點：圖片自身的哪一點對齊到座標。
-// 作法：transform-origin 設在該點（讓 scale 以它為中心），translate 把該點移到座標上。
-const ANCHORS = {
-  left_top:      { t: "0, 0",         o: "left top" },
-  center_top:    { t: "-50%, 0",      o: "center top" },
-  right_top:     { t: "-100%, 0",     o: "right top" },
-  left_center:   { t: "0, -50%",      o: "left center" },
-  center:        { t: "-50%, -50%",   o: "center center" },
-  right_center:  { t: "-100%, -50%",  o: "right center" },
-  left_bottom:   { t: "0, -100%",     o: "left bottom" },
-  center_bottom: { t: "-50%, -100%",  o: "center bottom" },
-  right_bottom:  { t: "-100%, -100%", o: "right bottom" },
-};
-const DEFAULT_ANCHOR = "center_bottom";
-const DEFAULT_HEIGHT_PCT = 80;   // 定位模式下立繪高度（佔畫面 %），再乘上 scale
+// 錨點定義與編輯器共用同一份，避免格線示意與實際渲染漂移
+import { anchorOf, DEFAULT_ANCHOR, DEFAULT_HEIGHT_PCT } from "./anchors.js";
 
 export class CharacterLayer {
   /**
@@ -79,7 +66,7 @@ export class CharacterLayer {
     } else if (preset) {
       x = preset.x; y = preset.y;
     }
-    const a = ANCHORS[anchorName] || ANCHORS[DEFAULT_ANCHOR];
+    const a = anchorOf(anchorName);
 
     slotEl.classList.add("positioned");
     slotEl.style.right = "auto";

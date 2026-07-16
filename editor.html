@@ -88,9 +88,17 @@
         </aside>
       </section>
 
-      <!-- ---------- 資產頁 ---------- -->
+      <!-- ---------- 資產頁：分類 ｜ 內容 ---------- -->
       <section class="page page-assets" data-page="assets">
-        <div id="asset-panel" class="asset-page-host"></div>
+        <aside class="col col-asset-nav">
+          <div class="col-head"><span>資產</span></div>
+          <button class="asset-nav-btn active" data-asset-view="files">資產檔案</button>
+          <button class="asset-nav-btn" data-asset-view="positions">位置與錨點</button>
+        </aside>
+        <main class="col col-asset-main">
+          <div id="asset-panel" class="asset-page-host"></div>
+          <div id="position-editor" class="asset-page-host" style="display:none"></div>
+        </main>
       </section>
 
       <!-- ---------- 敘事地圖頁：變量管理 ｜ 地圖 ---------- -->

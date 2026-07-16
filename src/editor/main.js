@@ -12,6 +12,7 @@ import { LintPanel } from "./views/LintPanel.js";
 import { FlagInspector } from "./views/FlagInspector.js";
 import { StoryManager } from "./views/StoryManager.js";
 import { AssetPanel } from "./views/AssetPanel.js";
+import { PositionEditor } from "./views/PositionEditor.js";
 import { MemoryBackend } from "./core/MemoryBackend.js";
 import { exportProjectZip } from "./core/projectZip.js";
 import { SceneParser } from "../engine/SceneParser.js";
@@ -76,6 +77,10 @@ const flagInspector = new FlagInspector($("#flag-panel"), project, (sceneId, ind
 
 const storyManager = new StoryManager(project);
 const assetPanel = new AssetPanel($("#asset-panel"), project);
+const positionEditor = new PositionEditor($("#position-editor"), project, {
+  // 改完位置立刻在劇本頁的預覽看到（若目前選著某條指令）
+  onChange: () => { if (currentSceneId != null) previewPanel.scrub(currentSceneId, sceneEditor.selectedIndex ?? 0); },
+});
 
 let currentSceneId = null;
 let currentPage = "script";   // script | assets | map | theme | publish | settings
@@ -328,6 +333,16 @@ $("#source-text").addEventListener("input", () => {
   setSourceStatus(isSourceDirty() ? "有未套用的變更" : "", isSourceDirty() ? "err" : "");
 });
 
+// 資產頁分類（資產檔案 / 位置與錨點）
+document.querySelectorAll(".asset-nav-btn").forEach((btn) => {
+  btn.addEventListener("click", () => {
+    const view = btn.dataset.assetView;
+    document.querySelectorAll(".asset-nav-btn").forEach((b) => b.classList.toggle("active", b === btn));
+    $("#asset-panel").style.display = view === "files" ? "" : "none";
+    $("#position-editor").style.display = view === "positions" ? "" : "none";
+  });
+});
+
 // 檢查器分頁（問題 / 檢查器）
 document.querySelectorAll(".insp-tab").forEach((tab) => {
   tab.addEventListener("click", () => {
@@ -386,7 +401,7 @@ project.subscribe((type, payload) => {
       type === "instruction-moved" || type === "instructions-replaced" ||
       type === "undo" || type === "redo" || type === "resources-updated" ||
       type === "characters-updated" || type === "flags-updated" || type === "story-meta-updated" ||
-      type === "chapters-updated") {
+      type === "chapters-updated" || type === "positions-updated") {
     if (currentPage === "script") renderEvents();
   }
   // 影響 graph 結構的變更
