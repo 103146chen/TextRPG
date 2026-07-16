@@ -40,7 +40,8 @@ export class GameRuntime {
       dom.characterLayer,
       storyPath,
       storyMeta.characters || {},
-      resolveAsset
+      resolveAsset,
+      storyMeta.positions || null
     );
     this.backgroundLayer = new BackgroundLayer(dom.backgroundLayer, storyPath, resolveAsset);
     this.audio = new AudioManager(storyPath, resolveAsset);
@@ -108,8 +109,14 @@ export class GameRuntime {
         break;
       }
       case "show": {
+        // slot 是身分鍵（同 slot 再 show 會取代前一個角色）；
+        // pos / anchor / scale 為可選的渲染覆寫（未給則沿用 CSS 三格版面）
         const [charName, slot = "center", emotion = null] = args.positional;
-        await this.characterLayer.show(charName, slot, emotion);
+        await this.characterLayer.show(charName, slot, emotion, {
+          pos: args.pos,
+          anchor: args.anchor,
+          scale: args.scale,
+        });
         break;
       }
       case "hide": {

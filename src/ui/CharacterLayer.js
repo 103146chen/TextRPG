@@ -3,12 +3,38 @@
 // 立繪管理：顯示/隱藏/移動/表情切換
 // ============================================
 
+// 錨點：圖片自身的哪一點對齊到座標。
+// 作法：transform-origin 設在該點（讓 scale 以它為中心），translate 把該點移到座標上。
+const ANCHORS = {
+  left_top:      { t: "0, 0",         o: "left top" },
+  center_top:    { t: "-50%, 0",      o: "center top" },
+  right_top:     { t: "-100%, 0",     o: "right top" },
+  left_center:   { t: "0, -50%",      o: "left center" },
+  center:        { t: "-50%, -50%",   o: "center center" },
+  right_center:  { t: "-100%, -50%",  o: "right center" },
+  left_bottom:   { t: "0, -100%",     o: "left bottom" },
+  center_bottom: { t: "-50%, -100%",  o: "center bottom" },
+  right_bottom:  { t: "-100%, -100%", o: "right bottom" },
+};
+const DEFAULT_ANCHOR = "center_bottom";
+const DEFAULT_HEIGHT_PCT = 80;   // 定位模式下立繪高度（佔畫面 %），再乘上 scale
+
 export class CharacterLayer {
-  constructor(layerEl, storyPath, characterMap = {}, resolveAsset = null) {
+  /**
+   * @param {HTMLElement} layerEl
+   * @param {string} storyPath
+   * @param {object} characterMap - name -> { default, emotions }
+   * @param {function} [resolveAsset] - (kind, file) => Promise<url>，供即時預覽用 blob URL
+   * @param {object} [positions] - story.json 的具名位置預設：
+   *   { center: { x, y, anchor, scale }, ... }。未提供時沿用原本的 CSS 三格版面。
+   */
+  constructor(layerEl, storyPath, characterMap = {}, resolveAsset = null, positions = null) {
     this.layerEl = layerEl;
     this.storyPath = storyPath;
-    this.resolveAsset = resolveAsset; // 可選：(kind, file) => Promise<url>，供即時預覽用 blob URL
-    this.characterMap = characterMap; // name -> {defaultFile, emotions: {happy: "alice_happy.png"}}
+    this.resolveAsset = resolveAsset;
+    this.characterMap = characterMap;
+    this.positions = positions || null;
+    // 內建三格沿用 HTML 既有元素；其餘具名位置在需要時動態建立
     this.slots = {
       left: layerEl.querySelector('[data-slot="left"]'),
       center: layerEl.querySelector('[data-slot="center"]'),
@@ -17,12 +43,62 @@ export class CharacterLayer {
     this.current = { left: null, center: null, right: null };
   }
 
+  /** 取得（必要時建立）指定 slot 的容器。slot 是「身分鍵」：同一 slot 再 show 會取代前一個角色。 */
+  #ensureSlot(slot) {
+    if (this.slots[slot]) return this.slots[slot];
+    const el = document.createElement("div");
+    el.className = "char-slot";
+    el.dataset.slot = slot;
+    this.layerEl.appendChild(el);
+    this.slots[slot] = el;
+    if (!(slot in this.current)) this.current[slot] = null;
+    return el;
+  }
+
+  /**
+   * 套用定位：opts（指令上的 pos/anchor/scale）優先於 story.json 的具名預設。
+   * 兩者都沒有時清掉 inline 樣式，回到原本的 CSS 三格版面（既有劇本走這條，畫面零變化）。
+   */
+  #applyPlacement(slotEl, slot, opts = {}) {
+    const preset = this.positions?.[slot] || null;
+    const hasPos = opts.pos != null || (preset && preset.x != null && preset.y != null);
+    const anchorName = opts.anchor ?? preset?.anchor ?? DEFAULT_ANCHOR;
+    const scale = opts.scale ?? preset?.scale ?? null;
+
+    if (!hasPos && scale == null && opts.anchor == null) {
+      slotEl.classList.remove("positioned");
+      slotEl.style.left = slotEl.style.top = slotEl.style.right = slotEl.style.bottom = "";
+      slotEl.style.width = slotEl.style.height = "";
+      slotEl.style.transform = slotEl.style.transformOrigin = "";
+      return;
+    }
+
+    let x, y;
+    if (opts.pos != null) {
+      [x, y] = String(opts.pos).split(",").map((v) => parseFloat(v));
+    } else if (preset) {
+      x = preset.x; y = preset.y;
+    }
+    const a = ANCHORS[anchorName] || ANCHORS[DEFAULT_ANCHOR];
+
+    slotEl.classList.add("positioned");
+    slotEl.style.right = "auto";
+    slotEl.style.bottom = "auto";
+    if (Number.isFinite(x)) slotEl.style.left = `${x}%`;
+    if (Number.isFinite(y)) slotEl.style.top = `${y}%`;
+    slotEl.style.width = "auto";
+    slotEl.style.height = `${DEFAULT_HEIGHT_PCT}%`;
+    slotEl.style.transformOrigin = a.o;
+    slotEl.style.transform = `translate(${a.t})${scale != null ? ` scale(${scale})` : ""}`;
+  }
+
   /**
    * 顯示角色: @show alice center happy
    */
-  async show(charName, slot, emotion) {
-    const slotEl = this.slots[slot];
+  async show(charName, slot, emotion, opts = {}) {
+    const slotEl = this.#ensureSlot(slot);
     if (!slotEl) return;
+    this.#applyPlacement(slotEl, slot, opts);
     const charData = this.characterMap[charName];
     if (!charData) {
       console.warn(`未定義角色: ${charName}`);

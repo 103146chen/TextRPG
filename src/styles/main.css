@@ -879,3 +879,20 @@ html, body {
   background: #ffffff;
   opacity: 0;
 }
+
+
+/* ===================== 立繪定位模式（S2d）=====================
+   未指定 pos/anchor/scale 時不會加上 .positioned，沿用上方的三格版面。 */
+.char-slot.positioned {
+  /* left/top/transform/height 由 JS 以 inline 樣式設定 */
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.char-slot.positioned img,
+.char-slot.positioned svg {
+  height: 100%;
+  width: auto;
+  max-width: none;
+  max-height: none;
+}
