@@ -69,6 +69,10 @@
       "emotions": {
         "normal": "tingzhang_normal.png"
       }
+    },
+    "項梁": {
+      "default": "xiangzhuang_normal.png",
+      "emotions": {}
     }
   },
   "endings": [
