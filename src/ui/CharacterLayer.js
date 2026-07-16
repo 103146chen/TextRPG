@@ -247,6 +247,16 @@ export class BackgroundLayer {
     return `${this.storyPath}/${kind}/${fileName}`;
   }
 
+  /** 清除背景（@clear 銷毀場景用） */
+  async clear(fadeMs = 400) {
+    if (this.current === null && !this.layerEl.style.backgroundImage) return;
+    this.current = null;
+    this.layerEl.classList.add("fading");
+    await this.#wait(fadeMs / 2);
+    this.layerEl.style.backgroundImage = "";
+    this.layerEl.classList.remove("fading");
+  }
+
   async change(fileName, fadeMs = 800) {
     if (this.current === fileName) return;
     this.current = fileName;

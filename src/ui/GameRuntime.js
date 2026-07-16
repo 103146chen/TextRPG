@@ -52,6 +52,11 @@ export class GameRuntime {
 
     dom.screen?.querySelectorAll(".float-text").forEach((el) => el.remove());   // 殘留浮動文字
 
+    // 自動播放（@auto）：打字完成後等 autoDelay 毫秒自動前進
+    this.autoPlay = false;
+    this.autoDelay = 1500;
+    this._autoTimer = null;
+
     // 鏡頭狀態（zoom/x/y 為持續狀態；預覽重建 runtime 時清掉上一輪的 transform）
     this.camera = { zoom: 1, x: 0, y: 0 };
     for (const el of [dom.backgroundLayer, dom.characterLayer]) {
@@ -87,6 +92,7 @@ export class GameRuntime {
    * @returns {boolean} 是否有處理（供宿主判斷是否要 preventDefault）
    */
   handleAdvanceInput() {
+    if (this.autoPlay) this.setAuto(false);   // 玩家介入 → 退出自動播放
     if (this.uiHidden) {
       // 界面隱藏時，任何前進輸入先把界面叫回來（不推進劇情）
       this.#setUiHidden(false);
@@ -112,6 +118,31 @@ export class GameRuntime {
 
   /** 依模式決定時長：靜態求值時一律 0 */
   #d(ms) { return this.instant ? 0 : ms; }
+
+  /**
+   * @auto on|off：自動播放。打字完成後等 autoDelay 毫秒自動前進；
+   * 玩家手動點擊會退出自動播放（一般 VN 慣例）。選項與 @wait 照常等待。
+   */
+  setAuto(on, delay) {
+    this.autoPlay = !!on;
+    if (delay != null && !Number.isNaN(Number(delay))) this.autoDelay = Math.max(200, Number(delay));
+    clearTimeout(this._autoTimer);
+    this._autoTimer = null;
+    if (this.autoPlay) this.#autoTick();
+  }
+
+  #autoTick() {
+    if (!this.autoPlay) return;
+    this._autoTimer = setTimeout(() => {
+      if (!this.autoPlay) return;
+      // 文字打完且在等點擊時才前進（直接走 textBox，不經 handleAdvanceInput
+      // —— 那是「玩家輸入」的入口，會取消自動播放）
+      if (!this.uiHidden && this.textBox.handleClick()) {
+        setTimeout(() => this.engine.advance(), 0);
+      }
+      this.#autoTick();
+    }, this.autoDelay);
+  }
 
   /** @ui hide/show：切換文字框與選項的可見性（持續狀態） */
   #setUiHidden(hide) {
@@ -143,8 +174,10 @@ export class GameRuntime {
 
   /** 停止環境效果（離開遊戲畫面時呼叫） */
   stopAmbient() {
+    this.setAuto(false);
     this.audio.stopBgm(500);
     this.audio.stopVoice();
+    this.audio.stopSe();
     this.characterLayer.hideAll(300);
   }
 
@@ -343,6 +376,27 @@ export class GameRuntime {
             await Promise.race([anim.finished, wait(duration + 100)]);
           } catch { /* 動畫被中斷 */ }
         }
+        break;
+      }
+      case "se-stop":
+      case "stopse": {
+        this.audio.stopSe();
+        break;
+      }
+      case "clear": {
+        // 銷毀場景（影響持續狀態，靜態求值也要套用）：
+        // 清立繪/背景/特效(染色/帷幕/暗角)/鏡頭。音訊用 @bgm-stop / @se-stop 另外控制。
+        const d = this.#d(args.fade ?? 400);
+        await this.characterLayer.hideAll(d);
+        if (args.bg !== false) await this.backgroundLayer.clear(d);
+        this.effects?.reset();
+        this.#applyCamera({ zoom: 1, x: 0, y: 0 }, 0);
+        break;
+      }
+      case "auto": {
+        if (this.instant) break;   // 靜態求值沒有「推進」可言
+        const on = (args.positional[0] || "on") !== "off";
+        this.setAuto(on, args.delay);
         break;
       }
       case "float": {

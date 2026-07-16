@@ -13,6 +13,7 @@ export class AudioManager {
     this.seVolume = 0.7;
     this.voiceVolume = 1.0;
     this.voice = null;           // 語音聲道：一次一句，新語音會停掉前一句
+    this.activeSe = new Set();   // 播放中的音效（@se-stop 用）
     this.muted = false;
   }
 
@@ -53,7 +54,18 @@ export class AudioManager {
     if (!fileName) return;
     const se = new Audio(await this.#assetUrl("se", fileName));
     se.volume = (volume ?? this.seVolume) * (this.muted ? 0 : 1);
+    this.activeSe.add(se);
+    se.addEventListener("ended", () => this.activeSe.delete(se));
     se.play().catch(() => {});
+  }
+
+  /** 停止所有播放中的音效（@se-stop） */
+  stopSe() {
+    for (const se of this.activeSe) {
+      se.pause();
+      se.src = "";
+    }
+    this.activeSe.clear();
   }
 
   async #assetUrl(kind, fileName) {

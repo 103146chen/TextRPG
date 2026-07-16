@@ -166,6 +166,10 @@ export class InstructionRow {
       "camera-reset": "復位鏡頭",
       sprite: "精靈動畫",
       float: "浮動文字",
+      "se-stop": "停止音效",
+      stopse: "停止音效",
+      clear: "銷毀場景",
+      auto: "自動播放",
     }[name] || name;
 
     container.appendChild(this.#badge(nameLabel));
@@ -524,6 +528,43 @@ export class InstructionRow {
         numField("x", "X%", "50");
         numField("y", "Y%", "40");
         numField("duration", "時長", "ms");
+        break;
+      }
+      case "se-stop":
+      case "stopse": {
+        container.appendChild(this.#labelInline("停止所有播放中的音效"));
+        break;
+      }
+      case "clear": {
+        container.appendChild(this.#labelInline("清空立繪/背景/特效/鏡頭"));
+        container.appendChild(this.#labelInline("fade"));
+        const fInput = this.#numberInput(args.fade, "ms");
+        fInput.addEventListener("change", (e) => {
+          this.onChange({ args: { ...args, fade: parseInt(e.target.value) || undefined } });
+        });
+        container.appendChild(fInput);
+        break;
+      }
+      case "auto": {
+        const modeSel = document.createElement("select");
+        modeSel.className = "instr-field";
+        for (const [val, txt] of [["on", "進入自動播放"], ["off", "退出自動播放"]]) {
+          const o = document.createElement("option");
+          o.value = val; o.textContent = txt;
+          if ((pos[0] || "on") === val) o.selected = true;
+          modeSel.appendChild(o);
+        }
+        modeSel.addEventListener("change", () => {
+          this.onChange({ args: { ...args, positional: [modeSel.value] } });
+        });
+        container.appendChild(modeSel);
+        container.appendChild(this.#labelInline("間隔"));
+        const dInput = this.#numberInput(args.delay, "ms");
+        dInput.addEventListener("change", (e) => {
+          const v = e.target.value.trim();
+          this.onChange({ args: { ...args, delay: v === "" ? undefined : parseInt(v) } });
+        });
+        container.appendChild(dInput);
         break;
       }
       default: {
