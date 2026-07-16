@@ -153,6 +153,7 @@ export class InstructionRow {
       "bgm-stop": "停止 BGM",
       stopbgm: "停止 BGM",
       se: "音效",
+      voice: "語音",
       wait: "等待",
       shake: "震動螢幕",
       flash: "閃光",
@@ -244,6 +245,17 @@ export class InstructionRow {
           onChange: (v) => this.onChange({ args: { ...args, positional: [v] } }),
         });
         container.appendChild(input);
+        break;
+      }
+      case "voice": {
+        const files = this.project.resources.voice || [];
+        const input = createSelectField({
+          value: pos[0], options: files, placeholder: "選語音檔",
+          addLabel: "匯入語音…", onAdd: () => this.onManage?.("assets"),
+          onChange: (v) => this.onChange({ args: { ...args, positional: [v] } }),
+        });
+        container.appendChild(input);
+        container.appendChild(this.#labelInline("放在對話行前，唸該句時播放"));
         break;
       }
       case "wait": {

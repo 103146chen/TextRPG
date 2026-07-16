@@ -11,6 +11,8 @@ export class AudioManager {
     this.currentBgmFile = null;
     this.bgmVolume = 0.5;
     this.seVolume = 0.7;
+    this.voiceVolume = 1.0;
+    this.voice = null;           // 語音聲道：一次一句，新語音會停掉前一句
     this.muted = false;
   }
 
@@ -62,9 +64,28 @@ export class AudioManager {
     return `${this.storyPath}/${kind}/${fileName}`;
   }
 
+  // 播放一句語音（對話配音）。與 BGM/SE 分離：新語音自動停掉上一句。
+  async playVoice(fileName) {
+    this.stopVoice();
+    if (!fileName) return;
+    const v = new Audio(await this.#assetUrl("voice", fileName));
+    v.volume = this.muted ? 0 : this.voiceVolume;
+    this.voice = v;
+    v.addEventListener("ended", () => { if (this.voice === v) this.voice = null; });
+    v.play().catch(() => {});
+  }
+
+  stopVoice() {
+    if (!this.voice) return;
+    this.voice.pause();
+    this.voice.src = "";
+    this.voice = null;
+  }
+
   setMuted(muted) {
     this.muted = muted;
     if (this.bgm) this.bgm.volume = muted ? 0 : this.bgmVolume;
+    if (this.voice) this.voice.volume = muted ? 0 : this.voiceVolume;
   }
 
   setBgmVolume(v) {

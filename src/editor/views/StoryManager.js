@@ -10,6 +10,19 @@ export class StoryManager {
   constructor(project) {
     this.project = project;
     this.dialogEl = null;
+    this._thumbUrls = [];   // 縮圖 objectURL，關閉時一併撤銷
+  }
+
+  // 非同步把某個立繪縮圖填進 img（找不到就顯示 placeholder 樣式）
+  #fillThumb(img, file) {
+    img.classList.add("char-thumb");
+    if (!file) { img.classList.add("empty"); return; }
+    this.project.fs?.readResource?.("characters", file).then((blob) => {
+      if (!blob) { img.classList.add("empty"); return; }
+      const url = URL.createObjectURL(blob);
+      this._thumbUrls.push(url);
+      img.src = url;
+    }).catch(() => img.classList.add("empty"));
   }
 
   open(activeTab = "basic") {
@@ -76,6 +89,8 @@ export class StoryManager {
 
   close() {
     if (this.assetPanel) { this.assetPanel.destroy(); this.assetPanel = null; }
+    for (const u of this._thumbUrls) URL.revokeObjectURL(u);
+    this._thumbUrls = [];
     if (this.dialogEl) {
       this.dialogEl.remove();
       this.dialogEl = null;
@@ -203,10 +218,15 @@ export class StoryManager {
     });
     row.appendChild(header);
 
-    // 預設立繪
+    // 預設立繪（含縮圖）
     const defWrap = document.createElement("div");
     defWrap.className = "char-field";
     defWrap.appendChild(this.#labelText("預設立繪"));
+    const defRow = document.createElement("div");
+    defRow.className = "char-thumb-row";
+    const defImg = document.createElement("img");
+    this.#fillThumb(defImg, data.default);
+    defRow.appendChild(defImg);
     const defInput = this.#datalistInput({
       value: data.default || "",
       options: charResources,
@@ -214,9 +234,11 @@ export class StoryManager {
       onChange: (v) => {
         data.default = v;
         this.project.upsertCharacter(name, data);
+        this.#fillThumb(defImg, v);   // 立即換縮圖
       }
     });
-    defWrap.appendChild(defInput);
+    defRow.appendChild(defInput);
+    defWrap.appendChild(defRow);
     row.appendChild(defWrap);
 
     // 表情清單
@@ -259,6 +281,10 @@ export class StoryManager {
     const row = document.createElement("div");
     row.className = "emotion-row";
 
+    const thumb = document.createElement("img");
+    this.#fillThumb(thumb, emoFile);
+    row.appendChild(thumb);
+
     const label = document.createElement("span");
     label.className = "emotion-name";
     label.textContent = emoName;
@@ -271,6 +297,7 @@ export class StoryManager {
       onChange: (v) => {
         charData.emotions[emoName] = v;
         this.project.upsertCharacter(charName, charData);
+        this.#fillThumb(thumb, v);   // 立即換縮圖
       }
     });
     input.style.flex = "1";

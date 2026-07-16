@@ -104,6 +104,7 @@ export class GameRuntime {
   /** 停止環境效果（離開遊戲畫面時呼叫） */
   stopAmbient() {
     this.audio.stopBgm(500);
+    this.audio.stopVoice();
     this.characterLayer.hideAll(300);
   }
 
@@ -173,6 +174,12 @@ export class GameRuntime {
       case "se": {
         if (this.instant) break;
         this.audio.playSe(args.positional[0]);
+        break;
+      }
+      case "voice": {
+        // 對話配音：放在對話行前，唸該句時播放；新語音自動停掉前一句
+        if (this.instant) break;                       // 靜態求值不出聲
+        this.audio.playVoice(args.positional[0]);
         break;
       }
       case "wait": {

@@ -1789,3 +1789,18 @@ input, textarea, select {
 }
 .pos-anchor:hover { color: var(--e-text); border-color: var(--e-border-2); }
 .pos-anchor.active { background: var(--e-accent); color: #1a1d23; border-color: var(--e-accent); font-weight: 600; }
+
+
+/* 角色編輯：立繪縮圖（S4d） */
+.char-thumb {
+  width: 40px; height: 40px;
+  object-fit: contain;
+  background: var(--e-bg-4);
+  border: 1px solid var(--e-border);
+  border-radius: 3px;
+  flex: 0 0 auto;
+}
+.char-thumb.empty { opacity: 0.4; }
+.char-thumb-row { display: flex; align-items: center; gap: 8px; }
+.char-thumb-row .datalist-wrap, .char-thumb-row > span { flex: 1; }
+.emotion-row .char-thumb { width: 32px; height: 32px; }

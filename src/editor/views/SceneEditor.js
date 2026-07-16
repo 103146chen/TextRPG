@@ -270,6 +270,7 @@ export class SceneEditor {
       { kind: "hide", label: "隱藏立繪", color: "var(--e-accent)", template: () => ({ type: "directive", name: "hide", args: { positional: ["all"] } }) },
       { kind: "bg", label: "切換背景", color: "var(--e-accent)", template: () => ({ type: "directive", name: "bg", args: { positional: [""], fade: 800 } }) },
       { kind: "bgm", label: "BGM", color: "var(--e-accent)", template: () => ({ type: "directive", name: "bgm", args: { positional: [""] } }) },
+      { kind: "voice", label: "語音（對話配音）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "voice", args: { positional: [""] } }) },
       { kind: "wait", label: "等待", color: "var(--e-accent)", template: () => ({ type: "directive", name: "wait", args: { positional: [1000] } }) },
       { kind: "shake", label: "震動螢幕", color: "var(--e-accent)", template: () => ({ type: "directive", name: "shake", args: { positional: [8], duration: 500 } }) },
       { kind: "flash", label: "閃光", color: "var(--e-accent)", template: () => ({ type: "directive", name: "flash", args: { positional: ["#ffffff"], duration: 400 } }) },

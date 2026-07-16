@@ -9,6 +9,7 @@ const SECTIONS = [
   { kind: "characters", label: "立繪", accept: "image/*", type: "image" },
   { kind: "bgm", label: "BGM", accept: "audio/*", type: "audio" },
   { kind: "se", label: "音效", accept: "audio/*", type: "audio" },
+  { kind: "voice", label: "語音", accept: "audio/*", type: "audio" },
 ];
 
 export class AssetPanel {
