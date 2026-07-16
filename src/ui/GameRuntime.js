@@ -47,6 +47,8 @@ export class GameRuntime {
     this.backgroundLayer = new BackgroundLayer(dom.backgroundLayer, storyPath, resolveAsset);
     this.audio = new AudioManager(storyPath, resolveAsset);
     this.effects = dom.screen ? new ScreenEffects(dom.screen) : null;
+    this.uiHidden = false;
+    dom.screen?.classList.remove("ui-hidden");   // 預覽重建 runtime 時清掉殘留
 
     this.engine = new StoryEngine({
       storyPath,
@@ -77,6 +79,11 @@ export class GameRuntime {
    * @returns {boolean} 是否有處理（供宿主判斷是否要 preventDefault）
    */
   handleAdvanceInput() {
+    if (this.uiHidden) {
+      // 界面隱藏時，任何前進輸入先把界面叫回來（不推進劇情）
+      this.#setUiHidden(false);
+      return true;
+    }
     if (this.textBox.handleClick()) {
       setTimeout(() => this.engine.advance(), 0);
       return true;
@@ -97,6 +104,12 @@ export class GameRuntime {
 
   /** 依模式決定時長：靜態求值時一律 0 */
   #d(ms) { return this.instant ? 0 : ms; }
+
+  /** @ui hide/show：切換文字框與選項的可見性（持續狀態） */
+  #setUiHidden(hide) {
+    this.uiHidden = !!hide;
+    this.dom.screen?.classList.toggle("ui-hidden", this.uiHidden);
+  }
 
   /** 靜態求值到第 pc 條指令（畫面停在該點，不播放） */
   evaluateTo(sceneId, pc) { return this.engine.evaluateTo(sceneId, pc); }
@@ -218,6 +231,32 @@ export class GameRuntime {
       case "tint-clear":
       case "cleartint": {
         if (this.effects) this.effects.clearTint({ duration: this.#d(args.duration ?? args.fade ?? 600) });
+        break;
+      }
+      case "textcfg": {
+        // 文本參數（持續狀態）：只改有給的欄位；靜態求值也要套用
+        const cfg = {};
+        if (args.speed != null) cfg.speed = Number(args.speed);
+        if (args.fade != null) cfg.fade = Number(args.fade);
+        if (args.indicator != null) cfg.indicator = args.indicator !== "off" && args.indicator !== false;
+        this.textBox.configure(cfg);
+        break;
+      }
+      case "curtain": {
+        // 帷幕（持續狀態）：close 合上 / open 打開；full 連文字框一起蓋
+        if (this.effects) {
+          this.effects.curtain({
+            mode: args.positional[0] || "close",
+            color: args.color || "#000000",
+            duration: this.#d(args.duration ?? args.fade ?? 600),
+            full: args.full === true || args.full === "true",
+          });
+        }
+        break;
+      }
+      case "ui": {
+        // 顯示/隱藏界面（持續狀態）：hide 後點擊會先恢復界面
+        this.#setUiHidden((args.positional[0] || "hide") === "hide");
         break;
       }
       default:

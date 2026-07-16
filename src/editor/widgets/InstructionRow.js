@@ -159,6 +159,9 @@ export class InstructionRow {
       flash: "閃光",
       tint: "畫面染色",
       "tint-clear": "清除染色",
+      curtain: "帷幕",
+      ui: "界面顯示",
+      textcfg: "文本參數",
     }[name] || name;
 
     container.appendChild(this.#badge(nameLabel));
@@ -336,6 +339,98 @@ export class InstructionRow {
           this.onChange({ args: { ...args, duration: parseInt(e.target.value) || undefined } });
         });
         container.appendChild(dInput);
+        break;
+      }
+      case "curtain": {
+        const modeSel = document.createElement("select");
+        modeSel.className = "instr-field";
+        for (const [val, txt] of [["close", "合上"], ["open", "打開"]]) {
+          const o = document.createElement("option");
+          o.value = val; o.textContent = txt;
+          if ((pos[0] || "close") === val) o.selected = true;
+          modeSel.appendChild(o);
+        }
+        modeSel.addEventListener("change", () => {
+          this.onChange({ args: { ...args, positional: [modeSel.value] } });
+        });
+        container.appendChild(modeSel);
+
+        const cInput = document.createElement("input");
+        cInput.className = "instr-field";
+        cInput.value = args.color || "";
+        cInput.placeholder = "#000000";
+        cInput.style.maxWidth = "90px";
+        cInput.addEventListener("change", (e) => {
+          this.onChange({ args: { ...args, color: e.target.value || undefined } });
+        });
+        container.appendChild(cInput);
+
+        container.appendChild(this.#labelInline("時長"));
+        const dInput = this.#numberInput(args.duration, "ms");
+        dInput.addEventListener("change", (e) => {
+          this.onChange({ args: { ...args, duration: parseInt(e.target.value) || undefined } });
+        });
+        container.appendChild(dInput);
+
+        const fullLabel = document.createElement("label");
+        fullLabel.className = "instr-inline-label";
+        const fullCb = document.createElement("input");
+        fullCb.type = "checkbox";
+        fullCb.checked = args.full === true || args.full === "true";
+        fullCb.addEventListener("change", () => {
+          this.onChange({ args: { ...args, full: fullCb.checked ? true : undefined } });
+        });
+        fullLabel.appendChild(fullCb);
+        fullLabel.appendChild(document.createTextNode(" 全屏"));
+        container.appendChild(fullLabel);
+        break;
+      }
+      case "ui": {
+        const modeSel = document.createElement("select");
+        modeSel.className = "instr-field";
+        for (const [val, txt] of [["hide", "隱藏界面"], ["show", "顯示界面"]]) {
+          const o = document.createElement("option");
+          o.value = val; o.textContent = txt;
+          if ((pos[0] || "hide") === val) o.selected = true;
+          modeSel.appendChild(o);
+        }
+        modeSel.addEventListener("change", () => {
+          this.onChange({ args: { ...args, positional: [modeSel.value] } });
+        });
+        container.appendChild(modeSel);
+        container.appendChild(this.#labelInline("隱藏後點擊畫面會先恢復界面"));
+        break;
+      }
+      case "textcfg": {
+        container.appendChild(this.#labelInline("速度"));
+        const sInput = this.#numberInput(args.speed, "ms/字");
+        sInput.addEventListener("change", (e) => {
+          const v = e.target.value.trim();
+          this.onChange({ args: { ...args, speed: v === "" ? undefined : parseInt(v) } });
+        });
+        container.appendChild(sInput);
+
+        container.appendChild(this.#labelInline("淡入"));
+        const fInput = this.#numberInput(args.fade, "ms/字");
+        fInput.addEventListener("change", (e) => {
+          const v = e.target.value.trim();
+          this.onChange({ args: { ...args, fade: v === "" ? undefined : parseInt(v) } });
+        });
+        container.appendChild(fInput);
+
+        container.appendChild(this.#labelInline("等待圖標"));
+        const iSel = document.createElement("select");
+        iSel.className = "instr-field";
+        for (const [val, txt] of [["", "（不變）"], ["on", "顯示"], ["off", "隱藏"]]) {
+          const o = document.createElement("option");
+          o.value = val; o.textContent = txt;
+          if (String(args.indicator ?? "") === val) o.selected = true;
+          iSel.appendChild(o);
+        }
+        iSel.addEventListener("change", () => {
+          this.onChange({ args: { ...args, indicator: iSel.value || undefined } });
+        });
+        container.appendChild(iSel);
         break;
       }
       default: {

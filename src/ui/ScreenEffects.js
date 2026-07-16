@@ -1,7 +1,8 @@
 // ============================================
 // ScreenEffects.js
-// 螢幕演出特效：震動 / 閃光 / 染色。純 DOM + Web Animations API，
+// 螢幕演出特效：震動 / 閃光 / 染色 / 帷幕。純 DOM + Web Animations API，
 // 不依賴任何第三方。覆蓋層放在立繪之上、文字框之下（見 main.css .fx-*）。
+// 帷幕的 full 模式使用另一層（.fx-curtain-full），連文字框與選項一起蓋住。
 // ============================================
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -9,17 +10,31 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 export class ScreenEffects {
   constructor(screenEl) {
     this.screenEl = screenEl;
+
+    // 預覽每次 load 都會重建 GameRuntime → ScreenEffects；
+    // 先移除上一輪殘留的覆蓋層，避免一層層堆疊（舊染色/帷幕會卡在畫面上）。
+    screenEl.querySelectorAll(":scope > .fx-overlay, :scope > .fx-curtain-full")
+      .forEach((el) => el.remove());
+
     this.overlay = document.createElement("div");
     this.overlay.className = "fx-overlay";
 
     this.tintEl = document.createElement("div");
     this.tintEl.className = "fx-tint";
+    this.curtainEl = document.createElement("div");
+    this.curtainEl.className = "fx-curtain";
     this.flashEl = document.createElement("div");
     this.flashEl.className = "fx-flash";
 
-    this.overlay.appendChild(this.tintEl);   // 染色在下（持續）
-    this.overlay.appendChild(this.flashEl);  // 閃光在上（瞬間）
+    this.overlay.appendChild(this.tintEl);      // 染色在最下（持續）
+    this.overlay.appendChild(this.curtainEl);   // 帷幕在中（持續，蓋過染色）
+    this.overlay.appendChild(this.flashEl);     // 閃光在上（瞬間）
     screenEl.appendChild(this.overlay);
+
+    // 全屏帷幕：在文字框之上（z-index 見 main.css）
+    this.curtainFullEl = document.createElement("div");
+    this.curtainFullEl.className = "fx-curtain-full";
+    screenEl.appendChild(this.curtainFullEl);
   }
 
   // 震動整個畫面：intensity=位移像素峰值，duration=毫秒
@@ -69,11 +84,36 @@ export class ScreenEffects {
     this.tintEl.style.opacity = "0";
   }
 
+  /**
+   * 帷幕（持續狀態）：close 合上一層純色遮罩、open 打開。
+   * full=true 時使用全屏層（連文字框/選項一起蓋住），適合換幕。
+   */
+  curtain({ mode = "close", color = "#000000", duration = 600, full = false } = {}) {
+    const apply = (el, show) => {
+      el.style.transition = duration > 0 ? `opacity ${duration}ms ease` : "none";
+      if (show) el.style.backgroundColor = color;
+      void el.offsetWidth;
+      el.style.opacity = show ? "1" : "0";
+    };
+    if (mode === "open") {
+      apply(this.curtainEl, false);
+      apply(this.curtainFullEl, false);
+      return;
+    }
+    // close：兩層互斥，只留指定的那層
+    apply(full ? this.curtainFullEl : this.curtainEl, true);
+    apply(full ? this.curtainEl : this.curtainFullEl, false);
+  }
+
   // 立即清除所有特效（重新開始遊戲/預覽時用）
   reset() {
     this.screenEl.style.transform = "";
     this.flashEl.style.opacity = "0";
     this.tintEl.style.transition = "none";
     this.tintEl.style.opacity = "0";
+    this.curtainEl.style.transition = "none";
+    this.curtainEl.style.opacity = "0";
+    this.curtainFullEl.style.transition = "none";
+    this.curtainFullEl.style.opacity = "0";
   }
 }

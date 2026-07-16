@@ -1,6 +1,7 @@
 // ============================================
 // TextBox.js
-// 文字框顯示與打字機效果
+// 文字框顯示與打字機效果。
+// S6a：@textcfg 可調整打字速度／每字淡入／等待圖標。
 // ============================================
 
 export class TextBox {
@@ -9,10 +10,22 @@ export class TextBox {
     this.speakerEl = speakerEl;
     this.indicatorEl = indicatorEl;
     this.typingSpeed = 35;         // 毫秒/字
+    this.fadeMs = 0;               // 每字淡入時長（0 = 關閉）
+    this.showIndicator = true;     // 是否顯示等待圖標
     this.currentTimer = null;
     this.isTyping = false;
     this.currentFullText = "";
     this.onTypingComplete = null;
+  }
+
+  /**
+   * @textcfg 的入口：只更新有給的欄位（持續狀態，直到再次設定）。
+   * speed = 毫秒/字；fade = 每字淡入毫秒；indicator = 布林
+   */
+  configure({ speed, fade, indicator } = {}) {
+    if (speed != null && !Number.isNaN(Number(speed))) this.typingSpeed = Math.max(0, Number(speed));
+    if (fade != null && !Number.isNaN(Number(fade))) this.fadeMs = Math.max(0, Number(fade));
+    if (indicator != null) this.showIndicator = !!indicator;
   }
 
   /**
@@ -34,7 +47,7 @@ export class TextBox {
       const typeNext = () => {
         if (idx >= chars.length) {
           this.isTyping = false;
-          this.indicatorEl.classList.add("show");
+          if (this.showIndicator) this.indicatorEl.classList.add("show");
           this.onTypingComplete = resolve;
           return;
         }
@@ -42,7 +55,16 @@ export class TextBox {
         const span = document.createElement("span");
         span.className = "char";
         span.textContent = ch;
-        this.contentEl.appendChild(span);
+        if (this.fadeMs > 0) {
+          // 每字淡入：用強制 reflow 而非 rAF（背景分頁 rAF 會被暫停）
+          span.style.opacity = "0";
+          span.style.transition = `opacity ${this.fadeMs}ms ease`;
+          this.contentEl.appendChild(span);
+          void span.offsetWidth;
+          span.style.opacity = "1";
+        } else {
+          this.contentEl.appendChild(span);
+        }
         idx++;
         this.currentTimer = setTimeout(typeNext, this.typingSpeed);
       };
@@ -62,7 +84,7 @@ export class TextBox {
     this.currentFullText = text;
     this.speakerEl.textContent = speaker || "";
     this.contentEl.textContent = text;
-    this.indicatorEl.classList.add("show");
+    this.indicatorEl.classList.toggle("show", this.showIndicator);
   }
 
   handleClick() {
@@ -94,10 +116,6 @@ export class TextBox {
   }
 
   setSpeed(ms) { this.typingSpeed = ms; }
-
-  #escape(s) {
-    return s.replace(/</g, "&lt;").replace(/>/g, "&gt;");
-  }
 
   getPreview() {
     return this.currentFullText;

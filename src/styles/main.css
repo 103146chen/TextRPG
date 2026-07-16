@@ -906,3 +906,28 @@ html, body {
 .bg-layer.instant {
   transition: none !important;
 }
+
+/* ===================== S6a：帷幕 / 界面顯示 ===================== */
+.fx-curtain {
+  position: absolute;
+  inset: 0;
+  background-color: transparent;
+  opacity: 0;
+}
+/* 全屏帷幕：蓋過文字框(z10)與選項(z20)，在選單(z100)之下 */
+.fx-curtain-full {
+  position: absolute;
+  inset: 0;
+  z-index: 30;
+  pointer-events: none;
+  background-color: transparent;
+  opacity: 0;
+}
+/* @ui hide：文字框與選項淡出且不可點；點擊畫面會先恢復界面 */
+.ui-hidden .text-box,
+.ui-hidden .choice-container {
+  opacity: 0 !important;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+.text-box, .choice-container { transition: opacity 0.3s ease; }
