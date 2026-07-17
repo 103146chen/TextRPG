@@ -12,11 +12,14 @@
 
 ## ✨ 特色
 
-- 🎨 **經典 GalGame 風格**：半透明文字框、三位置立繪（左/中/右）、背景淡入淡出、BGM 持續播放
-- 📖 **劇本用 Markdown 寫作**：作家友善，支援 YAML front matter
+- 🎨 **經典 GalGame 風格**：半透明文字框、立繪（三格版面＋自由座標/錨點/縮放）、背景淡入淡出、BGM 持續播放
+- 📖 **劇本用 Markdown 寫作**：作家友善，支援 YAML front matter；卡片 / Markdown / JSON 三種檢視隨時互換
 - 🔀 **自然銜接的分支**：不是生硬的「岔路口」，而是用狀態旗標（flags）讓劇情在選擇後無縫收束
-- 💾 **完整 GalGame 功能**：打字機效果、9 格存讀檔、回溯、自動播放、跳過、結局圖鑑
+- 🎬 **33 種演出指令**：帷幕、鏡頭（縮放/位移/暗角）、立繪動畫、浮動文字、視頻、粒子（雪/雨/花瓣）、語音配音…
+- 💾 **完整 GalGame 功能**：打字機效果、9 格存讀檔、回溯、自動播放（可指令化）、跳過、結局圖鑑
+- 🛠 **完整圖形編輯器**：六大分頁（劇本/資產/敘事地圖/個性化/發布/設定）、游標即時預覽、資產引用追蹤、全域搜尋、自動存檔
 - 🌐 **純靜態網頁**：無需後端，不需要編譯，`python -m http.server` 就能跑
+- 🦊 **跨瀏覽器**：Chrome/Edge 直接讀寫本機資料夾；Firefox/Safari 自動切記憶體模式（ZIP 匯入匯出）
 - 📱 **響應式設計**：桌機與行動裝置皆可
 - 🎭 **SVG fallback**：即使沒有立繪/背景圖檔也會自動產生 placeholder
 
@@ -61,31 +64,35 @@ npx serve .
 
 ## 🛠 圖形化編輯器
 
-在瀏覽器打開 `editor.html` 即可使用（**僅支援 Chrome、Edge、Opera**，因為使用 File System Access API）。
+在瀏覽器打開 `editor.html` 即可使用。Chrome/Edge/Opera 直接讀寫本機資料夾（File System Access API）；
+**Firefox/Safari 自動切換記憶體模式**——用「開啟專案」選 ZIP 匯入、「⬇ ZIP」匯出保存，內容暫存在瀏覽器（IndexedDB）。
 
-### 功能
+### 六大分頁
 
-- **直接讀寫本機 Markdown 檔案**：點「開啟專案」選擇你的故事資料夾，所有變更按 Ctrl+S 存回原本的 `.md` 檔
-- **場景清單編輯器**：每種指令有專屬的視覺化卡片，不用記語法
-- **流程圖視圖**：看到整個故事的分支結構，不同線段代表 next / goto / 選項
-- **即時 Linter**：自動抓出拼錯的 flag、無效的 goto、未定義的角色、不可達的場景等
-- **Flag 檢視器**：列出所有 flag 與它們在哪裡被設定/讀取，點擊可跳到位置，支援全域改名
-- **故事設定對話框**：管理標題、起始場景、角色清單（含多表情立繪對應）、結局清單
+| 分頁 | 內容 |
+|------|------|
+| **劇本** | 三欄常駐：結構樹（章節分組＋搜尋）｜事件卡片（卡片/MD/JSON 三檢視）｜預覽＋檢查器。點選任何指令，右側立即顯示「執行到這一行」的畫面（靜態求值，不播動畫）；按「▶ 運行」才實際播放 |
+| **資產** | 背景/立繪/BGM/音效/語音/視頻 匯入管理；每個資產顯示引用數或「⚠ 游離」，刪除前列出受影響位置；「位置與錨點」可拖曳格線自訂立繪位置 |
+| **敘事地圖** | 橫向分支圖：選項直接列在節點內、各自拉線；未引用場景虛線標示；縮放/適應畫面；左欄變量管理（登記/搜尋/篩選）與結局清單 |
+| **個性化** | 遊戲外觀主題（規劃中） |
+| **發布** | ZIP 匯出（一鍵網頁版規劃中） |
+| **設定** | 專案基本資訊、編輯器偏好 |
+
+### 其他能力
+
+- **全域搜尋**（`Ctrl+Shift+F`）：跨場景搜台詞/角色/變量/資產檔名，點擊跳到該行
+- **自動存檔**：改動後 2.5 秒自動寫回，狀態列可隨時開關
+- **即時 Linter**：拼錯的 flag、無效的 goto、未定義的角色、不可達的場景
+- **智慧改名**：改場景 ID / flag 名自動更新所有引用
 - **Undo/Redo**：Ctrl+Z / Ctrl+Shift+Z
-- **自動補完**：選擇背景、BGM、角色、場景時從現有資源下拉選單挑
-- **智慧改名**：改場景 ID 會自動更新所有 goto/next 的引用；改 flag 名也會同步更新所有條件表達式
 - **雙向相容**：編輯器輸出的 Markdown 與手寫完全相容，可以兩邊切換使用
 
 ### 快速開始
 
-1. 啟動靜態伺服器：`python3 -m http.server 8000`
-2. 打開 `http://localhost:8000/editor.html`（用 Chrome 或 Edge）
+1. 啟動靜態伺服器：`python tools/dev_server.py`
+2. 打開 `http://127.0.0.1:8123/editor.html`
 3. 點「開啟專案」選擇 `public/stories/demo_story/` 或你自己的故事資料夾
-4. 編輯、儲存（Ctrl+S）
-
-### 不支援 Chrome/Edge 怎麼辦
-
-目前沒做 fallback，Firefox/Safari 使用者只能手寫 Markdown。這是可接受的妥協：劇本格式本身就是為手寫設計的，編輯器只是加分項。
+4. 編輯——自動存檔會替你寫回（或 Ctrl+S 手動存）
 
 ---
 
@@ -158,25 +165,26 @@ next: 02_下一場景       # 沒有選項結尾時會自動跳過去
 
 ### `@` 畫面指令
 
-| 指令 | 用途 | 範例 |
-|------|------|------|
-| `@bg <file> fade=<ms>` | 切換背景 | `@bg cafe.svg fade=800` |
-| `@show <角色> <位置> <表情>` | 顯示立繪 | `@show 小鈴 center smile` |
-| `@hide <角色>` | 隱藏單一角色 | `@hide 小鈴` |
-| `@hide all` | 隱藏所有立繪 | `@hide all` |
-| `@move <角色> <起>→<終>` | 移動立繪位置 | `@move 小鈴 center→left` |
-| `@bgm <file>` | 播放背景音樂（同檔不會重播） | `@bgm happy.mp3` |
-| `@bgm-stop` | 停止 BGM | `@bgm-stop fade=500` |
-| `@se <file>` | 一次性音效 | `@se door_open.mp3` |
-| `@wait <ms>` | 靜默等待 | `@wait 1500` |
-| `@set <flag> = <值>` | 設定旗標 | `@set met_alice = true` |
-| `@set <flag> += <n>` | 旗標遞增 | `@set charm += 1` |
-| `@goto <target>` | 跳到標籤或場景 | `@goto 03_結局` |
-| `@ending id="..." title="..." desc="..."` | 結局標記 | 看下方 |
+完整語法與參數見 **[劇本寫作指引.md](./劇本寫作指引.md)**，以下為總表：
 
-**立繪位置**：`left`、`center`、`right`
+| 分類 | 指令 |
+|------|------|
+| 背景/立繪 | `@bg` · `@show`（含 `pos=` `anchor=` `scale=` 自由定位）· `@hide` · `@move` |
+| 音訊 | `@bgm` · `@bgm-stop` · `@se` · `@se-stop` · `@voice`（對話配音） |
+| 節奏 | `@wait` · `@auto`（自動播放）· `@textcfg`（打字速度/淡入/等待圖標） |
+| 特效 | `@shake` · `@flash` · `@tint` · `@tint-clear` · `@curtain`（帷幕）· `@ui`（隱藏界面） |
+| 鏡頭 | `@camera`（縮放/位移/暗角）· `@camera-reset` |
+| 動畫 | `@sprite`（立繪跳動/搖晃/位移）· `@float`（浮動文字） |
+| 媒體 | `@video` · `@video-stop` · `@particles`（雪/雨/花瓣）· `@particles-stop` |
+| 場控 | `@clear`（銷毀場景） |
+| 資料/流程 | `@set` · `@goto` · `@ending` |
+
+**立繪位置**：內建 `left`、`center`、`right`；也可在 story.json 的 `positions` 宣告具名位置，
+或直接在 `@show` 加 `pos=x,y anchor=錨點 scale=倍率` 自由定位（九種錨點）。
 
 **表情**：需在 `story.json` 的 `characters[名字].emotions` 中定義。
+
+**含空白的參數要加引號**：`@float "好痛 啊！" x=50`。
 
 ### `::` 控制流程
 
@@ -294,36 +302,37 @@ next: 02_下一場景       # 沒有選項結尾時會自動跳過去
 
 ```
 galgame-engine/
-├── index.html              # 入口
+├── index.html              # 遊戲入口
+├── editor.html             # 圖形化劇本編輯器
+├── preview.html            # 編輯器的預覽沙盒（iframe）
+├── tools/dev_server.py     # 開發用不快取靜態伺服器
 ├── src/
-│   ├── main.js             # 裝配：把引擎與 UI 串起來
+│   ├── main.js             # 遊戲裝配
+│   ├── preview.js          # 預覽裝配（scrub/play 雙模式）
 │   ├── engine/
-│   │   ├── StoryEngine.js       # 核心引擎
-│   │   ├── SceneParser.js       # Markdown 劇本解析
+│   │   ├── StoryEngine.js       # 核心引擎（含靜態求值 evaluateTo）
+│   │   ├── SceneParser.js       # Markdown 劇本解析（MD → AST）
 │   │   ├── ConditionEvaluator.js # 條件判斷器
 │   │   └── SaveManager.js       # 存讀檔
 │   ├── ui/
-│   │   ├── TextBox.js           # 文字框 + 打字機效果
+│   │   ├── GameRuntime.js       # 引擎↔UI 接線（遊戲與預覽共用）
+│   │   ├── TextBox.js           # 文字框 + 打字機
 │   │   ├── ChoiceMenu.js        # 選項
-│   │   ├── CharacterLayer.js    # 立繪與背景
-│   │   └── AudioManager.js      # 音效/BGM
-│   └── styles/
-│       └── main.css             # 經典 GalGame 風格樣式
+│   │   ├── CharacterLayer.js    # 立繪（含自由定位）與背景
+│   │   ├── AudioManager.js      # BGM/音效/語音
+│   │   ├── ScreenEffects.js     # 震動/閃光/染色/帷幕/暗角
+│   │   ├── ParticleLayer.js     # 粒子（雪/雨/花瓣）
+│   │   └── anchors.js           # 錨點定義（引擎與編輯器共用）
+│   ├── editor/                  # 編輯器（views / widgets / core）
+│   └── styles/main.css
 └── public/stories/
     └── demo_story/              # 範例：雨後的書店
         ├── story.json
-        ├── scenes/
-        │   ├── 01_prologue.md
-        │   ├── 02_bookstore.md
-        │   ├── 03_conversation.md
-        │   ├── 04a_shared_umbrella.md
-        │   ├── 04b_left_umbrella.md
-        │   ├── 04c_solitude.md
-        │   └── 04d_books.md
+        ├── scenes/*.md
         ├── characters/          # 立繪（SVG 或 PNG）
         ├── backgrounds/         # 背景
-        ├── bgm/                 # 背景音樂（選用）
-        └── se/                  # 音效（選用）
+        ├── bgm/  se/            # 音樂與音效（選用）
+        └── voice/  video/       # 語音與視頻（選用）
 ```
 
 ---
