@@ -25,6 +25,7 @@ import { MarkdownWriter } from "./core/MarkdownWriter.js";
 import { SceneJson } from "./core/SceneJson.js";
 import { createAutosave } from "./core/autosave.js";
 import { promptDialog } from "./widgets/dialog.js";
+import { renderDirectiveForm, DIRECTIVE_SCHEMAS } from "./widgets/directiveFields.js";
 
 const $ = s => document.querySelector(s);
 
@@ -735,6 +736,13 @@ function renderInspector(sceneId, index) {
     return;
   }
 
+  // 其餘多參數指令：schema 驅動的可編輯檢查器
+  if (ins.type === "directive" && DIRECTIVE_SCHEMAS[ins.name]) {
+    renderDirectiveForm(host, ins, DIRECTIVE_SCHEMAS[ins.name],
+      (args) => updateDirectiveArgs(sceneId, index, args));
+    return;
+  }
+
   const clean = SceneJson.toObject({ meta: {}, instructions: [ins] }).instructions[0];
   const rows = [["行號", String(index + 1)],
                 ["類型", clean.type + (clean.name ? ` · @${clean.name}` : "")]];
@@ -859,6 +867,15 @@ function renderShowInspector(host, sceneId, index, ins) {
   clear.addEventListener("click", () =>
     updateShowArgs(sceneId, index, { pos: "", anchor: "", scale: "" }));
   host.appendChild(clear);
+}
+
+// 寫回 schema 驅動指令的完整 args（表單已去空值），並即時預覽
+function updateDirectiveArgs(sceneId, index, args) {
+  const ins = project.getScene(sceneId)?.instructions?.[index];
+  if (!ins) return;
+  project.updateInstruction(sceneId, index, { args });
+  renderInspector(sceneId, index);          // 重繪自身（欄位與提示同步）
+  previewPanel.scrub(sceneId, index);       // 立刻在預覽看到結果
 }
 
 // 寫回 @show 的定位參數；空值代表「不指定」，直接從 args 移除以免污染 Markdown
