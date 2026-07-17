@@ -331,7 +331,7 @@ $("#btn-delete-scene").addEventListener("click", async () => {
   if (!currentSceneId) return;
   if (!(await confirmDialog({
     title: `刪除場景「${currentSceneId}」？`,
-    message: "這個操作無法復原——場景檔案會被刪除。",
+    message: "場景檔案會被刪除；若刪錯可用復原（Ctrl+Z）救回，存檔後生效。",
     confirmText: "刪除場景", danger: true,
   }))) return;
   try {

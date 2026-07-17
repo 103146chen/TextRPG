@@ -184,6 +184,8 @@ export class StoryProject {
   async deleteScene(sceneId) {
     const sc = this.scenes.get(sceneId);
     if (!sc) return;
+    // 先存快照 → 刪除可用 undo 救回（#restore 會把磁碟上不存在的場景標髒重寫）
+    this.#pushUndo();
     try {
       await this.fs.deleteScene(sc.fileName);
     } catch (e) {
