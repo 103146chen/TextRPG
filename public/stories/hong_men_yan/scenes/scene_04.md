@@ -29,7 +29,7 @@ next: scene_05
 - text: 「一個亭長出身的老兵痞，能有什麼大志？」
   set: { 亞父之言: "輕蔑" }
   goto: after_fanzeng
-- text: 「管他志在哪裡——明日一戰，都成灰燼」
+- text: 「管他志在哪裡，明日一戰，都成灰燼」
   set: { 亞父之言: "不屑一顧" }
   goto: after_fanzeng
 ??
