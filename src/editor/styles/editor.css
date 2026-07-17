@@ -1804,3 +1804,103 @@ input, textarea, select {
 
 /* S6d：資產面板視頻縮圖 */
 video.asset-thumb { object-fit: cover; cursor: pointer; }
+
+/* S7：全域搜尋 */
+.global-search {
+  position: relative;
+  flex: 0 1 260px;
+  margin: 0 12px;
+}
+.global-search input[type="search"] {
+  width: 100%;
+  background: var(--e-bg);
+  border: 1px solid var(--e-border);
+  border-radius: 4px;
+  padding: 5px 10px;
+  font-size: 12px;
+  color: var(--e-text);
+}
+.global-search input[type="search"]:focus {
+  outline: none;
+  border-color: var(--e-accent);
+}
+.gs-results {
+  position: absolute;
+  top: calc(100% + 6px);
+  left: 0;
+  width: 420px;
+  max-width: 60vw;
+  max-height: 60vh;
+  overflow-y: auto;
+  background: var(--e-bg-2);
+  border: 1px solid var(--e-border-2);
+  border-radius: 6px;
+  box-shadow: 0 10px 32px rgba(0, 0, 0, 0.5);
+  z-index: 500;
+}
+.gs-head {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--e-text-faded);
+  border-bottom: 1px solid var(--e-border);
+}
+.gs-empty { padding: 14px 12px; font-size: 12px; color: var(--e-text-faded); }
+.gs-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 7px 12px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid var(--e-border);
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--e-text);
+}
+.gs-row:hover { background: var(--e-bg-3); }
+.gs-row:last-child { border-bottom: none; }
+.gs-kind {
+  flex: 0 0 auto;
+  font-size: 10px;
+  color: var(--e-accent);
+  border: 1px solid var(--e-border-2);
+  border-radius: 3px;
+  padding: 0 5px;
+}
+.gs-scene {
+  flex: 0 0 auto;
+  max-width: 110px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--e-text-dim);
+}
+.gs-snippet {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* S7：自動存檔狀態鈕與偏好 */
+.status-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font: inherit;
+  color: var(--e-text-faded);
+  padding: 0;
+}
+.status-btn.on { color: var(--e-green, #7cbf7c); }
+.status-btn:hover { color: var(--e-text); }
+.pref-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--e-text-dim);
+  margin: 8px 0;
+  cursor: pointer;
+}

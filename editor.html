@@ -21,6 +21,11 @@
         <button class="main-tab" data-page="settings">設定</button>
       </nav>
 
+      <div class="global-search">
+        <input id="global-search" type="search" placeholder="全域搜尋…  (Ctrl+Shift+F)" autocomplete="off" />
+        <div id="global-search-results" class="gs-results" style="display:none"></div>
+      </div>
+
       <div class="topbar-actions">
         <span id="project-name" class="project-name">(未開啟)</span>
         <span id="dirty-indicator" class="dirty-indicator" style="display:none">有未儲存變更</span>
@@ -145,14 +150,17 @@
           <p class="muted">故事的標題、作者與起始場景。</p>
           <div id="project-settings" class="project-settings"></div>
           <h2 class="settings-sub">編輯器偏好</h2>
-          <p class="muted">尚未實作。</p>
+          <label class="pref-row">
+            <input type="checkbox" id="pref-autosave" />
+            自動存檔（任何改動後 2.5 秒自動寫回；狀態列可隨時切換）
+          </label>
         </div>
       </section>
     </div>
 
     <!-- ===== 狀態列 ===== -->
     <footer class="statusbar">
-      <span id="status-autosave" class="status-item">● 自動存檔：關閉</span>
+      <button id="status-autosave" class="status-item status-btn" title="點擊切換自動存檔">○ 自動存檔</button>
       <span id="status-project" class="status-item">未開啟專案</span>
       <span id="status-backend" class="status-item"></span>
       <span class="status-spacer"></span>

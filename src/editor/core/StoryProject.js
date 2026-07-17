@@ -374,6 +374,68 @@ export class StoryProject {
     return hits;
   }
 
+  /**
+   * 全域搜尋（S7）：跨場景找台詞/角色/選項/變量/條件/資產檔名/標籤/結局。
+   * 回傳 { sceneId, index, kind, snippet }；index 為 null 代表命中場景本身。
+   */
+  searchAll(query, { limit = 200 } = {}) {
+    const q = String(query).trim().toLowerCase();
+    if (!q) return [];
+    const hits = [];
+    const push = (sceneId, index, kind, snippet) => {
+      if (hits.length < limit) hits.push({ sceneId, index, kind, snippet: String(snippet) });
+    };
+    const m = (v) => String(v ?? "").toLowerCase().includes(q);
+
+    for (const sceneId of this.getAllSceneIds()) {
+      if (hits.length >= limit) break;
+      const sc = this.getScene(sceneId);
+      if (m(sceneId) || m(sc.meta.title)) push(sceneId, null, "場景", sc.meta.title || sceneId);
+
+      sc.instructions.forEach((ins, idx) => {
+        switch (ins.type) {
+          case "text":
+            if (m(ins.text) || m(ins.speaker)) {
+              push(sceneId, idx, ins.speaker ? "台詞" : "旁白",
+                   `${ins.speaker ? ins.speaker + ": " : ""}${ins.text}`);
+            }
+            break;
+          case "choice":
+            for (const opt of ins.options) {
+              if (m(opt.text) || m(opt.goto)) { push(sceneId, idx, "選項", opt.text); break; }
+            }
+            break;
+          case "set":
+            if (m(ins.key) || m(ins.value)) push(sceneId, idx, "變量", `@set ${ins.key} ${ins.op} ${ins.value}`);
+            break;
+          case "if":
+          case "elif":
+            if (m(ins.condition)) push(sceneId, idx, "條件", `${ins.type} ${ins.condition}`);
+            break;
+          case "goto":
+            if (m(ins.target)) push(sceneId, idx, "跳轉", `@goto ${ins.target}`);
+            break;
+          case "label":
+            if (m(ins.name)) push(sceneId, idx, "標籤", ins.name);
+            break;
+          case "ending":
+            if (m(ins.id) || m(ins.title) || m(ins.desc)) push(sceneId, idx, "結局", ins.title || ins.id);
+            break;
+          case "directive": {
+            const args = ins.args || {};
+            const argStr = [
+              ...(args.positional || []),
+              ...Object.entries(args).filter(([k]) => k !== "positional").map(([k, v]) => `${k}=${v}`),
+            ].join(" ");
+            if (m(ins.name) || m(argStr)) push(sceneId, idx, "指令", `@${ins.name} ${argStr}`.trim());
+            break;
+          }
+        }
+      });
+    }
+    return hits;
+  }
+
   /** 各類型中沒有任何引用的資產（游離） */
   findOrphanAssets() {
     const out = {};

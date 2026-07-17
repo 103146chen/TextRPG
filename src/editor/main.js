@@ -21,6 +21,7 @@ import { exportProjectZip } from "./core/projectZip.js";
 import { SceneParser } from "../engine/SceneParser.js";
 import { MarkdownWriter } from "./core/MarkdownWriter.js";
 import { SceneJson } from "./core/SceneJson.js";
+import { createAutosave } from "./core/autosave.js";
 
 const $ = s => document.querySelector(s);
 
@@ -403,6 +404,115 @@ window.addEventListener("beforeunload", (e) => {
     return e.returnValue;
   }
 });
+
+// ==================== 全域搜尋（S7）====================
+
+function jumpToInstruction(sceneId, index, color = "var(--e-accent)") {
+  currentSceneId = sceneId;
+  setPage("script");
+  renderSidebar();
+  setTimeout(() => {
+    if (index != null) {
+      const row = document.querySelector(`.instr-row[data-index="${index}"]`);
+      if (row) {
+        row.scrollIntoView({ behavior: "smooth", block: "center" });
+        row.style.outline = `2px solid ${color}`;
+        setTimeout(() => { row.style.outline = ""; }, 2000);
+      }
+    }
+  }, 100);
+}
+
+const gsInput = $("#global-search");
+const gsResults = $("#global-search-results");
+let gsTimer = null;
+
+function hideGlobalSearch() { gsResults.style.display = "none"; }
+
+function runGlobalSearch() {
+  const q = gsInput.value.trim();
+  if (!q) { hideGlobalSearch(); return; }
+  gsResults.style.display = "";
+  gsResults.innerHTML = "";
+
+  if (!project.storyMeta) {
+    gsResults.innerHTML = `<div class="gs-empty">請先開啟專案</div>`;
+    return;
+  }
+  const hits = project.searchAll(q, { limit: 80 });
+  if (hits.length === 0) {
+    gsResults.innerHTML = `<div class="gs-empty">沒有符合「${escapeHtml(q)}」的結果</div>`;
+    return;
+  }
+
+  const head = document.createElement("div");
+  head.className = "gs-head";
+  head.textContent = `${hits.length} 筆結果${hits.length >= 80 ? "（已截斷）" : ""}`;
+  gsResults.appendChild(head);
+
+  for (const hit of hits) {
+    const sc = project.getScene(hit.sceneId);
+    const row = document.createElement("button");
+    row.className = "gs-row";
+    const snippet = hit.snippet.length > 60 ? hit.snippet.slice(0, 58) + "…" : hit.snippet;
+    row.innerHTML =
+      `<span class="gs-kind">${escapeHtml(hit.kind)}</span>` +
+      `<span class="gs-scene">${escapeHtml(sc?.meta.title || hit.sceneId)}</span>` +
+      `<span class="gs-snippet">${escapeHtml(snippet)}</span>`;
+    row.addEventListener("click", () => {
+      hideGlobalSearch();
+      jumpToInstruction(hit.sceneId, hit.index);
+    });
+    gsResults.appendChild(row);
+  }
+}
+
+gsInput.addEventListener("input", () => {
+  clearTimeout(gsTimer);
+  gsTimer = setTimeout(runGlobalSearch, 200);
+});
+gsInput.addEventListener("focus", () => { if (gsInput.value.trim()) runGlobalSearch(); });
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".global-search")) hideGlobalSearch();
+});
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "f") {
+    e.preventDefault();
+    gsInput.focus();
+    gsInput.select();
+  } else if (e.key === "Escape") {
+    hideGlobalSearch();
+  }
+});
+
+// ==================== 自動存檔（S7）====================
+
+const autosave = createAutosave({
+  project, fs,
+  onStatus: ({ enabled, lastAt, error }) => {
+    if (error) toast(`自動存檔失敗，已停用：${error.message}`, "error");
+    localStorage.setItem("woven-autosave", enabled ? "on" : "off");
+    renderAutosaveStatus();
+    // 存檔成功後刷新側欄的 dirty 標記與工具列按鈕
+    if (!error && enabled) { renderSidebar(); updateToolbar(); }
+  },
+});
+autosave.setEnabled(localStorage.getItem("woven-autosave") !== "off");
+
+function renderAutosaveStatus() {
+  const btn = $("#status-autosave");
+  const cb = $("#pref-autosave");
+  const t = autosave.lastAt
+    ? `（上次 ${autosave.lastAt.toLocaleTimeString("zh-TW", { hour12: false })}）`
+    : "";
+  btn.textContent = autosave.enabled ? `● 自動存檔${t}` : "○ 自動存檔：關閉";
+  btn.classList.toggle("on", autosave.enabled);
+  if (cb) cb.checked = autosave.enabled;
+}
+
+$("#status-autosave").addEventListener("click", () => autosave.setEnabled(!autosave.enabled));
+$("#pref-autosave").addEventListener("change", (e) => autosave.setEnabled(e.target.checked));
+renderAutosaveStatus();
 
 // ==================== 訂閱專案變更 ====================
 
