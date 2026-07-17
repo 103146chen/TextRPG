@@ -2149,3 +2149,78 @@ video.asset-thumb { object-fit: cover; cursor: pointer; }
   padding: 4px;
   z-index: 1001;   /* 蓋在一級選單之上 */
 }
+
+/* ============================================
+   資產管理器重排：音訊清單列＋磁貼放大＋留白
+   ============================================ */
+.asset-page-host { padding: 16px 20px; }
+.asset-section { margin-bottom: 22px; }
+.asset-section-head { font-size: 13px; padding: 4px 2px 8px; }
+
+/* 音訊：清單列 */
+.asset-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 8px;
+  border: 1px dashed var(--e-border);
+  border-radius: 6px;
+  min-height: 48px;
+  max-width: 640px;
+}
+.asset-list.dragover { border-color: var(--e-accent); background: rgba(74, 144, 217, 0.08); }
+.asset-list .asset-drop-hint { padding: 10px 4px; color: var(--e-text-faded); font-size: 11px; text-align: center; }
+.asset-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 5px;
+  background: var(--e-bg-2);
+  border: 1px solid var(--e-border);
+}
+.asset-row:hover { border-color: var(--e-border-2); background: var(--e-bg-3); }
+.asset-row.orphan { border-color: var(--e-accent); }
+.asset-row-play {
+  width: 30px;
+  height: 30px;
+  flex: 0 0 auto;
+  cursor: pointer;
+  background: var(--e-bg-4);
+  color: var(--e-text);
+  border: 0;
+  border-radius: 50%;
+  font-size: 12px;
+}
+.asset-row-play:hover { background: var(--e-accent); color: #fff; }
+.asset-row-name {
+  flex: 1;
+  min-width: 0;
+  font-size: 13px;
+  color: var(--e-text);
+  font-family: var(--e-font-mono);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.asset-row .asset-usage { width: auto; flex: 0 0 auto; font-size: 11px; }
+.asset-row .asset-del {
+  position: static;
+  opacity: 0;
+  width: 22px;
+  height: 22px;
+  line-height: 20px;
+  flex: 0 0 auto;
+}
+.asset-row:hover .asset-del { opacity: 1; }
+
+/* 圖像/視頻磁貼放大（原本 72~110px 是舊側欄時代的尺寸） */
+.page-assets.active .asset-grid {
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 10px;
+  padding: 10px;
+}
+.page-assets.active .asset-thumb { height: 96px; border-radius: 4px; }
+.page-assets.active .asset-item { padding: 8px; gap: 5px; }
+.page-assets.active .asset-name { font-size: 11.5px; }
+.page-assets.active .asset-usage { font-size: 10.5px; }

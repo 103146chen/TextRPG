@@ -74,32 +74,39 @@ export class SceneEditor {
     const newBody = this.containerEl.querySelector('.scene-body');
     if (!newBody) return;
 
+    // 先「同步」回到原本的捲動位置——若等 rAF 才處理，
+    // 會先閃到頂端一幀，且 scrollIntoView 從 0 起算只會把列貼到底邊，
+    // 檢視位置每插入一次就漂移一次（使用者回報的「新增後不維持位置」）。
+    newBody.scrollTop = savedScroll;
+
     if (this._pendingScrollTo !== null) {
       const pending = this._pendingScrollTo;
       this._pendingScrollTo = null;
       requestAnimationFrame(() => {
         const idx = typeof pending === 'object' ? pending.index : pending;
         const targetRow = this.containerEl.querySelector(`.instr-row[data-index="${idx}"]`);
-        if (!targetRow) { newBody.scrollTop = savedScroll; return; }
+        if (!targetRow) return;
 
         if (typeof pending === 'object' && pending.visualOffset !== undefined) {
-          // 還原拖曳時的視覺位置：
-          // 此時 newBody.scrollTop = 0，getBoundingClientRect() 反映的是未捲動時的座標
+          // 還原拖曳時的視覺位置（以目前捲動為基準換算成容器內座標）
           const rowTop = targetRow.getBoundingClientRect().top;
-          const containerTop = newBody.getBoundingClientRect().top;
-          newBody.scrollTop = (rowTop - containerTop) - pending.visualOffset;
+          const bodyRect = newBody.getBoundingClientRect();
+          newBody.scrollTop = newBody.scrollTop + (rowTop - bodyRect.top) - pending.visualOffset;
         } else {
-          targetRow.scrollIntoView({ block: 'nearest' });
+          // 檢視位置已還原；只有目標列不在視野內時才輕移入視野
+          const rowRect = targetRow.getBoundingClientRect();
+          const bodyRect = newBody.getBoundingClientRect();
+          if (rowRect.top < bodyRect.top || rowRect.bottom > bodyRect.bottom) {
+            targetRow.scrollIntoView({ block: 'nearest' });
+          }
         }
-        // 拖曳後高亮閃爍，方便定位
+        // 高亮閃爍，方便定位
         targetRow.classList.remove('drop-highlight');
         void targetRow.offsetWidth; // 強制重排，確保動畫重新開始
         targetRow.classList.add('drop-highlight');
         targetRow.addEventListener('animationend',
           () => targetRow.classList.remove('drop-highlight'), { once: true });
       });
-    } else {
-      newBody.scrollTop = savedScroll;
     }
   }
 
@@ -331,6 +338,7 @@ export class SceneEditor {
 
     const insertItem = (item) => {
       const tpl = item.template();
+      this.selectedIndex = index;   // 新列自動選取：預覽與檢查器跟著跳過去
       if (Array.isArray(tpl)) {
         tpl.forEach((t, i) => {
           this._pendingScrollTo = index;

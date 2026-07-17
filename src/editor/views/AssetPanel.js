@@ -84,9 +84,9 @@ export class AssetPanel {
     head.appendChild(input);
     wrap.appendChild(head);
 
-    // 拖曳放置區 + 縮圖網格
+    // 拖曳放置區：音訊用清單列（檔名讀得清楚），圖像/視頻用磁貼
     const grid = document.createElement("div");
-    grid.className = "asset-grid";
+    grid.className = sec.type === "audio" ? "asset-list" : "asset-grid";
     grid.dataset.kind = sec.kind;
 
     if (files.length === 0) {
@@ -115,14 +115,42 @@ export class AssetPanel {
   #renderItem(sec, file) {
     const usages = this.project.findAssetUsages?.(sec.kind, file) || [];
     const isOrphan = usages.length === 0;
-
-    const item = document.createElement("div");
-    item.className = "asset-item" + (isOrphan ? " orphan" : "");
-    item.title = isOrphan
+    const tip = isOrphan
       ? `${file}\n\n⚠ 沒有任何地方引用`
       : `${file}\n\n引用 ${usages.length} 處：\n` +
         usages.slice(0, 8).map((u) => `· ${u.sceneId ? u.sceneId + " → " : ""}${u.detail}`).join("\n") +
         (usages.length > 8 ? `\n…共 ${usages.length} 處` : "");
+
+    // 音訊：清單列版型
+    if (sec.type === "audio") {
+      const row = document.createElement("div");
+      row.className = "asset-row" + (isOrphan ? " orphan" : "");
+      row.title = tip;
+
+      const playBtn = document.createElement("button");
+      playBtn.className = "asset-row-play";
+      playBtn.textContent = "▶";
+      playBtn.title = "試聽";
+      playBtn.addEventListener("click", (e) => { e.stopPropagation(); this.#togglePlay(sec.kind, file, playBtn); });
+      row.appendChild(playBtn);
+
+      const name = document.createElement("span");
+      name.className = "asset-row-name";
+      name.textContent = file;
+      row.appendChild(name);
+
+      const badge = document.createElement("span");
+      badge.className = "asset-usage" + (isOrphan ? " orphan" : "");
+      badge.textContent = isOrphan ? "⚠ 游離" : `${usages.length} 處引用`;
+      row.appendChild(badge);
+
+      row.appendChild(this.#deleteButton(sec, file, usages));
+      return row;
+    }
+
+    const item = document.createElement("div");
+    item.className = "asset-item" + (isOrphan ? " orphan" : "");
+    item.title = tip;
 
     if (sec.type === "image") {
       const img = document.createElement("img");
@@ -162,6 +190,12 @@ export class AssetPanel {
     badge.textContent = isOrphan ? "⚠ 游離" : `${usages.length} 處引用`;
     item.appendChild(badge);
 
+    item.appendChild(this.#deleteButton(sec, file, usages));
+
+    return item;
+  }
+
+  #deleteButton(sec, file, usages) {
     const del = document.createElement("button");
     del.className = "asset-del";
     del.textContent = "×";
@@ -178,9 +212,7 @@ export class AssetPanel {
       if (!confirm(warn)) return;
       await this.project.deleteAsset(sec.kind, file);
     });
-    item.appendChild(del);
-
-    return item;
+    return del;
   }
 
   async #importFiles(kind, files) {
