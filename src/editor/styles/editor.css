@@ -1413,6 +1413,68 @@ input, textarea, select {
 .map-view-host { flex: 1; min-height: 0; }
 #map-graph-view { display: flex; flex-direction: column; }
 #map-flags-view, #map-endings-view { overflow-y: auto; padding: 16px 20px; background: var(--e-bg); }
+#map-chapters-view { overflow-y: auto; padding: 16px 20px; background: var(--e-bg); }
+
+/* 章節管理專頁 */
+.chapter-mgr { max-width: 760px; }
+.chapter-card {
+  background: var(--e-bg-2);
+  border: 1px solid var(--e-border);
+  border-radius: 8px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+.chapter-unassigned { background: transparent; border-style: dashed; }
+.chapter-card-head {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 12px;
+  background: var(--e-bg-3);
+  border-bottom: 1px solid var(--e-border);
+}
+.chapter-unassigned .chapter-card-head { background: transparent; border-bottom-color: var(--e-border); }
+.chapter-order { display: flex; flex-direction: column; line-height: 0.7; }
+.chapter-order-btn {
+  background: transparent; border: none; color: var(--e-text-faded);
+  font-size: 9px; padding: 1px 2px; cursor: pointer;
+}
+.chapter-order-btn:hover:not(:disabled) { color: var(--e-accent); }
+.chapter-order-btn:disabled { opacity: 0.25; cursor: default; }
+.chapter-title { font-size: 13.5px; color: var(--e-text); }
+.chapter-count { font-size: 11px; color: var(--e-text-faded); }
+.chapter-head-btn {
+  background: transparent; border: none; color: var(--e-text-faded);
+  font-size: 14px; line-height: 1; padding: 2px 5px; cursor: pointer;
+}
+.chapter-head-btn:hover { color: var(--e-accent); }
+.chapter-head-btn.danger:hover { color: var(--e-red); }
+.chapter-head-btn + .chapter-head-btn { margin-left: -2px; }
+.chapter-card-head .chapter-head-btn:nth-last-child(2) { margin-left: auto; }
+
+.chapter-scene-list {
+  min-height: 40px;
+  padding: 8px;
+  display: flex; flex-direction: column; gap: 6px;
+}
+.chapter-scene-list.drop-target { background: rgba(212, 160, 96, 0.10); outline: 1px dashed var(--e-accent); outline-offset: -4px; }
+.chapter-drop-hint {
+  color: var(--e-text-faded); font-size: 12px;
+  text-align: center; padding: 10px; border: 1px dashed var(--e-border); border-radius: 6px;
+}
+.chapter-scene-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 7px 10px;
+  background: var(--e-bg);
+  border: 1px solid var(--e-border);
+  border-radius: 6px;
+  cursor: grab;
+}
+.chapter-scene-item:hover { border-color: var(--e-border-2); }
+.chapter-scene-item.dragging { opacity: 0.4; }
+.chapter-scene-grip { color: var(--e-text-faded); font-size: 11px; letter-spacing: -2px; cursor: grab; }
+.chapter-scene-label { flex: 1; min-width: 0; font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; cursor: pointer; }
+.chapter-scene-label:hover { color: var(--e-accent); }
+.chapter-scene-id { font-family: var(--e-font-mono); font-size: 10.5px; color: var(--e-text-faded); flex: 0 0 auto; }
+.chapter-add { margin-top: 4px; }
 
 .col-head {
   display: flex;

@@ -126,12 +126,16 @@
         <aside class="col col-map-nav">
           <div class="col-head"><span>敘事地圖</span></div>
           <button class="map-nav-btn active" data-map-view="graph">🗺 地圖</button>
+          <button class="map-nav-btn" data-map-view="chapters">📖 章節</button>
           <button class="map-nav-btn" data-map-view="flags">🔢 變量管理</button>
           <button class="map-nav-btn" data-map-view="endings">🏁 結局</button>
         </aside>
         <main class="col col-map-main">
           <div id="map-graph-view" class="map-view-host">
             <div id="graph-content"></div>
+          </div>
+          <div id="map-chapters-view" class="map-view-host" style="display:none">
+            <div id="chapter-manage"></div>
           </div>
           <div id="map-flags-view" class="map-view-host" style="display:none">
             <div id="var-manage"></div>

@@ -13,6 +13,7 @@ import { FlagInspector } from "./views/FlagInspector.js";
 import { CharacterManager } from "./views/CharacterManager.js";
 import { FlagManager } from "./views/FlagManager.js";
 import { EndingManager } from "./views/EndingManager.js";
+import { ChapterManager } from "./views/ChapterManager.js";
 import { ProjectSettings } from "./views/ProjectSettings.js";
 import { AssetPanel } from "./views/AssetPanel.js";
 import { AssetOverview } from "./views/AssetOverview.js";
@@ -86,6 +87,10 @@ const flagInspector = new FlagInspector($("#flag-panel"), project, (sceneId, ind
 new CharacterManager($("#character-manager"), project);
 new FlagManager($("#var-manage"), project);
 new EndingManager($("#ending-manage"), project);
+const chapterManager = new ChapterManager($("#chapter-manage"), project, (id) => {
+  currentSceneId = id;
+  setPage("script");
+});
 new ProjectSettings($("#project-settings"), project);
 // 資產頁分類入口（優化①）：總覽 + 每類一個過濾後的 AssetPanel
 new AssetOverview($("#asset-overview"), project, { onNavigate: (view) => setAssetView(view) });
@@ -401,6 +406,7 @@ document.querySelectorAll(".asset-nav-btn").forEach((btn) => {
 // 敘事地圖左欄分頁（地圖 / 變量管理 / 結局）
 const MAP_VIEWS = {
   graph: "#map-graph-view",
+  chapters: "#map-chapters-view",
   flags: "#map-flags-view",
   endings: "#map-endings-view",
 };
@@ -413,6 +419,7 @@ function setMapView(view) {
     $(sel).style.display = v === view ? "" : "none";
   }
   if (view === "graph") graphView.render();
+  else if (view === "chapters") chapterManager.render();
 }
 document.querySelectorAll(".map-nav-btn").forEach((btn) => {
   btn.addEventListener("click", () => setMapView(btn.dataset.mapView));

@@ -541,6 +541,42 @@ export class StoryProject {
     this.notify("chapters-updated", { sceneId, chapterId });
   }
 
+  /**
+   * 把場景移到某章節的指定位置（指派 + 排序合一）。
+   * chapterId 為 null/"" → 移出章節（未分類）；index < 0 或超界 → 放到末端。
+   * 同章節內移動可用來重排；跨章節移動同時處理搬離來源。
+   */
+  moveScene(sceneId, chapterId, index = -1) {
+    this.#pushUndo();
+    this.metaDirty = true;
+    const chapters = this.getChapters().map((c) => ({
+      ...c,
+      scenes: (c.scenes || []).filter((s) => s !== sceneId),
+    }));
+    if (chapterId) {
+      const target = chapters.find((c) => c.id === chapterId);
+      if (target) {
+        if (index < 0 || index > target.scenes.length) target.scenes.push(sceneId);
+        else target.scenes.splice(index, 0, sceneId);
+      }
+    }
+    this.storyMeta.chapters = chapters;
+    this.notify("chapters-updated", { sceneId, chapterId, index });
+  }
+
+  /** 調整章節順序：dir = -1 上移、+1 下移 */
+  moveChapter(chapterId, dir) {
+    const chapters = [...this.getChapters()];
+    const i = chapters.findIndex((c) => c.id === chapterId);
+    const j = i + dir;
+    if (i < 0 || j < 0 || j >= chapters.length) return;
+    this.#pushUndo();
+    this.metaDirty = true;
+    [chapters[i], chapters[j]] = [chapters[j], chapters[i]];
+    this.storyMeta.chapters = chapters;
+    this.notify("chapters-updated", { chapterId, moved: dir });
+  }
+
   // ==================== 旗標登記 ====================
 
   getDeclaredFlags() {
