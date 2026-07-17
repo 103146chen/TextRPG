@@ -5,6 +5,7 @@
 // ============================================
 
 import { confirmDialog } from "../widgets/dialog.js";
+import { toast } from "../widgets/toast.js";
 
 const SECTIONS = [
   { kind: "backgrounds", label: "背景", accept: "image/*", type: "image" },
@@ -223,7 +224,8 @@ export class AssetPanel {
       try { await this.project.importAsset(kind, f); ok++; }
       catch (e) { console.error("匯入失敗", f?.name, e); fail++; }
     }
-    if (fail) alert(`匯入完成：${ok} 成功、${fail} 失敗（詳見主控台）`);
+    if (fail) toast(`匯入完成：${ok} 成功、${fail} 失敗（詳見主控台）`, "error");
+    else if (ok) toast(`已匯入 ${ok} 個檔案`, "success");
   }
 
   #togglePlay(kind, file, btn) {

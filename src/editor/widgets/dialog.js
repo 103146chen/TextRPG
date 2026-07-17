@@ -7,6 +7,21 @@
 //   （解掉原生 prompt「重名彈 alert 後輸入消失」的痛點）
 // ============================================
 
+// 焦點鎖：Tab／Shift+Tab 在對話框內循環，不跑到背景元素
+function focusables(box) {
+  return [...box.querySelectorAll('button, input, select, textarea, [href], [tabindex]:not([tabindex="-1"])')]
+    .filter((el) => !el.disabled && el.offsetParent !== null);
+}
+function trapTab(box, e) {
+  if (e.key !== "Tab") return;
+  const f = focusables(box);
+  if (!f.length) return;
+  const first = f[0], last = f[f.length - 1];
+  if (!box.contains(document.activeElement)) { e.preventDefault(); first.focus(); }
+  else if (e.shiftKey && document.activeElement === first) { e.preventDefault(); last.focus(); }
+  else if (!e.shiftKey && document.activeElement === last) { e.preventDefault(); first.focus(); }
+}
+
 /**
  * 詢問一段文字輸入。
  * @param {object} o
@@ -91,6 +106,7 @@ export function promptDialog({
     function onKey(e) {
       if (e.key === "Escape") { e.preventDefault(); close(null); }
       else if (e.key === "Enter") { e.preventDefault(); submit(); }
+      else if (e.key === "Tab") trapTab(box, e);
     }
 
     okBtn.addEventListener("click", submit);
@@ -165,6 +181,7 @@ export function confirmDialog({
     function onKey(e) {
       if (e.key === "Escape") { e.preventDefault(); close(false); }
       else if (e.key === "Enter") { e.preventDefault(); close(true); }
+      else if (e.key === "Tab") trapTab(box, e);
     }
 
     okBtn.addEventListener("click", () => close(true));
@@ -210,6 +227,7 @@ export function openModal(title, build, { wide = false } = {}) {
     }
     function onKey(e) {
       if (e.key === "Escape") { e.preventDefault(); close(null); }
+      else if (e.key === "Tab") trapTab(box, e);
     }
 
     box.appendChild(build(close));

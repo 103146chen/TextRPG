@@ -25,6 +25,7 @@ import { MarkdownWriter } from "./core/MarkdownWriter.js";
 import { SceneJson } from "./core/SceneJson.js";
 import { createAutosave } from "./core/autosave.js";
 import { promptDialog, confirmDialog } from "./widgets/dialog.js";
+import { toast } from "./widgets/toast.js";
 import { renderDirectiveForm, DIRECTIVE_SCHEMAS } from "./widgets/directiveFields.js";
 
 const $ = s => document.querySelector(s);
@@ -905,14 +906,6 @@ function updateShowArgs(sceneId, index, patch) {
 }
 
 // ==================== 通用工具 ====================
-
-function toast(message, kind = "info") {
-  const el = document.createElement("div");
-  el.className = `toast ${kind}`;
-  el.textContent = message;
-  document.body.appendChild(el);
-  setTimeout(() => el.remove(), 3000);
-}
 
 function escapeHtml(s) {
   return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;");
