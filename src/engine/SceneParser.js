@@ -70,8 +70,16 @@ export class SceneParser {
       const line = lines[i];
       const trimmed = line.trim();
 
-      // 空行與註解
-      if (!trimmed || trimmed.startsWith("#")) {
+      // 空行跳過
+      if (!trimmed) {
+        i++;
+        continue;
+      }
+
+      // # 註解：保留為指令（作者筆記；引擎執行時 no-op，
+      // 原本直接丟棄會導致手寫註解在編輯器存檔後永久消失）
+      if (trimmed.startsWith("#")) {
+        instructions.push({ type: "comment", text: trimmed.replace(/^#\s?/, "") });
         i++;
         continue;
       }

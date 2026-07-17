@@ -37,6 +37,7 @@ export class InstructionRow {
     if (this.indent > 0) row.classList.add(`indented-${Math.min(this.indent, 3)}`);
     row.dataset.type = this.ins.type;
     if (this.ins.type === "text" && !this.ins.speaker) row.dataset.narration = "true";
+    if (this.ins.type === "directive") row.dataset.name = this.ins.name;
     row.dataset.index = this.index;
     if (this.selected) row.classList.add("selected");
     if (this.onSelect) {
@@ -44,6 +45,7 @@ export class InstructionRow {
     }
 
     row.innerHTML = `
+      <div class="instr-num">${this.index + 1}</div>
       <div class="instr-handle" title="拖曳排序"></div>
       <div class="instr-content"></div>
       <div class="instr-actions">
@@ -87,6 +89,7 @@ export class InstructionRow {
       case "endif": return this.#renderEndif(container);
       case "label": return this.#renderLabel(container);
       case "choice": return this.#renderChoice(container);
+      case "comment": return this.#renderComment(container);
       default: return this.#renderUnknown(container);
     }
   }
@@ -141,6 +144,21 @@ export class InstructionRow {
     container.appendChild(textInput);
   }
 
+  // ---------- 註解（作者筆記，執行時無作用）----------
+  #renderComment(container) {
+    const hash = document.createElement("span");
+    hash.className = "comment-hash";
+    hash.textContent = "#";
+    container.appendChild(hash);
+
+    const input = document.createElement("input");
+    input.className = "instr-field comment";
+    input.value = this.ins.text || "";
+    input.placeholder = "備註（不會出現在遊戲中）";
+    input.addEventListener("change", () => this.onChange({ text: input.value }));
+    container.appendChild(input);
+  }
+
   // ---------- 畫面指令 ----------
   #renderDirective(container) {
     const name = this.ins.name;
@@ -178,7 +196,20 @@ export class InstructionRow {
       stopparticles: "停止粒子",
     }[name] || name;
 
-    container.appendChild(this.#badge(nameLabel));
+    const ICONS = {
+      bg: "🖼", show: "🧍", hide: "🫥", move: "↔",
+      bgm: "🎵", "bgm-stop": "🔇", stopbgm: "🔇",
+      se: "🔔", "se-stop": "🔇", stopse: "🔇", voice: "🎙",
+      wait: "⏱", auto: "▶", textcfg: "✎",
+      shake: "💥", flash: "⚡", tint: "🎨", "tint-clear": "🧼",
+      curtain: "🎭", ui: "🪟",
+      camera: "🎥", "camera-reset": "🎥",
+      sprite: "✨", float: "💬",
+      video: "🎬", "video-stop": "⏹", stopvideo: "⏹",
+      particles: "❄", "particles-stop": "⏹", stopparticles: "⏹",
+      clear: "🗑",
+    };
+    container.appendChild(this.#badge(`${ICONS[name] ?? "＠"} ${nameLabel}`));
 
     const args = this.ins.args || {};
     const pos = args.positional || [];
@@ -281,6 +312,31 @@ export class InstructionRow {
           this.onChange({ args: { ...args, positional: [parseInt(e.target.value) || 500] } });
         });
         container.appendChild(input);
+
+        // 快速值（常用停頓長度一鍵設定）
+        const presets = document.createElement("span");
+        presets.className = "wait-presets";
+        const cur = parseInt(pos[0], 10);
+        for (const ms of [200, 500, 1000, 2000, 3000]) {
+          const b = document.createElement("button");
+          b.className = "wait-preset" + (cur === ms ? " active" : "");
+          b.textContent = String(ms);
+          b.addEventListener("click", (e) => {
+            e.stopPropagation();
+            this.onChange({ args: { ...args, positional: [ms] } });
+            // instruction-updated 不觸發整列重繪（保住輸入焦點），自己同步 UI
+            presets.querySelectorAll(".wait-preset").forEach((x) => x.classList.toggle("active", x === b));
+            input.value = String(ms);
+            approx.textContent = `≈ ${ms / 1000} 秒`;
+          });
+          presets.appendChild(b);
+        }
+        container.appendChild(presets);
+
+        const approx = document.createElement("span");
+        approx.className = "instr-label-inline wait-approx";
+        approx.textContent = `≈ ${(cur / 1000) || 0.5} 秒`;
+        container.appendChild(approx);
         break;
       }
       case "move": {
@@ -641,7 +697,7 @@ export class InstructionRow {
 
   // ---------- Set ----------
   #renderSet(container) {
-    container.appendChild(this.#badge("設定"));
+    container.appendChild(this.#badge("⚑ 設定"));
 
     const keyInput = createSelectField({
       value: this.ins.key || "",

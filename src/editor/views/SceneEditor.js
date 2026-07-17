@@ -262,77 +262,113 @@ export class SceneEditor {
     const menu = document.createElement("div");
     menu.className = "insert-menu";
 
-    const items = [
-      { kind: "text-dialog", label: "對話", color: "var(--e-blue)", template: () => ({ type: "text", speaker: "", text: "" }) },
-      { kind: "text-narration", label: "旁白", color: "var(--e-text-dim)", template: () => ({ type: "text", speaker: "", text: "" }) },
-      "divider",
-      { kind: "show", label: "顯示立繪", color: "var(--e-accent)", template: () => ({ type: "directive", name: "show", args: { positional: ["", "center", ""] } }) },
-      { kind: "hide", label: "隱藏立繪", color: "var(--e-accent)", template: () => ({ type: "directive", name: "hide", args: { positional: ["all"] } }) },
-      { kind: "bg", label: "切換背景", color: "var(--e-accent)", template: () => ({ type: "directive", name: "bg", args: { positional: [""], fade: 800 } }) },
-      { kind: "bgm", label: "BGM", color: "var(--e-accent)", template: () => ({ type: "directive", name: "bgm", args: { positional: [""] } }) },
-      { kind: "voice", label: "語音（對話配音）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "voice", args: { positional: [""] } }) },
-      { kind: "wait", label: "等待", color: "var(--e-accent)", template: () => ({ type: "directive", name: "wait", args: { positional: [1000] } }) },
-      { kind: "shake", label: "震動螢幕", color: "var(--e-accent)", template: () => ({ type: "directive", name: "shake", args: { positional: [8], duration: 500 } }) },
-      { kind: "flash", label: "閃光", color: "var(--e-accent)", template: () => ({ type: "directive", name: "flash", args: { positional: ["#ffffff"], duration: 400 } }) },
-      { kind: "tint", label: "畫面染色", color: "var(--e-accent)", template: () => ({ type: "directive", name: "tint", args: { positional: ["#000000"], opacity: 0.4, duration: 600 } }) },
-      { kind: "tint-clear", label: "清除染色", color: "var(--e-accent)", template: () => ({ type: "directive", name: "tint-clear", args: { positional: [], duration: 600 } }) },
-      { kind: "curtain", label: "帷幕（合上/打開）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "curtain", args: { positional: ["close"], color: "#000000", duration: 600 } }) },
-      { kind: "ui", label: "顯示/隱藏界面", color: "var(--e-accent)", template: () => ({ type: "directive", name: "ui", args: { positional: ["hide"] } }) },
-      { kind: "textcfg", label: "文本參數", color: "var(--e-accent)", template: () => ({ type: "directive", name: "textcfg", args: { positional: [], speed: 35 } }) },
-      { kind: "camera", label: "鏡頭（縮放/位移/暗角）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "camera", args: { positional: [], zoom: 1.2, duration: 800 } }) },
-      { kind: "camera-reset", label: "復位鏡頭", color: "var(--e-accent)", template: () => ({ type: "directive", name: "camera-reset", args: { positional: [], duration: 800 } }) },
-      { kind: "sprite", label: "精靈動畫（跳動/搖晃/位移）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "sprite", args: { positional: ["", "jump"], duration: 500 } }) },
-      { kind: "float", label: "浮動文字", color: "var(--e-accent)", template: () => ({ type: "directive", name: "float", args: { positional: [""], x: 50, y: 40, duration: 1500 } }) },
-      { kind: "se-stop", label: "停止音效", color: "var(--e-accent)", template: () => ({ type: "directive", name: "se-stop", args: { positional: [] } }) },
-      { kind: "clear", label: "銷毀場景（清空畫面）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "clear", args: { positional: [], fade: 400 } }) },
-      { kind: "auto", label: "自動播放", color: "var(--e-accent)", template: () => ({ type: "directive", name: "auto", args: { positional: ["on"], delay: 1500 } }) },
-      { kind: "video", label: "播放視頻", color: "var(--e-accent)", template: () => ({ type: "directive", name: "video", args: { positional: [""] } }) },
-      { kind: "video-stop", label: "停止視頻", color: "var(--e-accent)", template: () => ({ type: "directive", name: "video-stop", args: { positional: [] } }) },
-      { kind: "particles", label: "粒子效果（雪/雨/花瓣）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "particles", args: { positional: ["snow"] } }) },
-      { kind: "particles-stop", label: "停止粒子", color: "var(--e-accent)", template: () => ({ type: "directive", name: "particles-stop", args: { positional: [] } }) },
-      "divider",
-      { kind: "choice", label: "選項", color: "var(--e-accent-2)", template: () => ({ type: "choice", options: [{ text: "", set: {}, goto: "" }, { text: "", set: {}, goto: "" }] }) },
-      { kind: "if", label: "條件 if", color: "var(--e-purple)", template: () => [{ type: "if", condition: "" }, { type: "endif" }] },
-      { kind: "if-else", label: "條件 if-else", color: "var(--e-purple)", template: () => [{ type: "if", condition: "" }, { type: "else" }, { type: "endif" }] },
-      { kind: "elif", label: "elif (加入 if 內)", color: "var(--e-purple)", template: () => ({ type: "elif", condition: "" }) },
-      { kind: "else", label: "else (加入 if 內)", color: "var(--e-purple)", template: () => ({ type: "else" }) },
-      { kind: "label", label: "標籤 (goto 用)", color: "var(--e-green)", template: () => ({ type: "label", name: "" }) },
-      "divider",
-      { kind: "set", label: "設定 flag", color: "var(--e-pink)", template: () => ({ type: "set", key: "", op: "=", value: true }) },
-      { kind: "goto", label: "跳轉", color: "var(--e-purple)", template: () => ({ type: "goto", target: "" }) },
-      { kind: "ending", label: "結局", color: "var(--e-green)", template: () => ({ type: "ending", id: "", title: "", desc: "" }) },
+    // 二級分類：先選類別、右側挑指令（一級全攤太長，眼花撩亂）
+    const CATEGORIES = [
+      { label: "文字", items: [
+        { kind: "text-dialog", label: "對話", color: "var(--e-blue)", template: () => ({ type: "text", speaker: "", text: "" }) },
+        { kind: "text-narration", label: "旁白", color: "var(--e-text-dim)", template: () => ({ type: "text", speaker: "", text: "" }) },
+        { kind: "comment", label: "註解（不會顯示）", color: "var(--e-green)", template: () => ({ type: "comment", text: "" }) },
+        { kind: "float", label: "浮動文字", color: "var(--e-accent)", template: () => ({ type: "directive", name: "float", args: { positional: [""], x: 50, y: 40, duration: 1500 } }) },
+      ]},
+      { label: "立繪與背景", items: [
+        { kind: "show", label: "顯示立繪", color: "var(--e-accent)", template: () => ({ type: "directive", name: "show", args: { positional: ["", "center", ""] } }) },
+        { kind: "hide", label: "隱藏立繪", color: "var(--e-accent)", template: () => ({ type: "directive", name: "hide", args: { positional: ["all"] } }) },
+        { kind: "bg", label: "切換背景", color: "var(--e-accent)", template: () => ({ type: "directive", name: "bg", args: { positional: [""], fade: 800 } }) },
+        { kind: "sprite", label: "精靈動畫（跳/晃/移）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "sprite", args: { positional: ["", "jump"], duration: 500 } }) },
+      ]},
+      { label: "音訊", items: [
+        { kind: "bgm", label: "播放 BGM", color: "var(--e-accent)", template: () => ({ type: "directive", name: "bgm", args: { positional: [""] } }) },
+        { kind: "bgm-stop", label: "停止 BGM", color: "var(--e-accent)", template: () => ({ type: "directive", name: "bgm-stop", args: { positional: [], fade: 500 } }) },
+        { kind: "se", label: "音效", color: "var(--e-accent)", template: () => ({ type: "directive", name: "se", args: { positional: [""] } }) },
+        { kind: "se-stop", label: "停止音效", color: "var(--e-accent)", template: () => ({ type: "directive", name: "se-stop", args: { positional: [] } }) },
+        { kind: "voice", label: "語音（對話配音）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "voice", args: { positional: [""] } }) },
+      ]},
+      { label: "節奏與界面", items: [
+        { kind: "wait", label: "等待", color: "var(--e-accent)", template: () => ({ type: "directive", name: "wait", args: { positional: [1000] } }) },
+        { kind: "auto", label: "自動播放", color: "var(--e-accent)", template: () => ({ type: "directive", name: "auto", args: { positional: ["on"], delay: 1500 } }) },
+        { kind: "textcfg", label: "文本參數", color: "var(--e-accent)", template: () => ({ type: "directive", name: "textcfg", args: { positional: [], speed: 35 } }) },
+        { kind: "ui", label: "顯示/隱藏界面", color: "var(--e-accent)", template: () => ({ type: "directive", name: "ui", args: { positional: ["hide"] } }) },
+      ]},
+      { label: "特效與鏡頭", items: [
+        { kind: "shake", label: "震動螢幕", color: "var(--e-accent)", template: () => ({ type: "directive", name: "shake", args: { positional: [8], duration: 500 } }) },
+        { kind: "flash", label: "閃光", color: "var(--e-accent)", template: () => ({ type: "directive", name: "flash", args: { positional: ["#ffffff"], duration: 400 } }) },
+        { kind: "tint", label: "畫面染色", color: "var(--e-accent)", template: () => ({ type: "directive", name: "tint", args: { positional: ["#000000"], opacity: 0.4, duration: 600 } }) },
+        { kind: "tint-clear", label: "清除染色", color: "var(--e-accent)", template: () => ({ type: "directive", name: "tint-clear", args: { positional: [], duration: 600 } }) },
+        { kind: "curtain", label: "帷幕（合上/打開）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "curtain", args: { positional: ["close"], color: "#000000", duration: 600 } }) },
+        { kind: "camera", label: "鏡頭（縮放/位移/暗角）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "camera", args: { positional: [], zoom: 1.2, duration: 800 } }) },
+        { kind: "camera-reset", label: "復位鏡頭", color: "var(--e-accent)", template: () => ({ type: "directive", name: "camera-reset", args: { positional: [], duration: 800 } }) },
+      ]},
+      { label: "媒體", items: [
+        { kind: "video", label: "播放視頻", color: "var(--e-accent)", template: () => ({ type: "directive", name: "video", args: { positional: [""] } }) },
+        { kind: "video-stop", label: "停止視頻", color: "var(--e-accent)", template: () => ({ type: "directive", name: "video-stop", args: { positional: [] } }) },
+        { kind: "particles", label: "粒子（雪/雨/花瓣）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "particles", args: { positional: ["snow"] } }) },
+        { kind: "particles-stop", label: "停止粒子", color: "var(--e-accent)", template: () => ({ type: "directive", name: "particles-stop", args: { positional: [] } }) },
+        { kind: "clear", label: "銷毀場景（清空畫面）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "clear", args: { positional: [], fade: 400 } }) },
+      ]},
+      { label: "流程", items: [
+        { kind: "choice", label: "選項", color: "var(--e-accent-2)", template: () => ({ type: "choice", options: [{ text: "", set: {}, goto: "" }, { text: "", set: {}, goto: "" }] }) },
+        { kind: "if", label: "條件 if", color: "var(--e-purple)", template: () => [{ type: "if", condition: "" }, { type: "endif" }] },
+        { kind: "if-else", label: "條件 if-else", color: "var(--e-purple)", template: () => [{ type: "if", condition: "" }, { type: "else" }, { type: "endif" }] },
+        { kind: "elif", label: "elif (加入 if 內)", color: "var(--e-purple)", template: () => ({ type: "elif", condition: "" }) },
+        { kind: "else", label: "else (加入 if 內)", color: "var(--e-purple)", template: () => ({ type: "else" }) },
+        { kind: "label", label: "標籤 (goto 用)", color: "var(--e-green)", template: () => ({ type: "label", name: "" }) },
+        { kind: "goto", label: "跳轉", color: "var(--e-purple)", template: () => ({ type: "goto", target: "" }) },
+        { kind: "ending", label: "結局", color: "var(--e-green)", template: () => ({ type: "ending", id: "", title: "", desc: "" }) },
+      ]},
+      { label: "資料", items: [
+        { kind: "set", label: "設定 flag", color: "var(--e-pink)", template: () => ({ type: "set", key: "", op: "=", value: true }) },
+      ]},
     ];
 
-    for (const item of items) {
-      if (item === "divider") {
-        const d = document.createElement("div");
-        d.className = "insert-menu-divider";
-        menu.appendChild(d);
-        continue;
-      }
-      const btn = document.createElement("button");
-      btn.className = "insert-menu-item";
-      btn.innerHTML = `
-        <span class="kind-dot" style="background:${item.color}"></span>
-        <span>${item.label}</span>
-        <span class="kind-label">${item.kind}</span>
-      `;
-      btn.addEventListener("click", () => {
-        const tpl = item.template();
-        if (Array.isArray(tpl)) {
-          // 多指令一次插入（例如 if ... endif 一組）
-          tpl.forEach((t, i) => {
+    // 二欄：左類別、右指令
+    menu.classList.add("two-col");
+    const catCol = document.createElement("div");
+    catCol.className = "im-cats";
+    const itemCol = document.createElement("div");
+    itemCol.className = "im-items";
+    menu.appendChild(catCol);
+    menu.appendChild(itemCol);
+
+    const renderItems = (cat) => {
+      itemCol.innerHTML = "";
+      for (const item of cat.items) {
+        const btn = document.createElement("button");
+        btn.className = "insert-menu-item";
+        btn.innerHTML = `
+          <span class="kind-dot" style="background:${item.color}"></span>
+          <span>${item.label}</span>
+          <span class="kind-label">${item.kind}</span>
+        `;
+        btn.addEventListener("click", () => {
+          const tpl = item.template();
+          if (Array.isArray(tpl)) {
+            tpl.forEach((t, i) => {
+              this._pendingScrollTo = index;
+              this.project.insertInstruction(this.currentSceneId, index + i, t);
+            });
+          } else {
             this._pendingScrollTo = index;
-            this.project.insertInstruction(this.currentSceneId, index + i, t);
-          });
-        } else {
-          this._pendingScrollTo = index;
-          this.project.insertInstruction(this.currentSceneId, index, tpl);
-        }
-        this.closeInsertMenu();
-      });
-      menu.appendChild(btn);
-    }
+            this.project.insertInstruction(this.currentSceneId, index, tpl);
+          }
+          this.closeInsertMenu();
+        });
+        itemCol.appendChild(btn);
+      }
+    };
+
+    CATEGORIES.forEach((cat, ci) => {
+      const cbtn = document.createElement("button");
+      cbtn.className = "im-cat" + (ci === 0 ? " active" : "");
+      cbtn.textContent = cat.label;
+      const activate = () => {
+        catCol.querySelectorAll(".im-cat").forEach((b) => b.classList.toggle("active", b === cbtn));
+        renderItems(cat);
+      };
+      cbtn.addEventListener("mouseenter", activate);
+      cbtn.addEventListener("click", activate);
+      catCol.appendChild(cbtn);
+    });
+    renderItems(CATEGORIES[0]);
 
     document.body.appendChild(menu);
     const rect = anchor.getBoundingClientRect();
