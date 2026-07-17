@@ -659,6 +659,47 @@ input, textarea, select {
 }
 
 /* ============================================
+   輕量對話框（取代 prompt / alert）
+   ============================================ */
+
+.e-dialog-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 3000;
+  animation: dialogFade 0.15s ease;
+}
+.e-dialog {
+  width: min(420px, calc(100vw - 48px));
+  background: var(--e-bg-2);
+  border: 1px solid var(--e-border-2);
+  border-radius: 8px;
+  box-shadow: var(--e-shadow);
+  padding: 18px 20px 16px;
+  animation: dialogPop 0.15s ease;
+}
+.e-dialog-title { font-size: 14px; font-weight: 600; color: var(--e-text); margin-bottom: 12px; }
+.e-dialog-label { display: block; font-size: 12px; color: var(--e-text-dim); margin-bottom: 6px; }
+.e-dialog-input {
+  width: 100%;
+  padding: 8px 10px;
+  background: var(--e-bg);
+  border: 1px solid var(--e-border);
+  border-radius: 4px;
+  color: var(--e-text);
+  font-size: 13px;
+}
+.e-dialog-input:focus { outline: none; border-color: var(--e-accent); }
+.e-dialog-error { min-height: 16px; margin-top: 6px; font-size: 12px; color: var(--e-red); }
+.e-dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 4px; }
+
+@keyframes dialogFade { from { opacity: 0; } to { opacity: 1; } }
+@keyframes dialogPop { from { transform: translateY(8px) scale(0.98); opacity: 0; } to { transform: none; opacity: 1; } }
+
+/* ============================================
    支援警告
    ============================================ */
 
@@ -1306,7 +1347,7 @@ input, textarea, select {
 .page { display: none; height: 100%; min-height: 0; }
 .page.active { display: grid; }
 .page-script.active { grid-template-columns: 260px minmax(0, 1fr) 420px; }
-.page-map.active { grid-template-columns: 300px minmax(0, 1fr); }
+.page-map.active { grid-template-columns: 180px minmax(0, 1fr); }
 .page-assets.active, .page-plain.active { display: block; overflow-y: auto; }
 
 /* 欄 */
@@ -1314,8 +1355,29 @@ input, textarea, select {
 .col-structure { background: var(--e-bg-2); border-right: 1px solid var(--e-border); }
 .col-events { background: var(--e-bg); }
 .col-preview { background: var(--e-bg-2); border-left: 1px solid var(--e-border); }
-.col-vars { background: var(--e-bg-2); border-right: 1px solid var(--e-border); }
-.col-graph { background: #1a1d23; }
+.col-map-nav { background: var(--e-bg-2); border-right: 1px solid var(--e-border); }
+.col-map-main { background: #1a1d23; min-height: 0; }
+.map-nav-btn {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 9px 12px;
+  background: transparent;
+  color: var(--e-text-dim);
+  border: none;
+  border-left: 2px solid transparent;
+  font-size: 12.5px;
+}
+.map-nav-btn:hover { color: var(--e-text); background: var(--e-bg-3); }
+.map-nav-btn.active {
+  color: var(--e-accent);
+  border-left-color: var(--e-accent);
+  background: var(--e-bg);
+}
+/* 右側主區：地圖填滿高度；變量／結局可捲動 */
+.map-view-host { flex: 1; min-height: 0; }
+#map-graph-view { display: flex; flex-direction: column; }
+#map-flags-view, #map-endings-view { overflow-y: auto; padding: 16px 20px; background: var(--e-bg); }
 
 .col-head {
   display: flex;
@@ -1375,8 +1437,7 @@ input, textarea, select {
 .insp-tab.active { color: var(--e-accent); border-bottom-color: var(--e-accent); background: var(--e-bg-2); }
 .insp-panel { flex: 1; min-height: 0; overflow-y: auto; }
 
-/* 變量欄 / 地圖 */
-.vars-body { flex: 1; min-height: 0; overflow-y: auto; }
+/* 地圖畫布 */
 #graph-content { flex: 1; min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: #1a1d23; }
 
 /* 資產頁 */
@@ -1685,20 +1746,86 @@ input, textarea, select {
 .char-thumb-row .datalist-wrap, .char-thumb-row > span { flex: 1; }
 .emotion-row .char-thumb { width: 32px; height: 32px; }
 
-/* S4.5：資料庫 Hub 拆分 —— 新掛載點 */
-.vars-tabs { display: flex; gap: 2px; }
-.vars-tab {
-  background: transparent;
-  border: none;
-  color: var(--e-text-dim);
-  font-size: 12px;
-  font-weight: 600;
-  padding: 4px 10px;
-  cursor: pointer;
-  border-bottom: 2px solid transparent;
+/* 角色管理：主從式（左清單 ｜ 右表情差分） */
+.char-mgr { max-width: none; }
+.char-md { display: flex; gap: 20px; align-items: flex-start; }
+.char-md-list {
+  width: 210px; flex: 0 0 auto;
+  display: flex; flex-direction: column; gap: 3px;
 }
-.vars-tab:hover { color: var(--e-text); }
-.vars-tab.active { color: var(--e-accent); border-bottom-color: var(--e-accent); }
+.char-md-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 6px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.char-md-item:hover { background: var(--e-bg-3); }
+.char-md-item.active { background: var(--e-bg-3); border-color: var(--e-accent); }
+.char-md-thumb {
+  width: 38px; height: 38px;
+  object-fit: contain;
+  background: var(--e-bg-4);
+  border: 1px solid var(--e-border);
+  border-radius: 4px;
+  flex: 0 0 auto;
+}
+.char-md-thumb.empty { opacity: 0.4; }
+.char-md-item-name {
+  flex: 1; min-width: 0;
+  font-weight: 600; font-size: 13px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.char-md-item .char-delete {
+  flex: 0 0 auto;
+  background: transparent; border: none;
+  color: var(--e-text-faded); font-size: 15px; line-height: 1;
+  padding: 2px 4px; opacity: 0;
+}
+.char-md-item:hover .char-delete { opacity: 1; }
+.char-md-item .char-delete:hover { color: var(--e-red); }
+.char-md-add { margin-top: 10px; align-self: flex-start; }
+
+.char-md-detail { flex: 1; min-width: 0; }
+.char-md-detail-head { margin-bottom: 12px; }
+.char-md-detail-head .char-name { font-size: 15px; }
+.char-md-empty {
+  color: var(--e-text-dim);
+  padding: 40px 20px; text-align: center;
+  border: 1px dashed var(--e-border); border-radius: 8px;
+}
+
+.emotion-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 12px;
+  margin: 8px 0 12px;
+}
+.emotion-card {
+  display: flex; flex-direction: column; gap: 7px;
+  padding: 9px;
+  background: var(--e-bg-2);
+  border: 1px solid var(--e-border);
+  border-radius: 8px;
+}
+.emotion-card-thumb {
+  width: 100%; height: 120px;
+  object-fit: contain;
+  background: var(--e-bg);
+  border: 1px solid var(--e-border);
+  border-radius: 5px;
+}
+.emotion-card-thumb.empty { opacity: 0.4; }
+.emotion-card-name {
+  display: flex; align-items: center; justify-content: space-between;
+  font-weight: 600; font-size: 12.5px;
+}
+.emotion-card-name .emotion-delete {
+  background: transparent; border: none;
+  color: var(--e-text-faded); font-size: 15px; line-height: 1;
+  padding: 0 2px;
+}
+.emotion-card-name .emotion-delete:hover { color: var(--e-red); }
 
 .mgr-panel { max-width: 680px; }
 .flag-mgr-body { padding: 10px 12px; }

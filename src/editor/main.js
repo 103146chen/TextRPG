@@ -23,6 +23,7 @@ import { SceneParser } from "../engine/SceneParser.js";
 import { MarkdownWriter } from "./core/MarkdownWriter.js";
 import { SceneJson } from "./core/SceneJson.js";
 import { createAutosave } from "./core/autosave.js";
+import { promptDialog } from "./widgets/dialog.js";
 
 const $ = s => document.querySelector(s);
 
@@ -109,7 +110,7 @@ function setPage(page) {
   document.querySelectorAll(".page").forEach((p) =>
     p.classList.toggle("active", p.dataset.page === page));
 
-  if (page === "map") graphView.render();
+  if (page === "map") setMapView(currentMapView);
   else if (page === "script") renderEvents();
 }
 
@@ -202,9 +203,19 @@ $("#btn-open").addEventListener("click", async () => {
 });
 
 $("#btn-new").addEventListener("click", async () => {
-  const storyId = prompt("新專案的 ID（資料夾中的故事識別，例: my_story）", "new_story");
-  if (!storyId) return;
-  const title = prompt("故事標題", "新故事");
+  const storyId = await promptDialog({
+    title: "新專案",
+    label: "專案 ID（資料夾中的故事識別）",
+    value: "new_story",
+    placeholder: "例: my_story",
+    validate: (v) => !v.trim() ? "請輸入專案 ID" : null,
+  });
+  if (storyId === null) return;
+  const title = await promptDialog({
+    title: "新專案",
+    label: "故事標題",
+    value: "新故事",
+  });
   if (title === null) return;
 
   try {
@@ -280,13 +291,22 @@ $("#btn-redo").addEventListener("click", () => {
   }
 });
 
-$("#btn-new-scene").addEventListener("click", () => {
+$("#btn-new-scene").addEventListener("click", async () => {
   if (!fs.rootHandle) {
     toast("請先開啟專案", "error");
     return;
   }
-  const sceneId = prompt("新場景的 ID（例: 02_相遇）", "");
-  if (!sceneId) return;
+  const sceneId = await promptDialog({
+    title: "新增場景",
+    label: "新場景的 ID",
+    placeholder: "例: 02_相遇",
+    validate: (v) => {
+      if (!v.trim()) return "請輸入場景 ID";
+      if (project.getAllSceneIds().includes(v.trim())) return "場景 ID 已存在";
+      return null;
+    },
+  });
+  if (sceneId === null) return;
   try {
     project.createScene(sceneId, { title: sceneId });
     currentSceneId = sceneId;
@@ -312,19 +332,27 @@ $("#btn-delete-scene").addEventListener("click", async () => {
 
 // 「＋ 新增…」的統一入口：章節就地新增，其餘跳到對應的主分頁
 // （資料庫 Hub 已拆分：characters→資產頁「角色」、flags→敘事地圖、assets→資產頁）
-function handleManage(tab) {
+async function handleManage(tab) {
   if (tab === "chapters") {
     if (!project.storyMeta) { toast("請先開啟專案", "error"); return; }
-    const title = prompt("新章節名稱（例：第一章 · 相遇）", "");
-    if (!title) return;
+    const title = await promptDialog({
+      title: "新增章節",
+      label: "章節名稱",
+      placeholder: "例：第一章 · 相遇",
+      validate: (v) => {
+        if (!v.trim()) return "請輸入章節名稱";
+        if (project.getChapters().some((c) => c.id === v.trim())) return "章節已存在";
+        return null;
+      },
+    });
+    if (title === null) return;
     const id = title.trim();
-    if (project.getChapters().some((c) => c.id === id)) { toast("章節已存在", "error"); return; }
     project.upsertChapter({ id, title: id, scenes: [] });
     toast(`已新增章節：${id}`, "success");
     return;
   }
   if (!project.storyMeta) { toast("請先開啟專案", "error"); return; }
-  if (tab === "flags") { setPage("map"); setVarsTab("flags"); return; }
+  if (tab === "flags") { setPage("map"); setMapView("flags"); return; }
   if (tab === "characters") { setPage("assets"); setAssetView("characters"); return; }
   if (tab.startsWith("asset-")) { setPage("assets"); setAssetView(tab.slice(6)); return; }
   if (tab === "assets") { setPage("assets"); setAssetView("overview"); return; }
@@ -370,15 +398,24 @@ document.querySelectorAll(".asset-nav-btn").forEach((btn) => {
   btn.addEventListener("click", () => setAssetView(btn.dataset.assetView));
 });
 
-// 敘事地圖左欄分頁（變量管理 / 結局）
-function setVarsTab(tab) {
-  document.querySelectorAll(".vars-tab").forEach((b) =>
-    b.classList.toggle("active", b.dataset.vars === tab));
-  $("#vars-flags-panel").style.display = tab === "flags" ? "" : "none";
-  $("#vars-endings-panel").style.display = tab === "endings" ? "" : "none";
+// 敘事地圖左欄分頁（地圖 / 變量管理 / 結局）
+const MAP_VIEWS = {
+  graph: "#map-graph-view",
+  flags: "#map-flags-view",
+  endings: "#map-endings-view",
+};
+let currentMapView = "graph";
+function setMapView(view) {
+  currentMapView = view;
+  document.querySelectorAll(".map-nav-btn").forEach((b) =>
+    b.classList.toggle("active", b.dataset.mapView === view));
+  for (const [v, sel] of Object.entries(MAP_VIEWS)) {
+    $(sel).style.display = v === view ? "" : "none";
+  }
+  if (view === "graph") graphView.render();
 }
-document.querySelectorAll(".vars-tab").forEach((btn) => {
-  btn.addEventListener("click", () => setVarsTab(btn.dataset.vars));
+document.querySelectorAll(".map-nav-btn").forEach((btn) => {
+  btn.addEventListener("click", () => setMapView(btn.dataset.mapView));
 });
 
 // 檢查器分頁（問題 / 檢查器）

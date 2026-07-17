@@ -9,6 +9,7 @@
 // ============================================
 
 import { subLabel, datalistInput, escapeHtml } from "../widgets/formFields.js";
+import { promptDialog } from "../widgets/dialog.js";
 
 // 只關心會改變本面板內容的事件（縮圖要重新讀 blob，重繪不便宜）
 const EVENTS = new Set(["loaded", "characters-updated", "resources-updated", "undo", "redo"]);
@@ -19,6 +20,7 @@ export class CharacterManager {
     this.project = project;
     this._thumbUrls = [];   // 縮圖 objectURL，重繪／卸載時撤銷
     this._writing = false;
+    this._selected = null;  // 主從式：目前選中的角色名
     this._unsub = project.subscribe((t) => {
       if (this._writing) return;
       if (EVENTS.has(t)) this.render();
@@ -62,63 +64,123 @@ export class CharacterManager {
       return;
     }
 
+    const chars = this.project.storyMeta.characters || {};
+    const names = Object.keys(chars);
+
+    // 解析選取：選中的角色若已不存在，退回第一個
+    if (this._selected && !chars[this._selected]) this._selected = null;
+    if (!this._selected && names.length) this._selected = names[0];
+
     const wrap = document.createElement("div");
-    wrap.className = "mgr-panel";
+    wrap.className = "mgr-panel char-mgr";
 
     const intro = subLabel("定義角色與表情差分後，劇本的 @show 可用「角色名 位置 表情」切換立繪。");
     intro.style.display = "block";
     intro.style.marginBottom = "12px";
     wrap.appendChild(intro);
 
-    const chars = this.project.storyMeta.characters || {};
-    const charList = document.createElement("div");
-    charList.className = "char-list";
-
-    for (const [name, data] of Object.entries(chars)) {
-      charList.appendChild(this.#renderCharacterRow(name, data));
-    }
-    if (Object.keys(chars).length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "panel-empty";
-      empty.textContent = "還沒定義任何角色";
-      charList.appendChild(empty);
-    }
-    wrap.appendChild(charList);
-
-    const addBtn = document.createElement("button");
-    addBtn.className = "tb-btn";
-    addBtn.textContent = "+ 新增角色";
-    addBtn.style.marginTop = "16px";
-    addBtn.addEventListener("click", () => {
-      const name = prompt("新角色的名稱：", "");
-      if (!name) return;
-      if ((this.project.storyMeta.characters || {})[name]) { alert("角色已存在"); return; }
-      this.#write(() => this.project.upsertCharacter(name, { default: "", emotions: {} }));
-      this.render();   // 結構變了，整面重繪
-    });
-    wrap.appendChild(addBtn);
+    // 主從式：左側角色清單 ｜ 右側選中角色的表情差分
+    const md = document.createElement("div");
+    md.className = "char-md";
+    md.appendChild(this.#renderMasterList(chars, names));
+    md.appendChild(this.#renderDetail(this._selected, this._selected ? chars[this._selected] : null));
+    wrap.appendChild(md);
 
     this.containerEl.appendChild(wrap);
   }
 
-  #renderCharacterRow(name, data) {
-    const row = document.createElement("div");
-    row.className = "char-row";
-    const charResources = this.project.resources.characters;
+  // ---- 左欄：角色清單（縮圖 + 名字 + 刪除） ----
+  #renderMasterList(chars, names) {
+    const listCol = document.createElement("div");
+    listCol.className = "char-md-list";
 
-    // 名字 + 刪除按鈕
-    const header = document.createElement("div");
-    header.className = "char-row-header";
-    header.innerHTML = `
-      <strong class="char-name">${escapeHtml(name)}</strong>
-      <button class="char-delete" title="刪除角色">×</button>
-    `;
-    header.querySelector(".char-delete").addEventListener("click", () => {
+    for (const name of names) {
+      listCol.appendChild(this.#renderListItem(name, chars[name]));
+    }
+    if (names.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "panel-empty";
+      empty.textContent = "還沒定義任何角色";
+      listCol.appendChild(empty);
+    }
+
+    const addBtn = document.createElement("button");
+    addBtn.className = "tb-btn char-md-add";
+    addBtn.textContent = "+ 新增角色";
+    addBtn.addEventListener("click", async () => {
+      const name = await promptDialog({
+        title: "新增角色",
+        label: "新角色的名稱",
+        placeholder: "例：愛麗絲",
+        validate: (v) => {
+          if (!v.trim()) return "請輸入角色名稱";
+          if ((this.project.storyMeta.characters || {})[v.trim()]) return "角色已存在";
+          return null;
+        },
+      });
+      if (name === null) return;
+      const id = name.trim();
+      this._selected = id;
+      this.#write(() => this.project.upsertCharacter(id, { default: "", emotions: {} }));
+      this.render();   // 結構變了，整面重繪
+    });
+    listCol.appendChild(addBtn);
+
+    return listCol;
+  }
+
+  #renderListItem(name, data) {
+    const item = document.createElement("div");
+    item.className = "char-md-item" + (name === this._selected ? " active" : "");
+
+    const thumb = document.createElement("img");
+    thumb.classList.add("char-md-thumb");
+    this.#fillThumb(thumb, data.default);
+    item.appendChild(thumb);
+
+    const label = document.createElement("span");
+    label.className = "char-md-item-name";
+    label.textContent = name;
+    item.appendChild(label);
+
+    const delBtn = document.createElement("button");
+    delBtn.className = "char-delete";
+    delBtn.title = "刪除角色";
+    delBtn.textContent = "×";
+    delBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
       if (!confirm(`刪除角色「${name}」？\n這不會刪除劇本中對這個角色的引用。`)) return;
+      if (this._selected === name) this._selected = null;
       this.#write(() => this.project.removeCharacter(name));
       this.render();
     });
-    row.appendChild(header);
+    item.appendChild(delBtn);
+
+    item.addEventListener("click", () => {
+      if (this._selected === name) return;
+      this._selected = name;
+      this.render();
+    });
+
+    return item;
+  }
+
+  // ---- 右欄：選中角色的預設立繪 + 表情差分牆 ----
+  #renderDetail(name, data) {
+    const detail = document.createElement("div");
+    detail.className = "char-md-detail";
+
+    if (!name || !data) {
+      detail.innerHTML = `<div class="char-md-empty">從左側選擇一個角色，即可編輯其立繪與表情差分。</div>`;
+      return detail;
+    }
+
+    const charResources = this.project.resources.characters;
+
+    const header = document.createElement("div");
+    header.className = "char-md-detail-head";
+    header.innerHTML = `<strong class="char-name">${escapeHtml(name)}</strong>`;
+    detail.appendChild(header);
 
     // 預設立繪（含縮圖）
     const defWrap = document.createElement("div");
@@ -141,9 +203,9 @@ export class CharacterManager {
     });
     defRow.appendChild(defInput);
     defWrap.appendChild(defRow);
-    row.appendChild(defWrap);
+    detail.appendChild(defWrap);
 
-    // 表情清單
+    // 表情差分牆
     const emoSection = document.createElement("div");
     emoSection.className = "char-emotions";
     const emoTitle = document.createElement("div");
@@ -151,43 +213,71 @@ export class CharacterManager {
     emoTitle.textContent = "表情";
     emoSection.appendChild(emoTitle);
 
-    const emoList = document.createElement("div");
-    emoList.className = "emotion-list";
-    for (const [emoName, emoFile] of Object.entries(data.emotions || {})) {
-      emoList.appendChild(this.#renderEmotionRow(name, data, emoName, emoFile, charResources));
+    const emoGrid = document.createElement("div");
+    emoGrid.className = "emotion-grid";
+    const emotions = data.emotions || {};
+    for (const [emoName, emoFile] of Object.entries(emotions)) {
+      emoGrid.appendChild(this.#renderEmotionCard(name, data, emoName, emoFile, charResources));
     }
-    emoSection.appendChild(emoList);
+    if (Object.keys(emotions).length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "panel-empty";
+      empty.textContent = "尚未定義表情差分";
+      emoGrid.appendChild(empty);
+    }
+    emoSection.appendChild(emoGrid);
 
     const addEmoBtn = document.createElement("button");
     addEmoBtn.className = "emotion-add";
     addEmoBtn.textContent = "+ 新表情";
-    addEmoBtn.addEventListener("click", () => {
-      const emoName = prompt("表情名稱（例：happy、sad）：", "");
-      if (!emoName) return;
+    addEmoBtn.addEventListener("click", async () => {
+      const emoName = await promptDialog({
+        title: "新表情",
+        label: `為「${name}」新增一個表情差分`,
+        placeholder: "例：happy、sad",
+        validate: (v) => {
+          if (!v.trim()) return "請輸入表情名稱";
+          if ((data.emotions || {})[v.trim()]) return "這個表情已存在";
+          return null;
+        },
+      });
+      if (emoName === null) return;
       if (!data.emotions) data.emotions = {};
-      if (data.emotions[emoName]) { alert("這個表情已存在"); return; }
-      data.emotions[emoName] = "";
+      data.emotions[emoName.trim()] = "";
       this.#write(() => this.project.upsertCharacter(name, data));
       this.render();
     });
     emoSection.appendChild(addEmoBtn);
-    row.appendChild(emoSection);
+    detail.appendChild(emoSection);
 
-    return row;
+    return detail;
   }
 
-  #renderEmotionRow(charName, charData, emoName, emoFile, charResources) {
-    const row = document.createElement("div");
-    row.className = "emotion-row";
+  #renderEmotionCard(charName, charData, emoName, emoFile, charResources) {
+    const card = document.createElement("div");
+    card.className = "emotion-card";
 
     const thumb = document.createElement("img");
+    thumb.classList.add("emotion-card-thumb");
     this.#fillThumb(thumb, emoFile);
-    row.appendChild(thumb);
+    card.appendChild(thumb);
 
+    const nameRow = document.createElement("div");
+    nameRow.className = "emotion-card-name";
     const label = document.createElement("span");
-    label.className = "emotion-name";
     label.textContent = emoName;
-    row.appendChild(label);
+    nameRow.appendChild(label);
+    const delBtn = document.createElement("button");
+    delBtn.className = "emotion-delete";
+    delBtn.textContent = "×";
+    delBtn.title = "刪除表情";
+    delBtn.addEventListener("click", () => {
+      delete charData.emotions[emoName];
+      this.#write(() => this.project.upsertCharacter(charName, charData));
+      card.remove();
+    });
+    nameRow.appendChild(delBtn);
+    card.appendChild(nameRow);
 
     const input = datalistInput({
       value: emoFile || "",
@@ -199,19 +289,8 @@ export class CharacterManager {
         this.#fillThumb(thumb, v);   // 立即換縮圖
       }
     });
-    input.style.flex = "1";
-    row.appendChild(input);
+    card.appendChild(input);
 
-    const delBtn = document.createElement("button");
-    delBtn.className = "emotion-delete";
-    delBtn.textContent = "×";
-    delBtn.addEventListener("click", () => {
-      delete charData.emotions[emoName];
-      this.#write(() => this.project.upsertCharacter(charName, charData));
-      row.remove();
-    });
-    row.appendChild(delBtn);
-
-    return row;
+    return card;
   }
 }

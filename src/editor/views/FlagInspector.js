@@ -3,6 +3,10 @@
 // 列出專案中所有 flag，顯示使用位置，支援全域改名
 // ============================================
 
+import { promptDialog } from "../widgets/dialog.js";
+
+const FLAG_NAME_RE = /^[a-zA-Z_一-鿿㐀-䶿豈-﫿][\w一-鿿㐀-䶿豈-﫿]*$/;
+
 export class FlagInspector {
   constructor(containerEl, project, onJumpTo) {
     this.containerEl = containerEl;
@@ -146,13 +150,18 @@ export class FlagInspector {
     return el;
   }
 
-  #renameFlag(oldName) {
-    const newName = prompt(`將 flag "${oldName}" 重新命名為：`, oldName);
-    if (!newName || newName === oldName) return;
-    if (!/^[a-zA-Z_\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff][\w\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]*$/.test(newName)) {
-      alert("flag 名稱只能包含字母、數字、底線，且不能以數字開頭。");
-      return;
-    }
+  async #renameFlag(oldName) {
+    const newName = await promptDialog({
+      title: "重新命名 flag",
+      label: `將 flag "${oldName}" 重新命名為`,
+      value: oldName,
+      validate: (v) => {
+        if (!v.trim()) return "請輸入名稱";
+        if (!FLAG_NAME_RE.test(v.trim())) return "名稱只能含字母、數字、底線，且不能以數字開頭";
+        return null;
+      },
+    });
+    if (newName === null || newName === oldName) return;
 
     // 掃過所有場景做更新
     let changed = 0;

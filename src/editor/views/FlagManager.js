@@ -8,6 +8,7 @@
 // ============================================
 
 import { field, subLabel, escapeHtml } from "../widgets/formFields.js";
+import { promptDialog } from "../widgets/dialog.js";
 
 const EVENTS = new Set([
   "loaded", "flags-updated", "undo", "redo",
@@ -104,11 +105,19 @@ export class FlagManager {
     addBtn.className = "tb-btn";
     addBtn.textContent = "+ 新增旗標";
     addBtn.style.marginTop = "12px";
-    addBtn.addEventListener("click", () => {
-      const name = prompt("旗標名稱（例：charm、met_alice）：", "");
-      if (!name) return;
-      if (this.project.getDeclaredFlags()[name]) { alert("旗標已存在"); return; }
-      this.#write(() => this.project.upsertFlag(name, { type: "number", default: 0, label: "", usage: "counter" }));
+    addBtn.addEventListener("click", async () => {
+      const name = await promptDialog({
+        title: "新增旗標",
+        label: "旗標名稱",
+        placeholder: "例：charm、met_alice",
+        validate: (v) => {
+          if (!v.trim()) return "請輸入旗標名稱";
+          if (this.project.getDeclaredFlags()[v.trim()]) return "旗標已存在";
+          return null;
+        },
+      });
+      if (name === null) return;
+      this.#write(() => this.project.upsertFlag(name.trim(), { type: "number", default: 0, label: "", usage: "counter" }));
       this.render();
     });
     body.appendChild(addBtn);

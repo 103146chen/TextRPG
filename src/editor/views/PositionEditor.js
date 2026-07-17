@@ -11,6 +11,7 @@
 
 // 與引擎共用同一份錨點定義（src/ui/anchors.js），確保格線示意 = 實際渲染
 import { ANCHORS, ANCHOR_ORDER, DEFAULT_ANCHOR, DEFAULT_HEIGHT_PCT, anchorOf } from "../../ui/anchors.js";
+import { promptDialog } from "../widgets/dialog.js";
 
 const SPRITE_H_PCT = DEFAULT_HEIGHT_PCT;
 const SPRITE_ASPECT = 0.42;   // 示意用：立繪寬約為高的 0.42（僅供格線預覽）
@@ -87,11 +88,20 @@ export class PositionEditor {
     const add = document.createElement("button");
     add.className = "tb-btn";
     add.textContent = "＋ 新增位置";
-    add.addEventListener("click", () => {
-      const name = prompt("新位置名稱（劇本用 @show 角色 <名稱> 引用）", "");
-      if (!name) return;
+    add.addEventListener("click", async () => {
+      const name = await promptDialog({
+        title: "新增位置",
+        label: "新位置名稱（劇本用 @show 角色 <名稱> 引用）",
+        placeholder: "例：門口、窗邊",
+        validate: (v) => {
+          const key = v.trim();
+          if (!key) return "請輸入位置名稱";
+          if (this.#allSlots().includes(key) && this.#defOf(key)) return "這個位置已經設定過了";
+          return null;
+        },
+      });
+      if (name === null) return;
       const key = name.trim();
-      if (this.#allSlots().includes(key) && this.#defOf(key)) { alert("這個位置已經設定過了"); return; }
       this.project.upsertPosition(key, { x: 50, y: 95, anchor: DEFAULT_ANCHOR });
       this.selected = key;
     });
