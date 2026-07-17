@@ -1712,6 +1712,9 @@ input, textarea, select {
 .insp-num-suffix { display: flex; align-items: center; gap: 6px; }
 .insp-num-suffix input { flex: 1; }
 .insp-suffix { flex: 0 0 auto; font-size: 11px; color: var(--e-text-faded); font-family: var(--e-font-mono); }
+.insp-color { display: flex; align-items: center; gap: 8px; }
+.insp-color input[type="color"] { width: 46px; height: 28px; padding: 2px; flex: 0 0 auto; cursor: pointer; }
+.insp-color-default { font-size: 11px; color: var(--e-text-faded); }
 
 
 /* 資產引用追蹤／游離偵測（S4e） */

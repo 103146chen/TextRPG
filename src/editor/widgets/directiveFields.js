@@ -155,11 +155,31 @@ function textControl(f, value, commit) {
   return { control: inp, sync: (v) => { inp.value = v == null ? "" : String(v); } };
 }
 
+function colorControl(f, value, commit) {
+  const dflt = f.default || "#000000";
+  const wrap = document.createElement("div");
+  wrap.className = "insp-color";
+  const inp = document.createElement("input");
+  inp.type = "color";
+  inp.value = value != null && value !== "" ? String(value) : dflt;
+  // 只在使用者實際挑色時才寫入，避免一開檢查器就把預設色灌進 Markdown
+  inp.addEventListener("change", () => commit(inp.value));
+  wrap.appendChild(inp);
+  if (value == null || value === "") {
+    const tag = document.createElement("span");
+    tag.className = "insp-color-default";
+    tag.textContent = "預設";
+    wrap.appendChild(tag);
+  }
+  return { control: wrap, sync: (v) => { inp.value = v == null || v === "" ? dflt : String(v); } };
+}
+
 const CONTROLS = {
   slider: sliderControl,
   number: numberControl,
   select: selectControl,
   checkbox: checkboxControl,
+  color: colorControl,
   text: textControl,
 };
 
@@ -223,6 +243,91 @@ export const DIRECTIVE_SCHEMAS = {
     note: "把鏡頭與暗角還原到預設。",
     fields: [
       { key: "duration", label: "時長", type: "number", min: 0, step: 50, suffix: "ms", hint: "回到原始鏡頭的時間，預設 800" },
+    ],
+  },
+
+  // 帷幕（持續狀態）：mode 為位置參數，引擎優先讀 positional[0]
+  curtain: {
+    title: "curtain · 帷幕",
+    fields: [
+      { positional: 0, label: "動作", type: "select", default: "close",
+        options: [["close", "合上"], ["open", "打開"]] },
+      { key: "color", label: "顏色", type: "color", default: "#000000", hint: "帷幕的顏色" },
+      { key: "duration", label: "時長", type: "number", min: 0, step: 50, suffix: "ms", hint: "預設 600" },
+      { key: "full", label: "連文字框一起蓋", type: "checkbox", hint: "勾選則帷幕蓋過對話框" },
+    ],
+  },
+
+  // 精靈動畫（瞬時）：角色/效果為位置參數；欄位依效果動態顯示
+  sprite: {
+    title: "sprite · 精靈動畫",
+    fields: [
+      { positional: 0, label: "角色", type: "text", placeholder: "角色名（需已在場上）" },
+      { positional: 1, label: "效果", type: "select", default: "jump",
+        options: [["jump", "跳躍"], ["shake", "抖動"], ["move", "位移"]] },
+      { key: "duration", label: "時長", type: "number", min: 0, step: 50, suffix: "ms", hint: "預設 500" },
+      // jump
+      { key: "height", label: "跳躍高度", type: "number", min: 0, step: 5, suffix: "px", hint: "預設 20",
+        when: (a) => (a.positional?.[1] || "jump") === "jump" },
+      { key: "times", label: "次數", type: "number", min: 1, step: 1, hint: "預設 1",
+        when: (a) => (a.positional?.[1] || "jump") === "jump" },
+      // shake
+      { key: "intensity", label: "強度", type: "slider", min: 1, max: 30, step: 1, default: 8,
+        when: (a) => a.positional?.[1] === "shake" },
+      // move
+      { key: "x", label: "水平位移 X", type: "number", step: 5, suffix: "%", hint: "正值右移",
+        when: (a) => a.positional?.[1] === "move" },
+      { key: "y", label: "垂直位移 Y", type: "number", step: 5, suffix: "%", hint: "正值下移",
+        when: (a) => a.positional?.[1] === "move" },
+    ],
+  },
+
+  // 螢幕震動（瞬時）：強度優先讀 positional[0]
+  shake: {
+    title: "shake · 螢幕震動",
+    fields: [
+      { positional: 0, label: "強度", type: "slider", min: 1, max: 30, step: 1, default: 8 },
+      { key: "duration", label: "時長", type: "number", min: 0, step: 50, suffix: "ms", hint: "預設 500" },
+    ],
+  },
+
+  // 閃光（瞬時）：顏色引擎優先讀具名 color
+  flash: {
+    title: "flash · 閃光",
+    fields: [
+      { key: "color", label: "顏色", type: "color", default: "#ffffff" },
+      { key: "duration", label: "時長", type: "number", min: 0, step: 50, suffix: "ms", hint: "預設 400" },
+    ],
+  },
+
+  // 覆色（持續狀態）
+  tint: {
+    title: "tint · 覆色",
+    fields: [
+      { key: "color", label: "顏色", type: "color", default: "#000000" },
+      { key: "opacity", label: "濃度", type: "slider", min: 0, max: 1, step: 0.05, default: 0.4 },
+      { key: "duration", label: "時長", type: "number", min: 0, step: 50, suffix: "ms", hint: "預設 600" },
+    ],
+  },
+
+  // 粒子（持續狀態）：類型為位置參數
+  particles: {
+    title: "particles · 粒子",
+    fields: [
+      { positional: 0, label: "類型", type: "select", default: "snow",
+        options: [["snow", "雪"], ["rain", "雨"], ["petals", "花瓣"]] },
+      { key: "density", label: "密度", type: "number", min: 0, step: 10, hint: "留空為預設密度" },
+    ],
+  },
+
+  // 文字設定（持續狀態）
+  textcfg: {
+    title: "textcfg · 文字設定",
+    fields: [
+      { key: "speed", label: "打字速度", type: "number", min: 0, step: 5, hint: "每字毫秒，越小越快" },
+      { key: "fade", label: "淡入", type: "number", min: 0, step: 50, suffix: "ms" },
+      { key: "indicator", label: "續行指示", type: "select", optional: true, emptyLabel: "（預設 · 顯示）",
+        options: [["on", "顯示"], ["off", "隱藏"]] },
     ],
   },
 };
