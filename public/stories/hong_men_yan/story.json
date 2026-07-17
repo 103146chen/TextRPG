@@ -229,6 +229,16 @@
       "y": 100,
       "anchor": "center_bottom",
       "scale": 1.25
+    },
+    "left": {
+      "x": 25,
+      "y": 95,
+      "anchor": "center_bottom"
+    },
+    "right": {
+      "x": 75,
+      "y": 95,
+      "anchor": "center_bottom"
     }
   }
 }
