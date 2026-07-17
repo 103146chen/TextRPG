@@ -14,9 +14,11 @@ const SECTIONS = [
 ];
 
 export class AssetPanel {
-  constructor(containerEl, project) {
+  /** @param {object} [opts] opts.kinds：只渲染這些類別（資產頁分類入口用）；null = 全部 */
+  constructor(containerEl, project, { kinds = null } = {}) {
     this.containerEl = containerEl;
     this.project = project;
+    this.kinds = kinds;
     this.urlCache = new Map();   // "kind/file" -> objectURL（縮圖／試聽）
     this.currentAudio = null;
 
@@ -48,6 +50,7 @@ export class AssetPanel {
     this.orphans = this.project.findOrphanAssets?.() || {};
 
     for (const sec of SECTIONS) {
+      if (this.kinds && !this.kinds.includes(sec.kind)) continue;
       this.containerEl.appendChild(this.#renderSection(sec));
     }
   }

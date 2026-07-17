@@ -134,7 +134,7 @@ export class SceneEditor {
       value: scene.meta.background || "",
       options: this.project.resources.backgrounds,
       placeholder: "（無背景）",
-      addLabel: "匯入背景…", onAdd: () => this.onManage?.("assets"),
+      addLabel: "匯入背景…", onAdd: () => this.onManage?.("asset-backgrounds"),
       onChange: (v) => this.project.updateSceneMeta(this.currentSceneId, { background: v }),
     });
     header.appendChild(this.#field("背景", bgSelect));
@@ -144,7 +144,7 @@ export class SceneEditor {
       value: scene.meta.bgm || "",
       options: this.project.resources.bgm,
       placeholder: "（無 BGM）",
-      addLabel: "匯入 BGM…", onAdd: () => this.onManage?.("assets"),
+      addLabel: "匯入 BGM…", onAdd: () => this.onManage?.("asset-bgm"),
       onChange: (v) => this.project.updateSceneMeta(this.currentSceneId, { bgm: v }),
     });
     header.appendChild(this.#field("BGM", bgmSelect));

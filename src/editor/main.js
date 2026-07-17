@@ -15,6 +15,7 @@ import { FlagManager } from "./views/FlagManager.js";
 import { EndingManager } from "./views/EndingManager.js";
 import { ProjectSettings } from "./views/ProjectSettings.js";
 import { AssetPanel } from "./views/AssetPanel.js";
+import { AssetOverview } from "./views/AssetOverview.js";
 import { PositionEditor } from "./views/PositionEditor.js";
 import { MemoryBackend } from "./core/MemoryBackend.js";
 import { exportProjectZip } from "./core/projectZip.js";
@@ -85,7 +86,12 @@ new CharacterManager($("#character-manager"), project);
 new FlagManager($("#var-manage"), project);
 new EndingManager($("#ending-manage"), project);
 new ProjectSettings($("#project-settings"), project);
-const assetPanel = new AssetPanel($("#asset-panel"), project);
+// 資產頁分類入口（優化①）：總覽 + 每類一個過濾後的 AssetPanel
+new AssetOverview($("#asset-overview"), project, { onNavigate: (view) => setAssetView(view) });
+new AssetPanel($("#asset-files-characters"), project, { kinds: ["characters"] });
+for (const kind of ["backgrounds", "bgm", "se", "voice", "video"]) {
+  new AssetPanel($(`#asset-kind-${kind}`), project, { kinds: [kind] });
+}
 const positionEditor = new PositionEditor($("#position-editor"), project, {
   // 改完位置立刻在劇本頁的預覽看到（若目前選著某條指令）
   onChange: () => { if (currentSceneId != null) previewPanel.scrub(currentSceneId, sceneEditor.selectedIndex ?? 0); },
@@ -320,7 +326,8 @@ function handleManage(tab) {
   if (!project.storyMeta) { toast("請先開啟專案", "error"); return; }
   if (tab === "flags") { setPage("map"); setVarsTab("flags"); return; }
   if (tab === "characters") { setPage("assets"); setAssetView("characters"); return; }
-  if (tab === "assets") { setPage("assets"); setAssetView("files"); return; }
+  if (tab.startsWith("asset-")) { setPage("assets"); setAssetView(tab.slice(6)); return; }
+  if (tab === "assets") { setPage("assets"); setAssetView("overview"); return; }
 }
 
 // 頂部主分頁
@@ -341,8 +348,17 @@ $("#source-text").addEventListener("input", () => {
   setSourceStatus(isSourceDirty() ? "有未套用的變更" : "", isSourceDirty() ? "err" : "");
 });
 
-// 資產頁分類（資產檔案 / 角色 / 位置與錨點）
-const ASSET_VIEWS = { files: "#asset-panel", characters: "#character-manager", positions: "#position-editor" };
+// 資產頁分類入口（總覽 / 角色 / 各檔案類別 / 位置與錨點）
+const ASSET_VIEWS = {
+  overview: "#asset-overview",
+  characters: "#asset-characters-page",
+  backgrounds: "#asset-kind-backgrounds",
+  bgm: "#asset-kind-bgm",
+  se: "#asset-kind-se",
+  voice: "#asset-kind-voice",
+  video: "#asset-kind-video",
+  positions: "#position-editor",
+};
 function setAssetView(view) {
   document.querySelectorAll(".asset-nav-btn").forEach((b) =>
     b.classList.toggle("active", b.dataset.assetView === view));

@@ -92,17 +92,31 @@
         </aside>
       </section>
 
-      <!-- ---------- 資產頁：分類 ｜ 內容 ---------- -->
+      <!-- ---------- 資產頁：分類入口 ｜ 內容 ---------- -->
       <section class="page page-assets" data-page="assets">
         <aside class="col col-asset-nav">
           <div class="col-head"><span>資產</span></div>
-          <button class="asset-nav-btn active" data-asset-view="files">資產檔案</button>
+          <button class="asset-nav-btn active" data-asset-view="overview">總覽</button>
           <button class="asset-nav-btn" data-asset-view="characters">角色</button>
+          <button class="asset-nav-btn" data-asset-view="backgrounds">背景</button>
+          <button class="asset-nav-btn" data-asset-view="bgm">BGM</button>
+          <button class="asset-nav-btn" data-asset-view="se">音效</button>
+          <button class="asset-nav-btn" data-asset-view="voice">語音</button>
+          <button class="asset-nav-btn" data-asset-view="video">視頻</button>
           <button class="asset-nav-btn" data-asset-view="positions">位置與錨點</button>
         </aside>
         <main class="col col-asset-main">
-          <div id="asset-panel" class="asset-page-host"></div>
-          <div id="character-manager" class="asset-page-host" style="display:none"></div>
+          <div id="asset-overview" class="asset-page-host"></div>
+          <div id="asset-characters-page" class="asset-page-host" style="display:none">
+            <div id="character-manager"></div>
+            <div class="asset-files-divider">立繪檔案</div>
+            <div id="asset-files-characters"></div>
+          </div>
+          <div id="asset-kind-backgrounds" class="asset-page-host" style="display:none"></div>
+          <div id="asset-kind-bgm" class="asset-page-host" style="display:none"></div>
+          <div id="asset-kind-se" class="asset-page-host" style="display:none"></div>
+          <div id="asset-kind-voice" class="asset-page-host" style="display:none"></div>
+          <div id="asset-kind-video" class="asset-page-host" style="display:none"></div>
           <div id="position-editor" class="asset-page-host" style="display:none"></div>
         </main>
       </section>

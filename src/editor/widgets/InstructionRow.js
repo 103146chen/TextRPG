@@ -188,7 +188,7 @@ export class InstructionRow {
         const files = this.project.resources.backgrounds;
         const input = createSelectField({
           value: pos[0], options: files, placeholder: "選背景",
-          addLabel: "匯入背景…", onAdd: () => this.onManage?.("assets"),
+          addLabel: "匯入背景…", onAdd: () => this.onManage?.("asset-backgrounds"),
           onChange: (v) => this.onChange({ args: { ...args, positional: [v, ...pos.slice(1)] } }),
         });
         container.appendChild(input);
@@ -248,7 +248,7 @@ export class InstructionRow {
         const files = this.project.resources.bgm;
         const input = createSelectField({
           value: pos[0], options: files, placeholder: "選 BGM",
-          addLabel: "匯入 BGM…", onAdd: () => this.onManage?.("assets"),
+          addLabel: "匯入 BGM…", onAdd: () => this.onManage?.("asset-bgm"),
           onChange: (v) => this.onChange({ args: { ...args, positional: [v] } }),
         });
         container.appendChild(input);
@@ -258,7 +258,7 @@ export class InstructionRow {
         const files = this.project.resources.se;
         const input = createSelectField({
           value: pos[0], options: files, placeholder: "選音效",
-          addLabel: "匯入音效…", onAdd: () => this.onManage?.("assets"),
+          addLabel: "匯入音效…", onAdd: () => this.onManage?.("asset-se"),
           onChange: (v) => this.onChange({ args: { ...args, positional: [v] } }),
         });
         container.appendChild(input);
@@ -268,7 +268,7 @@ export class InstructionRow {
         const files = this.project.resources.voice || [];
         const input = createSelectField({
           value: pos[0], options: files, placeholder: "選語音檔",
-          addLabel: "匯入語音…", onAdd: () => this.onManage?.("assets"),
+          addLabel: "匯入語音…", onAdd: () => this.onManage?.("asset-voice"),
           onChange: (v) => this.onChange({ args: { ...args, positional: [v] } }),
         });
         container.appendChild(input);
@@ -577,7 +577,7 @@ export class InstructionRow {
         const files = this.project.resources.video || [];
         const input = createSelectField({
           value: pos[0], options: files, placeholder: "選視頻檔",
-          addLabel: "匯入視頻…", onAdd: () => this.onManage?.("assets"),
+          addLabel: "匯入視頻…", onAdd: () => this.onManage?.("asset-video"),
           onChange: (v) => this.onChange({ args: { ...args, positional: [v] } }),
         });
         container.appendChild(input);
