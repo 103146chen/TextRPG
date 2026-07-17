@@ -106,5 +106,121 @@
       "title": "遲來的追擊",
       "description": "宴上你舉不起刀,席散了你才想追。追到霸上壁壘之前,你什麼都沒有得到,卻把「不義」兩個字掛上了自己的旗。天下最著名的一場局,你是設局的人——可笑的是,你明明什麼都沒做成。"
     }
-  ]
+  ],
+  "flags": {
+    "怒氣": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "范增信任": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "少年志向": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "江東八千子弟": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "降卒處置": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "秦地民心": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "函谷之怒": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "曾經查證": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "亞父之言": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "項伯夜說": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "對項伯起疑": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "未告亞父": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "說出曹無傷": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "席間起疑": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "舉玦回應": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "劍舞應對": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "樊噲處置": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "白璧": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    },
+    "最終抉擇": {
+      "type": "number",
+      "default": 0,
+      "label": "",
+      "usage": "counter"
+    }
+  }
 }
