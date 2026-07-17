@@ -21,6 +21,7 @@ export class StoryProject {
       video: [],
     };
     this.listeners = new Set();      // 變更訂閱者（給 UI 重繪用）
+    this.metaDirty = false;          // story.json 類變更（角色/旗標/章節/位置/基本資訊）
     this.undoStack = [];
     this.redoStack = [];
     this.maxUndo = 50;
@@ -67,23 +68,36 @@ export class StoryProject {
 
     this.undoStack = [];
     this.redoStack = [];
+    this.metaDirty = false;
     this.notify("loaded");
   }
 
   // ==================== 儲存 ====================
 
   async saveAll() {
-    // 儲存被改過的場景
+    // 儲存被改過的場景。
+    // 重要：dirty 要在 await 寫檔「之前」清掉——寫入期間使用者若繼續編輯，
+    // markDirty 會重新標髒、留給下一輪儲存；若寫完才清，會把新編輯的
+    // 髒旗標一併蓋掉，該段編輯就永遠不會被存（自動存檔下機率性觸發）。
     for (const [sceneId, sc] of this.scenes) {
-      if (sc.dirty) {
-        const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions });
+      if (!sc.dirty) continue;
+      const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions });
+      sc.dirty = false;
+      try {
         await this.fs.writeScene(sc.fileName, md);
         sc.raw = md;
-        sc.dirty = false;
+      } catch (err) {
+        sc.dirty = true;   // 寫失敗要保住旗標，否則變更被標成已存
+        throw err;
       }
     }
-    // 總是重寫 story.json（影響不大）
-    await this.fs.writeStoryJson(this.storyMeta);
+    this.metaDirty = false;
+    try {
+      await this.fs.writeStoryJson(this.storyMeta);
+    } catch (err) {
+      this.metaDirty = true;
+      throw err;
+    }
     this.notify("saved");
   }
 
@@ -91,13 +105,19 @@ export class StoryProject {
     const sc = this.scenes.get(sceneId);
     if (!sc) return;
     const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions });
-    await this.fs.writeScene(sc.fileName, md);
-    sc.raw = md;
-    sc.dirty = false;
+    sc.dirty = false;   // 先清（同 saveAll 的競態說明）
+    try {
+      await this.fs.writeScene(sc.fileName, md);
+      sc.raw = md;
+    } catch (err) {
+      sc.dirty = true;
+      throw err;
+    }
     this.notify("scene-saved", { sceneId });
   }
 
   hasUnsavedChanges() {
+    if (this.metaDirty) return true;
     for (const sc of this.scenes.values()) {
       if (sc.dirty) return true;
     }
@@ -299,6 +319,7 @@ export class StoryProject {
 
   upsertPosition(name, def) {
     this.#pushUndo();
+    this.metaDirty = true;
     if (!this.storyMeta.positions) this.storyMeta.positions = {};
     this.storyMeta.positions[name] = { ...this.storyMeta.positions[name], ...def };
     this.notify("positions-updated", { name });
@@ -306,6 +327,7 @@ export class StoryProject {
 
   removePosition(name) {
     this.#pushUndo();
+    this.metaDirty = true;
     if (this.storyMeta.positions) {
       delete this.storyMeta.positions[name];
       if (Object.keys(this.storyMeta.positions).length === 0) delete this.storyMeta.positions;
@@ -478,6 +500,7 @@ export class StoryProject {
 
   upsertChapter(chapter) {
     this.#pushUndo();
+    this.metaDirty = true;
     if (!this.storyMeta.chapters) this.storyMeta.chapters = [];
     const chapters = [...this.storyMeta.chapters];
     const i = chapters.findIndex((c) => c.id === chapter.id);
@@ -489,6 +512,7 @@ export class StoryProject {
 
   removeChapter(chapterId) {
     this.#pushUndo();
+    this.metaDirty = true;
     this.storyMeta.chapters = this.getChapters().filter((c) => c.id !== chapterId);
     this.notify("chapters-updated", { id: chapterId, removed: true });
   }
@@ -504,6 +528,7 @@ export class StoryProject {
   /** 設定場景所屬章節（chapterId 傳 null/"" 表示移出章節）。場景只會屬於一個章節。 */
   setSceneChapter(sceneId, chapterId) {
     this.#pushUndo();
+    this.metaDirty = true;
     const chapters = this.getChapters().map((c) => ({
       ...c,
       scenes: (c.scenes || []).filter((s) => s !== sceneId),
@@ -524,6 +549,7 @@ export class StoryProject {
 
   upsertFlag(name, def) {
     this.#pushUndo();
+    this.metaDirty = true;
     if (!this.storyMeta.flags) this.storyMeta.flags = {};
     this.storyMeta.flags[name] = def;
     this.notify("flags-updated", { name });
@@ -531,6 +557,7 @@ export class StoryProject {
 
   removeFlag(name) {
     this.#pushUndo();
+    this.metaDirty = true;
     if (this.storyMeta.flags) delete this.storyMeta.flags[name];
     this.notify("flags-updated", { name, removed: true });
   }
@@ -575,12 +602,14 @@ export class StoryProject {
 
   updateStoryMeta(patch) {
     this.#pushUndo();
+    this.metaDirty = true;
     this.storyMeta = { ...this.storyMeta, ...patch };
     this.notify("story-meta-updated");
   }
 
   upsertCharacter(name, data) {
     this.#pushUndo();
+    this.metaDirty = true;
     if (!this.storyMeta.characters) this.storyMeta.characters = {};
     this.storyMeta.characters[name] = data;
     this.notify("characters-updated");
@@ -588,6 +617,7 @@ export class StoryProject {
 
   removeCharacter(name) {
     this.#pushUndo();
+    this.metaDirty = true;
     if (this.storyMeta.characters) delete this.storyMeta.characters[name];
     this.notify("characters-updated");
   }
@@ -619,8 +649,27 @@ export class StoryProject {
   }
 
   #restore(snapshot) {
+    // 快照裡的 dirty/raw 是「當時」的狀態；若快照之後存過檔，
+    // 直接還原會把「與磁碟不同的內容」標成已存而漏寫。
+    // 以目前的 raw（每次寫檔後更新，即磁碟真相）重新判定 dirty。
+    const diskRaw = new Map();
+    for (const [id, sc] of this.scenes) diskRaw.set(id, sc.raw);
+
     this.storyMeta = snapshot.storyMeta;
     this.scenes = new Map(snapshot.scenes);
+
+    for (const [id, sc] of this.scenes) {
+      if (diskRaw.has(id)) {
+        sc.raw = diskRaw.get(id);
+        const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions });
+        sc.dirty = sc.raw == null || md !== sc.raw;
+      } else {
+        // 磁碟上目前不存在（例如剛刪除又 undo 回來）→ 必須重寫
+        sc.raw = null;
+        sc.dirty = true;
+      }
+    }
+    this.metaDirty = true;   // storyMeta 也可能被還原成與磁碟不同，保守標髒
   }
 
   undo() {
