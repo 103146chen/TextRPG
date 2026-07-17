@@ -104,3 +104,46 @@ export function promptDialog({
     input.select();
   });
 }
+
+/**
+ * 通用彈出視窗：由呼叫端提供內容，內容可呼叫 close(value) 關閉並回傳。
+ * 常用於「選擇器」這類需要自訂 DOM（縮圖網格等）的場景。
+ * @param {string} title 標題
+ * @param {(close:(v:any)=>void)=>HTMLElement} build 產生內容；close 供內容關閉並 resolve
+ * @param {object} [opt]
+ * @param {boolean} [opt.wide] 是否用較寬版型（選擇器）
+ * @returns {Promise<any>} 由 close 傳入的值；Esc／點背景關閉時為 null
+ */
+export function openModal(title, build, { wide = false } = {}) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "e-dialog-overlay";
+
+    const box = document.createElement("div");
+    box.className = "e-dialog" + (wide ? " e-dialog-wide" : "");
+    box.setAttribute("role", "dialog");
+    box.setAttribute("aria-modal", "true");
+
+    if (title) {
+      const t = document.createElement("div");
+      t.className = "e-dialog-title";
+      t.textContent = title;
+      box.appendChild(t);
+    }
+
+    function close(result) {
+      document.removeEventListener("keydown", onKey, true);
+      overlay.remove();
+      resolve(result);
+    }
+    function onKey(e) {
+      if (e.key === "Escape") { e.preventDefault(); close(null); }
+    }
+
+    box.appendChild(build(close));
+    overlay.appendChild(box);
+    overlay.addEventListener("mousedown", (e) => { if (e.target === overlay) close(null); });
+    document.addEventListener("keydown", onKey, true);
+    document.body.appendChild(overlay);
+  });
+}

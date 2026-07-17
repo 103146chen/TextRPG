@@ -9,7 +9,7 @@
 // ============================================
 
 import { subLabel, datalistInput, escapeHtml } from "../widgets/formFields.js";
-import { promptDialog } from "../widgets/dialog.js";
+import { promptDialog, openModal } from "../widgets/dialog.js";
 
 // 只關心會改變本面板內容的事件（縮圖要重新讀 blob，重繪不便宜）
 const EVENTS = new Set(["loaded", "characters-updated", "resources-updated", "undo", "redo"]);
@@ -227,6 +227,9 @@ export class CharacterManager {
     }
     emoSection.appendChild(emoGrid);
 
+    const emoActions = document.createElement("div");
+    emoActions.className = "emotion-actions";
+
     const addEmoBtn = document.createElement("button");
     addEmoBtn.className = "emotion-add";
     addEmoBtn.textContent = "+ 新表情";
@@ -247,10 +250,81 @@ export class CharacterManager {
       this.#write(() => this.project.upsertCharacter(name, data));
       this.render();
     });
-    emoSection.appendChild(addEmoBtn);
+    emoActions.appendChild(addEmoBtn);
+
+    const pickBtn = document.createElement("button");
+    pickBtn.className = "emotion-add";
+    pickBtn.textContent = "＋ 從立繪加入";
+    pickBtn.addEventListener("click", () => this.#pickSpriteAsEmotion(name, data));
+    emoActions.appendChild(pickBtn);
+
+    emoSection.appendChild(emoActions);
     detail.appendChild(emoSection);
 
     return detail;
+  }
+
+  // 從立繪檔案直接設為表情：選圖 → 命名（自動猜）→ 建立差分
+  async #pickSpriteAsEmotion(name, data) {
+    const files = this.project.resources.characters || [];
+    // 已被此角色用掉的檔（預設 + 各表情）標記為 used
+    const used = new Set([data.default, ...Object.values(data.emotions || {})].filter(Boolean));
+
+    const file = await openModal(`從立繪加入表情 · ${name}`, (close) => {
+      const grid = document.createElement("div");
+      grid.className = "sprite-pick-grid";
+      if (files.length === 0) {
+        const empty = document.createElement("div");
+        empty.className = "sprite-pick-empty";
+        empty.textContent = "尚無立繪檔案（可先到「立繪檔案」區匯入）";
+        grid.appendChild(empty);
+        return grid;
+      }
+      for (const f of files) {
+        const item = document.createElement("div");
+        item.className = "sprite-pick-item" + (used.has(f) ? " used" : "");
+        const img = document.createElement("img");
+        img.className = "sprite-pick-thumb";
+        this.#fillThumb(img, f);
+        const cap = document.createElement("div");
+        cap.className = "sprite-pick-name";
+        cap.textContent = f;
+        item.append(img, cap);
+        item.title = used.has(f) ? `${f}（已使用）` : f;
+        item.addEventListener("click", () => close(f));
+        grid.appendChild(item);
+      }
+      return grid;
+    }, { wide: true });
+
+    if (!file) return;
+
+    const emoName = await promptDialog({
+      title: "設為表情",
+      label: `把「${file}」設為哪個表情？`,
+      value: this.#guessEmotionName(file, name, data),
+      placeholder: "例：happy、sad",
+      validate: (v) => {
+        if (!v.trim()) return "請輸入表情名稱";
+        if ((data.emotions || {})[v.trim()]) return "這個表情已存在";
+        return null;
+      },
+    });
+    if (emoName === null) return;
+    if (!data.emotions) data.emotions = {};
+    data.emotions[emoName.trim()] = file;
+    this.#write(() => this.project.upsertCharacter(name, data));
+    this.render();
+  }
+
+  // 從檔名猜表情名：去副檔名，取最後一個底線後的片段；避開已存在的名稱
+  #guessEmotionName(file, _charName, data) {
+    const stem = String(file).replace(/\.[^.]+$/, "");
+    const parts = stem.split(/[_\-]/).filter(Boolean);
+    let guess = parts.length > 1 ? parts[parts.length - 1] : stem;
+    const existing = data.emotions || {};
+    if (existing[guess]) guess = "";   // 撞名就留空讓使用者填
+    return guess;
   }
 
   #renderEmotionCard(charName, charData, emoName, emoFile, charResources) {
