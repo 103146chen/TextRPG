@@ -10,6 +10,7 @@ const SECTIONS = [
   { kind: "bgm", label: "BGM", accept: "audio/*", type: "audio" },
   { kind: "se", label: "音效", accept: "audio/*", type: "audio" },
   { kind: "voice", label: "語音", accept: "audio/*", type: "audio" },
+  { kind: "video", label: "視頻", accept: "video/*", type: "video" },
 ];
 
 export class AssetPanel {
@@ -127,6 +128,18 @@ export class AssetPanel {
       img.loading = "lazy";
       this.#resolveUrl(sec.kind, file).then((url) => { if (url) img.src = url; });
       item.appendChild(img);
+    } else if (sec.type === "video") {
+      // 視頻縮圖：載 metadata 顯示首幀，點擊播放/暫停（消音）
+      const vid = document.createElement("video");
+      vid.className = "asset-thumb";
+      vid.muted = true;
+      vid.preload = "metadata";
+      this.#resolveUrl(sec.kind, file).then((url) => { if (url) vid.src = url; });
+      vid.addEventListener("click", (e) => {
+        e.stopPropagation();
+        if (vid.paused) vid.play().catch(() => {}); else vid.pause();
+      });
+      item.appendChild(vid);
     } else {
       const playBtn = document.createElement("button");
       playBtn.className = "asset-audio-btn";

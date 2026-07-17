@@ -7,7 +7,7 @@
 
 import { zipSync, unzipSync, strToU8, strFromU8 } from "../../vendor/fflate.js";
 
-const KINDS = ["backgrounds", "characters", "bgm", "se", "voice"];
+const KINDS = ["backgrounds", "characters", "bgm", "se", "voice", "video"];
 
 // 專案 → ZIP Blob
 export async function exportProjectZip(fs) {

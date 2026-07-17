@@ -1801,3 +1801,6 @@ input, textarea, select {
   margin-left: auto;
   margin-right: 8px;
 }
+
+/* S6d：資產面板視頻縮圖 */
+video.asset-thumb { object-fit: cover; cursor: pointer; }

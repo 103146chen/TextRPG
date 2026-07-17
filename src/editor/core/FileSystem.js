@@ -14,6 +14,7 @@ export class ProjectFileSystem {
     this.bgmDirHandle = null;
     this.seDirHandle = null;
     this.voiceDirHandle = null;
+    this.videoDirHandle = null;
   }
 
   static isSupported() {
@@ -43,6 +44,7 @@ export class ProjectFileSystem {
     this.bgmDirHandle = await this.rootHandle.getDirectoryHandle("bgm", { create: true });
     this.seDirHandle = await this.rootHandle.getDirectoryHandle("se", { create: true });
     this.voiceDirHandle = await this.rootHandle.getDirectoryHandle("voice", { create: true });
+    this.videoDirHandle = await this.rootHandle.getDirectoryHandle("video", { create: true });
   }
 
   /**
@@ -60,6 +62,7 @@ export class ProjectFileSystem {
     this.bgmDirHandle = await this.rootHandle.getDirectoryHandle("bgm", { create: true });
     this.seDirHandle = await this.rootHandle.getDirectoryHandle("se", { create: true });
     this.voiceDirHandle = await this.rootHandle.getDirectoryHandle("voice", { create: true });
+    this.videoDirHandle = await this.rootHandle.getDirectoryHandle("video", { create: true });
 
     await this.writeStoryJson(initialStoryMeta);
     return this.rootHandle.name;
@@ -97,6 +100,7 @@ export class ProjectFileSystem {
       bgm: this.bgmDirHandle,
       se: this.seDirHandle,
       voice: this.voiceDirHandle,
+      video: this.videoDirHandle,
     };
     const dir = dirMap[kind];
     if (!dir) return null;
@@ -116,6 +120,7 @@ export class ProjectFileSystem {
       bgm: this.bgmDirHandle,
       se: this.seDirHandle,
       voice: this.voiceDirHandle,
+      video: this.videoDirHandle,
     };
     const dir = dirMap[kind];
     if (!dir) throw new Error(`未知的資源類型: ${kind}`);
@@ -132,6 +137,7 @@ export class ProjectFileSystem {
       bgm: this.bgmDirHandle,
       se: this.seDirHandle,
       voice: this.voiceDirHandle,
+      video: this.videoDirHandle,
     };
     const dir = dirMap[kind];
     if (!dir) return;
@@ -146,6 +152,7 @@ export class ProjectFileSystem {
       bgm: this.bgmDirHandle,
       se: this.seDirHandle,
       voice: this.voiceDirHandle,
+      video: this.videoDirHandle,
     };
     const dir = dirMap[kind];
     if (!dir) return [];

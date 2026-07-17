@@ -10,6 +10,7 @@ import { ChoiceMenu } from "./ChoiceMenu.js";
 import { CharacterLayer, BackgroundLayer } from "./CharacterLayer.js";
 import { AudioManager } from "./AudioManager.js";
 import { ScreenEffects } from "./ScreenEffects.js";
+import { ParticleLayer } from "./ParticleLayer.js";
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
@@ -28,6 +29,8 @@ export class GameRuntime {
   constructor({ dom, storyMeta, storyPath, sceneLoader, metaLoader, resolveAsset, onEnding }) {
     this.dom = dom;
     this.storyMeta = storyMeta;
+    this.storyPath = storyPath;
+    this.resolveAsset = resolveAsset || null;
     this.onEndingCb = onEnding;
     this.instant = false;   // 靜態求值模式：不播動畫、不出聲、不等待
 
@@ -51,6 +54,9 @@ export class GameRuntime {
     dom.screen?.classList.remove("ui-hidden");   // 預覽重建 runtime 時清掉殘留
 
     dom.screen?.querySelectorAll(".float-text").forEach((el) => el.remove());   // 殘留浮動文字
+    dom.screen?.querySelectorAll(".fx-video").forEach((el) => el.remove());      // 殘留視頻層
+    this._videoEl = null;
+    this.particles = dom.screen ? new ParticleLayer(dom.screen) : null;
 
     // 自動播放（@auto）：打字完成後等 autoDelay 毫秒自動前進
     this.autoPlay = false;
@@ -144,6 +150,23 @@ export class GameRuntime {
     }, this.autoDelay);
   }
 
+  /** @video 的資源網址：預覽走 resolveAsset(blob)，正式遊玩走 storyPath */
+  async #videoUrl(fileName) {
+    if (this.resolveAsset) {
+      const u = await this.resolveAsset("video", fileName);
+      if (u) return u;
+    }
+    return `${this.storyPath}/video/${fileName}`;
+  }
+
+  #removeVideo() {
+    if (!this._videoEl) return;
+    this._videoEl.pause();
+    this._videoEl.src = "";
+    this._videoEl.remove();
+    this._videoEl = null;
+  }
+
   /** @ui hide/show：切換文字框與選項的可見性（持續狀態） */
   #setUiHidden(hide) {
     this.uiHidden = !!hide;
@@ -175,6 +198,8 @@ export class GameRuntime {
   /** 停止環境效果（離開遊戲畫面時呼叫） */
   stopAmbient() {
     this.setAuto(false);
+    this.#removeVideo();
+    this.particles?.stop();
     this.audio.stopBgm(500);
     this.audio.stopVoice();
     this.audio.stopSe();
@@ -336,6 +361,56 @@ export class GameRuntime {
         const dur = this.#d(args.duration ?? 800);
         this.#applyCamera({ zoom: 1, x: 0, y: 0 }, dur);
         this.effects?.vignette({ opacity: 0, duration: dur });
+        break;
+      }
+      case "video": {
+        // 視頻層：loop=true 循環（背景影片，用 @video-stop 收掉）；
+        // 無 loop 播一次、等結束才繼續。靜態求值跳過（動態內容無法凍結呈現）。
+        if (this.instant) break;
+        const file = args.positional[0];
+        if (!file || !this.dom.screen) break;
+        this.#removeVideo();
+        const v = document.createElement("video");
+        v.className = "fx-video";
+        v.src = await this.#videoUrl(file);
+        v.loop = args.loop === true || args.loop === "true";
+        v.muted = this.audio.muted;
+        if (args.volume != null) v.volume = Math.max(0, Math.min(1, Number(args.volume)));
+        v.playsInline = true;
+        this.dom.screen.appendChild(v);
+        this._videoEl = v;
+        try {
+          await v.play();
+        } catch {
+          // autoplay 被擋或載入失敗：不能卡死劇情，直接收掉繼續
+          this.#removeVideo();
+          break;
+        }
+        if (!v.loop) {
+          await new Promise((res) => {
+            v.addEventListener("ended", res, { once: true });
+            v.addEventListener("error", res, { once: true });
+          });
+          this.#removeVideo();
+        }
+        break;
+      }
+      case "video-stop":
+      case "stopvideo": {
+        this.#removeVideo();
+        break;
+      }
+      case "particles": {
+        // 粒子（持續狀態）：雪/雨/花瓣。scrub 也套用 —— 作者要看得到氛圍
+        const type = args.positional[0] || "snow";
+        this.particles?.start(type, {
+          density: args.density != null ? Number(args.density) : undefined,
+        });
+        break;
+      }
+      case "particles-stop":
+      case "stopparticles": {
+        this.particles?.stop();
         break;
       }
       case "sprite": {

@@ -953,3 +953,21 @@ html, body {
   white-space: nowrap;
   opacity: 0;
 }
+
+/* S6d：視頻層（文字框之下，帷幕 full 之下） */
+.fx-video {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 28;
+  background: #000;
+}
+/* S6e：粒子畫布（立繪之上、文字框之下） */
+.fx-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 6;
+  pointer-events: none;
+}

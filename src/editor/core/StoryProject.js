@@ -18,6 +18,7 @@ export class StoryProject {
       bgm: [],
       se: [],
       voice: [],
+      video: [],
     };
     this.listeners = new Set();      // 變更訂閱者（給 UI 重繪用）
     this.undoStack = [];
@@ -62,6 +63,7 @@ export class StoryProject {
     this.resources.bgm = await this.fs.listResources("bgm");
     this.resources.se = await this.fs.listResources("se");
     this.resources.voice = await this.fs.listResources("voice");
+    this.resources.video = await this.fs.listResources("video");
 
     this.undoStack = [];
     this.redoStack = [];
@@ -110,6 +112,7 @@ export class StoryProject {
     this.resources.bgm = await this.fs.listResources("bgm");
     this.resources.se = await this.fs.listResources("se");
     this.resources.voice = await this.fs.listResources("voice");
+    this.resources.video = await this.fs.listResources("video");
   }
 
   // 匯入資源檔（File/Blob），寫回資料夾並刷新清單
@@ -365,6 +368,7 @@ export class StoryProject {
         if (kind === "bgm" && ins.name === "bgm") hits.push({ sceneId, index, detail: "@bgm" });
         if (kind === "se" && ins.name === "se") hits.push({ sceneId, index, detail: "@se" });
         if (kind === "voice" && ins.name === "voice") hits.push({ sceneId, index, detail: "@voice" });
+        if (kind === "video" && ins.name === "video") hits.push({ sceneId, index, detail: "@video" });
       });
     }
     return hits;
@@ -373,7 +377,7 @@ export class StoryProject {
   /** 各類型中沒有任何引用的資產（游離） */
   findOrphanAssets() {
     const out = {};
-    for (const kind of ["backgrounds", "characters", "bgm", "se", "voice"]) {
+    for (const kind of ["backgrounds", "characters", "bgm", "se", "voice", "video"]) {
       out[kind] = (this.resources[kind] || []).filter(
         (f) => this.findAssetUsages(kind, f).length === 0
       );

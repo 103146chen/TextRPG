@@ -8,7 +8,7 @@
 
 import { exportProjectZip, importProjectZip } from "./projectZip.js";
 
-const KINDS = ["backgrounds", "characters", "bgm", "se", "voice"];
+const KINDS = ["backgrounds", "characters", "bgm", "se", "voice", "video"];
 const IDB_NAME = "galgame-editor";
 const IDB_STORE = "projects";
 const IDB_KEY = "current";
@@ -19,7 +19,7 @@ export class MemoryBackend {
     this.storyJson = null;                 // 物件
     this.scenes = new Map();               // fileName -> text
     this.resources = {                     // fileName -> Blob
-      backgrounds: new Map(), characters: new Map(), bgm: new Map(), se: new Map(), voice: new Map(),
+      backgrounds: new Map(), characters: new Map(), bgm: new Map(), se: new Map(), voice: new Map(), video: new Map(),
     };
     this.loaded = false;
     this._persistTimer = null;

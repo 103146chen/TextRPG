@@ -170,6 +170,12 @@ export class InstructionRow {
       stopse: "停止音效",
       clear: "銷毀場景",
       auto: "自動播放",
+      video: "播放視頻",
+      "video-stop": "停止視頻",
+      stopvideo: "停止視頻",
+      particles: "粒子效果",
+      "particles-stop": "停止粒子",
+      stopparticles: "停止粒子",
     }[name] || name;
 
     container.appendChild(this.#badge(nameLabel));
@@ -565,6 +571,62 @@ export class InstructionRow {
           this.onChange({ args: { ...args, delay: v === "" ? undefined : parseInt(v) } });
         });
         container.appendChild(dInput);
+        break;
+      }
+      case "video": {
+        const files = this.project.resources.video || [];
+        const input = createSelectField({
+          value: pos[0], options: files, placeholder: "選視頻檔",
+          addLabel: "匯入視頻…", onAdd: () => this.onManage?.("assets"),
+          onChange: (v) => this.onChange({ args: { ...args, positional: [v] } }),
+        });
+        container.appendChild(input);
+
+        const loopLabel = document.createElement("label");
+        loopLabel.className = "instr-inline-label";
+        const loopCb = document.createElement("input");
+        loopCb.type = "checkbox";
+        loopCb.checked = args.loop === true || args.loop === "true";
+        loopCb.addEventListener("change", () => {
+          this.onChange({ args: { ...args, loop: loopCb.checked ? true : undefined } });
+        });
+        loopLabel.appendChild(loopCb);
+        loopLabel.appendChild(document.createTextNode(" 循環"));
+        container.appendChild(loopLabel);
+        container.appendChild(this.#labelInline("無循環＝播完才繼續"));
+        break;
+      }
+      case "video-stop":
+      case "stopvideo": {
+        container.appendChild(this.#labelInline("停止並移除視頻層"));
+        break;
+      }
+      case "particles": {
+        const typeSel = document.createElement("select");
+        typeSel.className = "instr-field";
+        for (const [val, txt] of [["snow", "雪"], ["rain", "雨"], ["petals", "花瓣"]]) {
+          const o = document.createElement("option");
+          o.value = val; o.textContent = txt;
+          if ((pos[0] || "snow") === val) o.selected = true;
+          typeSel.appendChild(o);
+        }
+        typeSel.addEventListener("change", () => {
+          this.onChange({ args: { ...args, positional: [typeSel.value] } });
+        });
+        container.appendChild(typeSel);
+
+        container.appendChild(this.#labelInline("密度"));
+        const dInput = this.#numberInput(args.density, "預設值");
+        dInput.addEventListener("change", (e) => {
+          const v = e.target.value.trim();
+          this.onChange({ args: { ...args, density: v === "" ? undefined : parseInt(v) } });
+        });
+        container.appendChild(dInput);
+        break;
+      }
+      case "particles-stop":
+      case "stopparticles": {
+        container.appendChild(this.#labelInline("停止粒子效果"));
         break;
       }
       default: {
