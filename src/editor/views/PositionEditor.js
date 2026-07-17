@@ -11,7 +11,7 @@
 
 // 與引擎共用同一份錨點定義（src/ui/anchors.js），確保格線示意 = 實際渲染
 import { ANCHORS, ANCHOR_ORDER, DEFAULT_ANCHOR, DEFAULT_HEIGHT_PCT, anchorOf } from "../../ui/anchors.js";
-import { promptDialog } from "../widgets/dialog.js";
+import { promptDialog, confirmDialog } from "../widgets/dialog.js";
 
 const SPRITE_H_PCT = DEFAULT_HEIGHT_PCT;
 const SPRITE_ASPECT = 0.42;   // 示意用：立繪寬約為高的 0.42（僅供格線預覽）
@@ -282,8 +282,12 @@ export class PositionEditor {
     rm.className = "tb-btn";
     rm.textContent = "移除自訂（恢復內建版面）";
     rm.disabled = !def;
-    rm.addEventListener("click", () => {
-      if (!confirm(`移除「${this.selected}」的自訂位置？\n此位置會恢復成引擎內建的三格版面。`)) return;
+    rm.addEventListener("click", async () => {
+      if (!(await confirmDialog({
+        title: `移除「${this.selected}」的自訂位置？`,
+        message: "此位置會恢復成引擎內建的三格版面。",
+        confirmText: "移除", danger: true,
+      }))) return;
       this.project.removePosition(this.selected);
       this.onChange?.();
     });

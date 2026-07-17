@@ -8,7 +8,7 @@
 // ============================================
 
 import { field, subLabel, escapeHtml } from "../widgets/formFields.js";
-import { promptDialog } from "../widgets/dialog.js";
+import { promptDialog, confirmDialog } from "../widgets/dialog.js";
 
 const EVENTS = new Set([
   "loaded", "flags-updated", "undo", "redo",
@@ -187,8 +187,12 @@ export class FlagManager {
       `<strong class="char-name">${escapeHtml(name)}</strong>` +
       `<span class="flag-usage-tag">${usageTag}</span>` +
       `<button class="char-delete" title="刪除旗標登記">×</button>`;
-    header.querySelector(".char-delete").addEventListener("click", () => {
-      if (!confirm(`刪除旗標登記「${name}」？\n不會刪除劇本中的引用。`)) return;
+    header.querySelector(".char-delete").addEventListener("click", async () => {
+      if (!(await confirmDialog({
+        title: `刪除旗標登記「${name}」？`,
+        message: "不會刪除劇本中的引用。",
+        confirmText: "刪除", danger: true,
+      }))) return;
       this.#write(() => this.project.removeFlag(name));
       this.render();
     });

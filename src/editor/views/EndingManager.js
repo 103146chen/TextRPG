@@ -7,6 +7,7 @@
 // ============================================
 
 import { field, textInput, escapeHtml } from "../widgets/formFields.js";
+import { confirmDialog } from "../widgets/dialog.js";
 
 const EVENTS = new Set([
   "loaded", "story-meta-updated", "undo", "redo",
@@ -124,8 +125,8 @@ export class EndingManager {
       ${idUsed ? '<span class="ending-used">✓ 已連結</span>' : '<span class="ending-unused">○ 未連結</span>'}
       <button class="ending-delete" title="刪除">×</button>
     `;
-    header.querySelector(".ending-delete").addEventListener("click", () => {
-      if (!confirm("刪除這個結局？")) return;
+    header.querySelector(".ending-delete").addEventListener("click", async () => {
+      if (!(await confirmDialog({ title: "刪除這個結局？", confirmText: "刪除", danger: true }))) return;
       const next = [...(this.project.storyMeta.endings || [])];
       next.splice(idx, 1);
       this.#write(() => this.project.updateStoryMeta({ endings: next }));

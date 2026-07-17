@@ -24,7 +24,7 @@ import { SceneParser } from "../engine/SceneParser.js";
 import { MarkdownWriter } from "./core/MarkdownWriter.js";
 import { SceneJson } from "./core/SceneJson.js";
 import { createAutosave } from "./core/autosave.js";
-import { promptDialog } from "./widgets/dialog.js";
+import { promptDialog, confirmDialog } from "./widgets/dialog.js";
 import { renderDirectiveForm, DIRECTIVE_SCHEMAS } from "./widgets/directiveFields.js";
 
 const $ = s => document.querySelector(s);
@@ -122,10 +122,14 @@ function setPage(page) {
 
 // ==================== 檢視切換（卡片 / Markdown / JSON）====================
 
-function setViewMode(mode) {
+async function setViewMode(mode) {
   // 離開原始碼檢視前，若有未套用的編輯就先確認
   if ((viewMode === "md" || viewMode === "json") && mode !== viewMode && isSourceDirty()) {
-    if (!confirm("原始碼有未套用的變更，切換後會捨棄。確定切換？")) return;
+    if (!(await confirmDialog({
+      title: "捨棄未套用的變更？",
+      message: "原始碼有未套用的變更，切換檢視後會捨棄。",
+      confirmText: "捨棄並切換", danger: true,
+    }))) return;
   }
   viewMode = mode;
   document.querySelectorAll(".view-mode").forEach((b) =>
@@ -324,7 +328,11 @@ $("#btn-new-scene").addEventListener("click", async () => {
 
 $("#btn-delete-scene").addEventListener("click", async () => {
   if (!currentSceneId) return;
-  if (!confirm(`刪除場景「${currentSceneId}」？\n這個操作無法復原（檔案會被刪除）。`)) return;
+  if (!(await confirmDialog({
+    title: `刪除場景「${currentSceneId}」？`,
+    message: "這個操作無法復原——場景檔案會被刪除。",
+    confirmText: "刪除場景", danger: true,
+  }))) return;
   try {
     await project.deleteScene(currentSceneId);
     currentSceneId = project.getAllSceneIds()[0] || null;
@@ -664,9 +672,13 @@ function renderSidebar() {
           <div class="scene-subtitle">${escapeHtml(id)}</div>
         </div>
       `;
-      item.addEventListener("click", () => {
+      item.addEventListener("click", async () => {
         if ((viewMode === "md" || viewMode === "json") && isSourceDirty() &&
-            !confirm("原始碼有未套用的變更，切換場景後會捨棄。確定切換？")) return;
+            !(await confirmDialog({
+              title: "捨棄未套用的變更？",
+              message: "原始碼有未套用的變更，切換場景後會捨棄。",
+              confirmText: "捨棄並切換", danger: true,
+            }))) return;
         currentSceneId = id;
         renderEvents();
         renderSidebar();

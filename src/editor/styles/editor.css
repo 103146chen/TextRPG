@@ -88,6 +88,14 @@ input, textarea, select {
   background: var(--e-accent-2);
 }
 
+.tb-btn.danger {
+  background: var(--e-red);
+  color: #fff;
+  border-color: var(--e-red);
+  font-weight: 600;
+}
+.tb-btn.danger:hover { background: #c04f4f; border-color: #c04f4f; }
+
 .tb-btn:disabled {
   opacity: 0.4;
   cursor: not-allowed;
@@ -717,6 +725,7 @@ input, textarea, select {
 }
 .sprite-pick-empty { color: var(--e-text-dim); padding: 30px; text-align: center; }
 .e-dialog-label { display: block; font-size: 12px; color: var(--e-text-dim); margin-bottom: 6px; }
+.e-dialog-message { font-size: 13px; color: var(--e-text-dim); line-height: 1.6; white-space: pre-line; margin-bottom: 4px; }
 .e-dialog-input {
   width: 100%;
   padding: 8px 10px;

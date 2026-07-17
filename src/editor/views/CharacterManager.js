@@ -9,7 +9,7 @@
 // ============================================
 
 import { subLabel, datalistInput, escapeHtml } from "../widgets/formFields.js";
-import { promptDialog, openModal } from "../widgets/dialog.js";
+import { promptDialog, openModal, confirmDialog } from "../widgets/dialog.js";
 
 // 只關心會改變本面板內容的事件（縮圖要重新讀 blob，重繪不便宜）
 const EVENTS = new Set(["loaded", "characters-updated", "resources-updated", "undo", "redo"]);
@@ -147,9 +147,13 @@ export class CharacterManager {
     delBtn.className = "char-delete";
     delBtn.title = "刪除角色";
     delBtn.textContent = "×";
-    delBtn.addEventListener("click", (e) => {
+    delBtn.addEventListener("click", async (e) => {
       e.stopPropagation();
-      if (!confirm(`刪除角色「${name}」？\n這不會刪除劇本中對這個角色的引用。`)) return;
+      if (!(await confirmDialog({
+        title: `刪除角色「${name}」？`,
+        message: "這不會刪除劇本中對這個角色的引用。",
+        confirmText: "刪除角色", danger: true,
+      }))) return;
       if (this._selected === name) this._selected = null;
       this.#write(() => this.project.removeCharacter(name));
       this.render();

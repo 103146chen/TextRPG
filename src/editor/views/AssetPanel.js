@@ -4,6 +4,8 @@
 // 縮圖預覽與試聽，並可刪除。匯入後自動刷新各下拉選單。
 // ============================================
 
+import { confirmDialog } from "../widgets/dialog.js";
+
 const SECTIONS = [
   { kind: "backgrounds", label: "背景", accept: "image/*", type: "image" },
   { kind: "characters", label: "立繪", accept: "image/*", type: "image" },
@@ -207,9 +209,9 @@ export class AssetPanel {
         ? `「${file}」目前有 ${usages.length} 處引用：\n` +
           usages.slice(0, 6).map((u) => `· ${u.sceneId ? u.sceneId + " → " : ""}${u.detail}`).join("\n") +
           (usages.length > 6 ? `\n…共 ${usages.length} 處` : "") +
-          `\n\n刪除後這些地方會找不到檔案。確定刪除？`
-        : `刪除「${file}」？\n此檔案沒有任何地方引用。\n這會直接刪除檔案，無法復原。`;
-      if (!confirm(warn)) return;
+          `\n\n刪除後這些地方會找不到檔案。`
+        : `此檔案沒有任何地方引用。這會直接刪除檔案，無法復原。`;
+      if (!(await confirmDialog({ title: `刪除「${file}」？`, message: warn, confirmText: "刪除檔案", danger: true }))) return;
       await this.project.deleteAsset(sec.kind, file);
     });
     return del;

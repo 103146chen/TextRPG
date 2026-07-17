@@ -7,7 +7,7 @@
 // ============================================
 
 import { escapeHtml, subLabel } from "../widgets/formFields.js";
-import { promptDialog } from "../widgets/dialog.js";
+import { promptDialog, confirmDialog } from "../widgets/dialog.js";
 
 const EVENTS = new Set([
   "loaded", "chapters-updated", "story-meta-updated", "undo", "redo",
@@ -129,8 +129,12 @@ export class ChapterManager {
     const delBtn = document.createElement("button");
     delBtn.className = "chapter-head-btn danger";
     delBtn.textContent = "×"; delBtn.title = "刪除章節（場景會回到未分類）";
-    delBtn.addEventListener("click", () => {
-      if (!confirm(`刪除章節「${ch.title || ch.id}」？\n章節內的場景會回到「未分類」，場景檔不受影響。`)) return;
+    delBtn.addEventListener("click", async () => {
+      if (!(await confirmDialog({
+        title: `刪除章節「${ch.title || ch.id}」？`,
+        message: "章節內的場景會回到「未分類」，場景檔不受影響。",
+        confirmText: "刪除章節", danger: true,
+      }))) return;
       this.project.removeChapter(ch.id);
     });
     head.appendChild(delBtn);

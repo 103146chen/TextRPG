@@ -5,6 +5,7 @@
 
 import { InstructionRow } from "../widgets/InstructionRow.js";
 import { createSelectField } from "../widgets/selectField.js";
+import { confirmDialog } from "../widgets/dialog.js";
 
 export class SceneEditor {
   constructor(containerEl, project, onPlayFrom = null, onManage = null, onSelect = null) {
@@ -122,9 +123,13 @@ export class SceneEditor {
     // 場景 ID 編輯
     header.appendChild(this.#field("ID", this.#input({
       value: scene.meta.id,
-      onChange: (v) => {
+      onChange: async (v) => {
         if (v !== scene.meta.id && v) {
-          if (!confirm(`將場景 ID 從「${scene.meta.id}」改為「${v}」？\n這也會連動修改所有引用到它的 goto/next。`)) return;
+          if (!(await confirmDialog({
+            title: `將場景 ID 改為「${v}」？`,
+            message: `原 ID「${scene.meta.id}」。這也會連動修改所有引用到它的 goto/next。`,
+            confirmText: "重新命名",
+          }))) return;
           this.project.renameScene(scene.meta.id, v);
           this.currentSceneId = v;
         }

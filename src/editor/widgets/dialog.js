@@ -106,6 +106,78 @@ export function promptDialog({
 }
 
 /**
+ * 確認對話框（取代原生 confirm）。
+ * @param {object} o
+ * @param {string} [o.title]        標題
+ * @param {string} [o.message]      內文（支援換行 \n）
+ * @param {string} [o.confirmText]  確認鈕文字
+ * @param {string} [o.cancelText]   取消鈕文字
+ * @param {boolean} [o.danger]      確認鈕是否用危險樣式（刪除等破壞性操作）
+ * @returns {Promise<boolean>} 確認回傳 true；取消／Esc／點背景回傳 false
+ */
+export function confirmDialog({
+  title = "",
+  message = "",
+  confirmText = "確定",
+  cancelText = "取消",
+  danger = false,
+} = {}) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "e-dialog-overlay";
+
+    const box = document.createElement("div");
+    box.className = "e-dialog";
+    box.setAttribute("role", "alertdialog");
+    box.setAttribute("aria-modal", "true");
+
+    if (title) {
+      const t = document.createElement("div");
+      t.className = "e-dialog-title";
+      t.textContent = title;
+      box.appendChild(t);
+    }
+    if (message) {
+      const m = document.createElement("div");
+      m.className = "e-dialog-message";
+      m.textContent = message;
+      box.appendChild(m);
+    }
+
+    const actions = document.createElement("div");
+    actions.className = "e-dialog-actions";
+    const cancelBtn = document.createElement("button");
+    cancelBtn.className = "tb-btn e-dialog-cancel";
+    cancelBtn.textContent = cancelText;
+    const okBtn = document.createElement("button");
+    okBtn.className = "tb-btn " + (danger ? "danger" : "primary") + " e-dialog-ok";
+    okBtn.textContent = confirmText;
+    actions.append(cancelBtn, okBtn);
+    box.appendChild(actions);
+
+    overlay.appendChild(box);
+
+    function close(result) {
+      document.removeEventListener("keydown", onKey, true);
+      overlay.remove();
+      resolve(result);
+    }
+    function onKey(e) {
+      if (e.key === "Escape") { e.preventDefault(); close(false); }
+      else if (e.key === "Enter") { e.preventDefault(); close(true); }
+    }
+
+    okBtn.addEventListener("click", () => close(true));
+    cancelBtn.addEventListener("click", () => close(false));
+    overlay.addEventListener("mousedown", (e) => { if (e.target === overlay) close(false); });
+    document.addEventListener("keydown", onKey, true);
+
+    document.body.appendChild(overlay);
+    okBtn.focus();
+  });
+}
+
+/**
  * 通用彈出視窗：由呼叫端提供內容，內容可呼叫 close(value) 關閉並回傳。
  * 常用於「選擇器」這類需要自訂 DOM（縮圖網格等）的場景。
  * @param {string} title 標題
