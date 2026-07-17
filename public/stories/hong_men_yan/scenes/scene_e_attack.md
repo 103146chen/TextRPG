@@ -1,7 +1,7 @@
 ---
 id: scene_e_attack
 title: 結局 · 旦日的四十萬
-background: julu_battlefield.png
+background: baqiao_camp.png
 bgm: bgm_war_drums.mp3
 ---
 

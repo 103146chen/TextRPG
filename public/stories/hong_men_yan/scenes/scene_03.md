@@ -1,7 +1,7 @@
-﻿---
+---
 id: scene_03
 title: 第三章 · 兩次大怒
-background: hongmen_camp.png
+background: hangu_pass.png
 bgm: bgm_tension.mp3
 next: scene_04
 ---
@@ -15,7 +15,9 @@ next: scene_04
 項羽(心聲): 「他劉邦，趁我與章邯血戰之時，撿了一座空咸陽！」
 你大怒，使當陽君等強攻函谷關。關破，大軍長驅直入，駐於戲西、新豐鴻門。
 此時，沛公軍霸上，與你相距四十里。
+@bg hongmen_camp.png fade=1000
 @wait 1200
+@bg hongmen_camp_night.png fade=1000
 當夜，有人求見——沛公麾下左司馬，曹無傷的密使。
 使者伏在地上，一字一句：
 「沛公欲王關中，使子嬰為相，珍寶盡有之。」

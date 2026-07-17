@@ -13,6 +13,7 @@ bgm: bgm_ending_tragic.mp3
 看見樊噲背著十幾處傷,硬生生從你四十萬人的轅門殺了出去,像一頭流著血的獸。
 看見張良——不知所終。滿地打翻的酒器和血,沒有他的屍身。
 @wait 2000
+@bg banquet_tent_chaos.png fade=1000
 鴻門的宴席,以血收場。
 @wait 1500
 @show 范增 center normal

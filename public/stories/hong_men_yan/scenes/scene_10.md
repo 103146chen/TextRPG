@@ -1,4 +1,4 @@
-﻿---
+---
 id: scene_10
 title: 第十章 · 垓下
 background: gaixia_night.png
@@ -6,6 +6,7 @@ bgm: bgm_gaixia.mp3
 ---
 
 此後的事，史書寫了整整四年。
+@bg xianyang_fire.png fade=1500
 你引兵西屠咸陽，殺子嬰，燒秦宮室，火三月不滅。
 
 :: if 降卒處置 == "坑殺"
@@ -17,6 +18,7 @@ bgm: bgm_gaixia.mp3
 然後，諸侯一個接一個地反了。
 帶頭的，正是那個在你宴席上彎腰稱臣、藉口如廁溜走的漢王。
 @wait 1500
+@bg pengcheng_battle.png fade=1200
 彭城，你三萬破他五十六萬，漢卒十餘萬人被擠落睢水，水為之不流——你贏了。
 滎陽、成皋，拉鋸經年。
 陳平的反間計來了。你疑了亞父，奪了他的權。老人說——「天下事大定矣，君王自為之！」辭官東歸，背疽發作，死在半路。
@@ -27,6 +29,7 @@ bgm: bgm_gaixia.mp3
 鴻門宴上你不聽他，滎陽軍中你疑了他。這個為項家謀劃到七十五歲的老人，到死都沒等到你再叫他一聲亞父。
 :: endif
 鴻溝議和,，中分天下。你引兵東歸，他背約追擊。
+@bg gaixia_night.png fade=2000
 然後，垓下。
 @wait 2000
 夜。
@@ -44,7 +47,7 @@ bgm: bgm_gaixia.mp3
 左右皆泣，莫能仰視。
 @hide 虞姬 fade=1500
 @wait 2000
-@bg wujiang_shore.png fade=1500
+@bg gaixia_breakout.png fade=1200
 是夜，你率八百餘騎潰圍南出，渡淮，迷失道。
 田父紿曰——「左。」左，乃陷大澤中。
 連一個種田的老人，都要騙你。
@@ -54,6 +57,7 @@ bgm: bgm_gaixia.mp3
 天之亡我，非戰之罪。
 你又說了一遍。像是說給二十八騎聽，又像是說給自己聽。
 @wait 1500
+@bg wujiang_shore.png fade=1500
 於是,，烏江。
 @show 亭長 center normal
 烏江亭長檥船岸邊，等著你。全烏江，只有這一條船。
