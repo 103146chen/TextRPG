@@ -20,7 +20,9 @@ export class SceneEditor {
 
     // 關閉插入選單（點到選單外）
     document.addEventListener("click", (e) => {
-      if (this.openMenu && !this.openMenu.contains(e.target)) {
+      const inMain = this.openMenu && this.openMenu.contains(e.target);
+      const inSub = this.subMenu && this.subMenu.contains(e.target);
+      if (this.openMenu && !inMain && !inSub) {
         this.closeInsertMenu();
       }
     });
@@ -320,17 +322,32 @@ export class SceneEditor {
       ]},
     ];
 
-    // 二欄：左類別、右指令
-    menu.classList.add("two-col");
+    // 飛出式：一級只放類別，子選單開在類別「右側」（沒空間就開左側），
+    // 才不會發生「滑鼠斜向移過去、子選單被中途經過的類別搶走」點不到的問題。
+    menu.classList.add("cats-only");
     const catCol = document.createElement("div");
     catCol.className = "im-cats";
-    const itemCol = document.createElement("div");
-    itemCol.className = "im-items";
     menu.appendChild(catCol);
-    menu.appendChild(itemCol);
 
-    const renderItems = (cat) => {
-      itemCol.innerHTML = "";
+    const insertItem = (item) => {
+      const tpl = item.template();
+      if (Array.isArray(tpl)) {
+        tpl.forEach((t, i) => {
+          this._pendingScrollTo = index;
+          this.project.insertInstruction(this.currentSceneId, index + i, t);
+        });
+      } else {
+        this._pendingScrollTo = index;
+        this.project.insertInstruction(this.currentSceneId, index, tpl);
+      }
+      this.closeInsertMenu();
+    };
+
+    const openSub = (cat, cbtn) => {
+      catCol.querySelectorAll(".im-cat").forEach((b) => b.classList.toggle("active", b === cbtn));
+      this.subMenu?.remove();
+      const sub = document.createElement("div");
+      sub.className = "insert-menu insert-submenu";
       for (const item of cat.items) {
         const btn = document.createElement("button");
         btn.className = "insert-menu-item";
@@ -339,36 +356,43 @@ export class SceneEditor {
           <span>${item.label}</span>
           <span class="kind-label">${item.kind}</span>
         `;
-        btn.addEventListener("click", () => {
-          const tpl = item.template();
-          if (Array.isArray(tpl)) {
-            tpl.forEach((t, i) => {
-              this._pendingScrollTo = index;
-              this.project.insertInstruction(this.currentSceneId, index + i, t);
-            });
-          } else {
-            this._pendingScrollTo = index;
-            this.project.insertInstruction(this.currentSceneId, index, tpl);
-          }
-          this.closeInsertMenu();
-        });
-        itemCol.appendChild(btn);
+        btn.addEventListener("click", () => insertItem(item));
+        sub.appendChild(btn);
       }
+      document.body.appendChild(sub);
+
+      // 定位：貼齊類別列右緣；右側放不下 → 開左側；垂直夾在視窗內
+      const r = cbtn.getBoundingClientRect();
+      const w = sub.offsetWidth;
+      const h = sub.offsetHeight;
+      let left = r.right + 2;
+      if (left + w > window.innerWidth - 8) left = Math.max(8, r.left - w - 2);
+      let top = r.top - 4;
+      if (top + h > window.innerHeight - 8) top = Math.max(8, window.innerHeight - h - 8);
+      sub.style.left = `${left}px`;
+      sub.style.top = `${top}px`;
+
+      // 滑進子選單就取消待切換的計時器（防止殘留切換）
+      sub.addEventListener("mouseenter", () => clearTimeout(this._subTimer));
+      this.subMenu = sub;
     };
 
-    CATEGORIES.forEach((cat, ci) => {
+    CATEGORIES.forEach((cat) => {
       const cbtn = document.createElement("button");
-      cbtn.className = "im-cat" + (ci === 0 ? " active" : "");
-      cbtn.textContent = cat.label;
-      const activate = () => {
-        catCol.querySelectorAll(".im-cat").forEach((b) => b.classList.toggle("active", b === cbtn));
-        renderItems(cat);
-      };
-      cbtn.addEventListener("mouseenter", activate);
-      cbtn.addEventListener("click", activate);
+      cbtn.className = "im-cat";
+      cbtn.innerHTML = `<span>${cat.label}</span><span class="im-arrow">▸</span>`;
+      // 懸停切換加 120ms 緩衝：斜向移往子選單時途經其他類別不會立刻搶走
+      cbtn.addEventListener("mouseenter", () => {
+        clearTimeout(this._subTimer);
+        this._subTimer = setTimeout(() => openSub(cat, cbtn), 120);
+      });
+      cbtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        clearTimeout(this._subTimer);
+        openSub(cat, cbtn);
+      });
       catCol.appendChild(cbtn);
     });
-    renderItems(CATEGORIES[0]);
 
     document.body.appendChild(menu);
     const rect = anchor.getBoundingClientRect();
@@ -384,6 +408,11 @@ export class SceneEditor {
   }
 
   closeInsertMenu() {
+    clearTimeout(this._subTimer);
+    if (this.subMenu) {
+      this.subMenu.remove();
+      this.subMenu = null;
+    }
     if (this.openMenu) {
       this.openMenu.remove();
       this.openMenu = null;

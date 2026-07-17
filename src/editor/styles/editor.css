@@ -2128,3 +2128,24 @@ video.asset-thumb { object-fit: cover; cursor: pointer; }
   overflow-y: auto;
   padding: 4px;
 }
+
+/* 插入選單：飛出式（一級類別 → 右側子選單） */
+.insert-menu.cats-only { padding: 4px; display: block; }
+.insert-menu.cats-only .im-cats {
+  background: transparent;
+  border-right: none;
+  min-width: 130px;
+  padding: 0;
+}
+.im-cat { display: flex; align-items: center; justify-content: space-between; gap: 10px; }
+.im-arrow { color: var(--e-text-faded); font-size: 10px; }
+.im-cat.active .im-arrow { color: var(--e-accent); }
+
+.insert-submenu {
+  position: fixed;
+  min-width: 210px;
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 4px;
+  z-index: 1001;   /* 蓋在一級選單之上 */
+}
