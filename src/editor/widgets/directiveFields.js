@@ -6,9 +6,12 @@
 // 指令的解析／序列化不需改動——SceneParser/MarkdownWriter 已能承載任意
 // args（positional 陣列 + 具名鍵）。這裡只負責 UI 與值的讀寫。
 //
-// 欄位型別：slider / number / select / checkbox / text
+// 欄位型別：slider / number / select / checkbox / color / text /
+//           asset / character（需 context.project）
 // 欄位可用 key（具名 args）或 positional（args.positional[N]）定位其值。
 // ============================================
+
+import { createSelectField } from "./selectField.js";
 
 // ---- 值的讀寫（具名 vs 位置參數）----
 // fallbackPositional：具名值空缺時，改讀某個位置參數（相容舊檔，例如
@@ -188,6 +191,32 @@ function colorControl(f, value, commit) {
   return wrap;
 }
 
+// 資產下拉（背景／BGM／音效／語音／立繪…）：選項來自 project.resources[kind]，
+// 尾端可「＋ 匯入…」跳到資產頁對應分類。需 context.project / context.onManage。
+function assetControl(f, value, commit, compact, ctx) {
+  const options = ctx?.project?.resources?.[f.assetKind] || [];
+  return createSelectField({
+    value: value || "", options,
+    placeholder: f.placeholder || "（未選）",
+    addLabel: f.addLabel, onAdd: f.manageTarget ? () => ctx?.onManage?.(f.manageTarget) : undefined,
+    onChange: (v) => commit(v),
+    className: compact ? "instr-field" : "",
+  });
+}
+
+// 角色下拉：選項為已定義角色（可含 all），尾端「＋ 新增角色…」。
+function characterControl(f, value, commit, compact, ctx) {
+  const names = Object.keys(ctx?.project?.storyMeta?.characters || {});
+  const options = f.includeAll ? ["all", ...names] : names;
+  return createSelectField({
+    value: value || "", options,
+    placeholder: f.placeholder || "（選角色）",
+    addLabel: "新增角色…", onAdd: () => ctx?.onManage?.("characters"),
+    onChange: (v) => commit(v),
+    className: compact ? "instr-field" : "",
+  });
+}
+
 const CONTROLS = {
   slider: sliderControl,
   number: numberControl,
@@ -195,6 +224,8 @@ const CONTROLS = {
   checkbox: checkboxControl,
   color: colorControl,
   text: textControl,
+  asset: assetControl,
+  character: characterControl,
 };
 
 /**
@@ -205,8 +236,9 @@ const CONTROLS = {
  * @param {(args:object)=>void} onCommit 任一欄位變更後，收到完整（去空值）的 args
  * @param {object} [opts]
  * @param {boolean} [opts.compact] 卡片內嵌的緊湊版型（inline、無標題/說明、不清空 host）
+ * @param {object} [opts.context] { project, onManage } 供 asset/character 等欄位取用
  */
-export function renderDirectiveForm(host, ins, schema, onCommit, { compact = false } = {}) {
+export function renderDirectiveForm(host, ins, schema, onCommit, { compact = false, context = null } = {}) {
   // 以目前 args 為基底的工作副本；欄位變更就地修改後回呼
   const args = JSON.parse(JSON.stringify(ins.args || {}));
   if (args.positional && !Array.isArray(args.positional)) args.positional = [];
@@ -218,7 +250,7 @@ export function renderDirectiveForm(host, ins, schema, onCommit, { compact = fal
       const out = JSON.parse(JSON.stringify(args));
       stripEmpties(out);
       onCommit(out);
-    }, compact);
+    }, compact, context);
   };
 
   if (compact) {
@@ -351,6 +383,54 @@ export const DIRECTIVE_SCHEMAS = {
       { positional: 0, label: "類型", type: "select", default: "snow",
         options: [["snow", "雪"], ["rain", "雨"], ["petals", "花瓣"]] },
       { key: "density", label: "密度", type: "number", min: 0, step: 10, hint: "留空為預設密度" },
+    ],
+  },
+
+  // 切換背景
+  bg: {
+    title: "bg · 切換背景",
+    fields: [
+      { positional: 0, label: "背景", type: "asset", assetKind: "backgrounds",
+        addLabel: "匯入背景…", manageTarget: "asset-backgrounds", placeholder: "選背景" },
+      { key: "fade", label: "淡入", clabel: "fade", type: "number", min: 0, step: 50, suffix: "ms", hint: "預設 800" },
+    ],
+  },
+
+  // 播放 BGM
+  bgm: {
+    title: "bgm · 播放 BGM",
+    fields: [
+      { positional: 0, label: "BGM", type: "asset", assetKind: "bgm",
+        addLabel: "匯入 BGM…", manageTarget: "asset-bgm", placeholder: "選 BGM" },
+      { key: "fade", label: "淡入", clabel: "fade", type: "number", min: 0, step: 50, suffix: "ms", hint: "預設 1000" },
+    ],
+  },
+
+  // 音效
+  se: {
+    title: "se · 音效",
+    fields: [
+      { positional: 0, label: "音效", type: "asset", assetKind: "se",
+        addLabel: "匯入音效…", manageTarget: "asset-se", placeholder: "選音效" },
+    ],
+  },
+
+  // 語音
+  voice: {
+    title: "voice · 語音",
+    note: "放在對話行前，唸該句時播放。",
+    fields: [
+      { positional: 0, label: "語音檔", type: "asset", assetKind: "voice",
+        addLabel: "匯入語音…", manageTarget: "asset-voice", placeholder: "選語音檔" },
+    ],
+  },
+
+  // 隱藏立繪
+  hide: {
+    title: "hide · 隱藏立繪",
+    fields: [
+      { positional: 0, label: "角色", type: "character", includeAll: true, placeholder: "角色或 all" },
+      { key: "fade", label: "淡出", clabel: "fade", type: "number", min: 0, step: 50, suffix: "ms", hint: "預設 400" },
     ],
   },
 

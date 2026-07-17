@@ -752,7 +752,8 @@ function renderInspector(sceneId, index) {
   // 其餘多參數指令：schema 驅動的可編輯檢查器
   if (ins.type === "directive" && DIRECTIVE_SCHEMAS[ins.name]) {
     renderDirectiveForm(host, ins, DIRECTIVE_SCHEMAS[ins.name],
-      (args) => updateDirectiveArgs(sceneId, index, args));
+      (args) => updateDirectiveArgs(sceneId, index, args),
+      { context: { project, onManage: handleManage } });
     return;
   }
 

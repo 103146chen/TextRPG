@@ -218,27 +218,12 @@ export class InstructionRow {
     // schema 驅動的指令：卡片與檢查器共用同一份欄位定義（compact 版型）
     if (DIRECTIVE_SCHEMAS[name]) {
       renderDirectiveForm(container, this.ins, DIRECTIVE_SCHEMAS[name],
-        (newArgs) => this.onChange({ args: newArgs }), { compact: true });
+        (newArgs) => this.onChange({ args: newArgs }),
+        { compact: true, context: { project: this.project, onManage: this.onManage } });
       return;
     }
 
     switch (name) {
-      case "bg": {
-        const files = this.project.resources.backgrounds;
-        const input = createSelectField({
-          value: pos[0], options: files, placeholder: "選背景",
-          addLabel: "匯入背景…", onAdd: () => this.onManage?.("asset-backgrounds"),
-          onChange: (v) => this.onChange({ args: { ...args, positional: [v, ...pos.slice(1)] } }),
-        });
-        container.appendChild(input);
-        const fadeInput = this.#numberInput(args.fade, "fade (ms)");
-        fadeInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, fade: parseInt(e.target.value) || undefined } });
-        });
-        container.appendChild(this.#labelInline("fade"));
-        container.appendChild(fadeInput);
-        break;
-      }
       case "show": {
         const charNames = Object.keys(this.project.storyMeta?.characters || {});
         const charInput = createSelectField({
@@ -272,46 +257,6 @@ export class InstructionRow {
           onChange: (v) => this.onChange({ args: { ...args, positional: [pos[0], pos[1] || "center", v] } }),
         });
         container.appendChild(emoInput);
-        break;
-      }
-      case "hide": {
-        const charNames = ["all", ...Object.keys(this.project.storyMeta?.characters || {})];
-        const input = this.#selectOrInput(pos[0], charNames, "角色名或 all");
-        input.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, positional: [e.target.value] } });
-        });
-        container.appendChild(input);
-        break;
-      }
-      case "bgm": {
-        const files = this.project.resources.bgm;
-        const input = createSelectField({
-          value: pos[0], options: files, placeholder: "選 BGM",
-          addLabel: "匯入 BGM…", onAdd: () => this.onManage?.("asset-bgm"),
-          onChange: (v) => this.onChange({ args: { ...args, positional: [v] } }),
-        });
-        container.appendChild(input);
-        break;
-      }
-      case "se": {
-        const files = this.project.resources.se;
-        const input = createSelectField({
-          value: pos[0], options: files, placeholder: "選音效",
-          addLabel: "匯入音效…", onAdd: () => this.onManage?.("asset-se"),
-          onChange: (v) => this.onChange({ args: { ...args, positional: [v] } }),
-        });
-        container.appendChild(input);
-        break;
-      }
-      case "voice": {
-        const files = this.project.resources.voice || [];
-        const input = createSelectField({
-          value: pos[0], options: files, placeholder: "選語音檔",
-          addLabel: "匯入語音…", onAdd: () => this.onManage?.("asset-voice"),
-          onChange: (v) => this.onChange({ args: { ...args, positional: [v] } }),
-        });
-        container.appendChild(input);
-        container.appendChild(this.#labelInline("放在對話行前，唸該句時播放"));
         break;
       }
       case "wait": {
