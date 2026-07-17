@@ -222,5 +222,13 @@
       "label": "",
       "usage": "counter"
     }
+  },
+  "positions": {
+    "center-big": {
+      "x": 50,
+      "y": 100,
+      "anchor": "center_bottom",
+      "scale": 1.25
+    }
   }
 }

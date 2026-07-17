@@ -45,7 +45,7 @@ next: scene_03
 - text: 「全數坑殺。斬草除根,大軍才走得快」
   set: { 降卒處置: "坑殺" }
   goto: after_xinan
-- text: 「收編入軍。二十萬人,就是二十萬兵」
+- text: 「收編入軍。二十萬人，就是二十萬兵」
   set: { 降卒處置: "收編" }
   goto: after_xinan
 - text: 「繳械遣散，放他們回鄉」
