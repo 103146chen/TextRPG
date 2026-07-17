@@ -224,41 +224,6 @@ export class InstructionRow {
     }
 
     switch (name) {
-      case "show": {
-        const charNames = Object.keys(this.project.storyMeta?.characters || {});
-        const charInput = createSelectField({
-          value: pos[0], options: charNames, placeholder: "選角色",
-          addLabel: "新增角色…", onAdd: () => this.onManage?.("characters"),
-          onChange: (v) => this.onChange({ args: { ...args, positional: [v, pos[1] || "center", pos[2] || ""] } }),
-        });
-        container.appendChild(charInput);
-
-        const slotSelect = document.createElement("select");
-        slotSelect.className = "instr-field";
-        for (const slot of ["left", "center", "right"]) {
-          const o = document.createElement("option");
-          o.value = slot;
-          o.textContent = slot;
-          if ((pos[1] || "center") === slot) o.selected = true;
-          slotSelect.appendChild(o);
-        }
-        slotSelect.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, positional: [pos[0], e.target.value, pos[2] || ""] } });
-        });
-        container.appendChild(slotSelect);
-
-        // 表情
-        const charName = pos[0];
-        const charData = this.project.storyMeta?.characters?.[charName];
-        const emotions = charData?.emotions ? Object.keys(charData.emotions) : [];
-        const emoInput = createSelectField({
-          value: pos[2], options: emotions, placeholder: "（預設表情）",
-          addLabel: "編輯角色表情…", onAdd: () => this.onManage?.("characters"),
-          onChange: (v) => this.onChange({ args: { ...args, positional: [pos[0], pos[1] || "center", v] } }),
-        });
-        container.appendChild(emoInput);
-        break;
-      }
       case "wait": {
         const input = this.#numberInput(pos[0], "毫秒");
         input.addEventListener("change", (e) => {

@@ -723,14 +723,6 @@ function updateStatusBar() {
 
 // ==================== 檢查器（S3d）====================
 
-// 九種錨點：圖片的哪一點對齊到座標
-const ANCHOR_OPTIONS = [
-  ["", "（預設 · 底部置中）"],
-  ["left_top", "左上"], ["center_top", "上方置中"], ["right_top", "右上"],
-  ["left_center", "左中"], ["center", "正中"], ["right_center", "右中"],
-  ["left_bottom", "左下"], ["center_bottom", "底部置中"], ["right_bottom", "右下"],
-];
-
 // 顯示選取指令的細部參數。用 SceneJson.toObject 剝除推導欄位，
 // 確保這裡看到的就是「真正被序列化的內容」，不會混入內部索引。
 function renderInspector(sceneId, index) {
@@ -743,13 +735,7 @@ function renderInspector(sceneId, index) {
     return;
   }
 
-  // @show：定位（位置／錨點／縮放）在此編輯——卡片只放常用的角色/位置槽/表情
-  if (ins.type === "directive" && ins.name === "show") {
-    renderShowInspector(host, sceneId, index, ins);
-    return;
-  }
-
-  // 其餘多參數指令：schema 驅動的可編輯檢查器
+  // 多參數指令（含 @show 的定位）：schema 驅動的可編輯檢查器
   if (ins.type === "directive" && DIRECTIVE_SCHEMAS[ins.name]) {
     renderDirectiveForm(host, ins, DIRECTIVE_SCHEMAS[ins.name],
       (args) => updateDirectiveArgs(sceneId, index, args),
@@ -785,124 +771,12 @@ function renderInspector(sceneId, index) {
   `;
 }
 
-// ---------- @show 的定位檢查器 ----------
-
-function renderShowInspector(host, sceneId, index, ins) {
-  const args = ins.args || {};
-  const pos = args.pos != null ? String(args.pos) : "";
-  const [px = "", py = ""] = pos ? pos.split(",").map((v) => v.trim()) : [];
-  const charName = (args.positional || [])[0] || "（未指定角色）";
-  const slot = (args.positional || [])[1] || "center";
-  const preset = project.storyMeta?.positions?.[slot];
-
-  host.innerHTML = "";
-
-  const head = document.createElement("div");
-  head.className = "insp-head";
-  head.innerHTML = `<strong>@show · ${escapeHtml(charName)}</strong><span>位置槽：${escapeHtml(slot)}</span>`;
-  host.appendChild(head);
-
-  const body = document.createElement("div");
-  body.className = "insp-body";
-
-  const field = (label, el, hint) => {
-    const w = document.createElement("div");
-    w.className = "insp-field";
-    const l = document.createElement("label");
-    l.textContent = label;
-    w.appendChild(l);
-    w.appendChild(el);
-    if (hint) {
-      const h = document.createElement("small");
-      h.textContent = hint;
-      w.appendChild(h);
-    }
-    body.appendChild(w);
-  };
-
-  // 位置 X / Y（畫面百分比）
-  const posWrap = document.createElement("div");
-  posWrap.className = "insp-xy";
-  const xIn = document.createElement("input");
-  xIn.type = "number"; xIn.placeholder = "X %"; xIn.value = px;
-  const yIn = document.createElement("input");
-  yIn.type = "number"; yIn.placeholder = "Y %"; yIn.value = py;
-  const commitPos = () => {
-    const x = xIn.value.trim(), y = yIn.value.trim();
-    updateShowArgs(sceneId, index, { pos: (x === "" && y === "") ? "" : `${x || 0},${y || 0}` });
-  };
-  xIn.addEventListener("change", commitPos);
-  yIn.addEventListener("change", commitPos);
-  posWrap.appendChild(xIn);
-  posWrap.appendChild(yIn);
-  field("位置 X/Y", posWrap, "錨點落在畫面的百分比座標；留空則用位置槽的版面");
-
-  // 錨點
-  const anchorSel = document.createElement("select");
-  for (const [val, txt] of ANCHOR_OPTIONS) {
-    const o = document.createElement("option");
-    o.value = val; o.textContent = txt;
-    if ((args.anchor || "") === val) o.selected = true;
-    anchorSel.appendChild(o);
-  }
-  anchorSel.addEventListener("change", () =>
-    updateShowArgs(sceneId, index, { anchor: anchorSel.value }));
-  field("錨點", anchorSel, "圖片的哪一點對齊到座標；縮放也以此點為中心");
-
-  // 縮放
-  const scaleIn = document.createElement("input");
-  scaleIn.type = "number"; scaleIn.step = "0.1"; scaleIn.min = "0.1";
-  scaleIn.placeholder = "1.0";
-  scaleIn.value = args.scale != null ? String(args.scale) : "";
-  scaleIn.addEventListener("change", () =>
-    updateShowArgs(sceneId, index, { scale: scaleIn.value.trim() === "" ? "" : parseFloat(scaleIn.value) }));
-  field("縮放", scaleIn, "留空為原始大小");
-
-  host.appendChild(body);
-
-  // 目前生效的來源，避免作者搞不清為何畫面沒變
-  const note = document.createElement("div");
-  note.className = "insp-note";
-  if (args.pos || args.anchor || args.scale != null) {
-    note.textContent = "此指令有自訂定位，會覆寫位置槽的版面。";
-  } else if (preset) {
-    note.textContent = `目前套用 story.json 的「${slot}」具名預設（x:${preset.x} y:${preset.y}${preset.anchor ? " / " + preset.anchor : ""}${preset.scale != null ? " / ×" + preset.scale : ""}）。`;
-  } else {
-    note.textContent = `目前沿用原本的三格版面（${slot}）。填入座標即可自由定位。`;
-  }
-  host.appendChild(note);
-
-  // 清除
-  const clear = document.createElement("button");
-  clear.className = "tb-btn";
-  clear.style.margin = "0 10px 10px";
-  clear.textContent = "清除自訂定位";
-  clear.disabled = !(args.pos || args.anchor || args.scale != null);
-  clear.addEventListener("click", () =>
-    updateShowArgs(sceneId, index, { pos: "", anchor: "", scale: "" }));
-  host.appendChild(clear);
-}
-
 // 寫回 schema 驅動指令的完整 args（表單已去空值），並即時預覽
 function updateDirectiveArgs(sceneId, index, args) {
   const ins = project.getScene(sceneId)?.instructions?.[index];
   if (!ins) return;
   project.updateInstruction(sceneId, index, { args });
   renderInspector(sceneId, index);          // 重繪自身（欄位與提示同步）
-  previewPanel.scrub(sceneId, index);       // 立刻在預覽看到結果
-}
-
-// 寫回 @show 的定位參數；空值代表「不指定」，直接從 args 移除以免污染 Markdown
-function updateShowArgs(sceneId, index, patch) {
-  const ins = project.getScene(sceneId)?.instructions?.[index];
-  if (!ins) return;
-  const args = { ...(ins.args || {}) };
-  Object.assign(args, patch);
-  for (const k of ["pos", "anchor", "scale"]) {
-    if (args[k] === "" || args[k] == null || Number.isNaN(args[k])) delete args[k];
-  }
-  project.updateInstruction(sceneId, index, { args });
-  renderInspector(sceneId, index);          // 重繪自身（含提示文字）
   previewPanel.scrub(sceneId, index);       // 立刻在預覽看到結果
 }
 

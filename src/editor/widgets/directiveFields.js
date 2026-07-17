@@ -53,6 +53,23 @@ function stripEmpties(args) {
   }
 }
 
+// 位置參數若在「已設定的最後一格」之前留有空洞，補上該格欄位的 default，
+// 其餘空洞補空字串——避免序列化出 "undefined"/"null" token，也避免破壞後續格。
+// 例：@show 設了表情(idx2) 但沒動位置槽(idx1) → 位置槽補回 "center"。
+function applyPositionalDefaults(args, schema) {
+  if (!Array.isArray(args.positional)) return;
+  let maxSet = -1;
+  args.positional.forEach((v, i) => { if (v != null && v !== "") maxSet = i; });
+  if (maxSet < 0) return;
+  const defaults = {};
+  for (const f of schema.fields) if (f.positional != null && f.default != null) defaults[f.positional] = f.default;
+  for (let i = 0; i <= maxSet; i++) {
+    if (args.positional[i] == null || args.positional[i] === "") {
+      args.positional[i] = defaults[i] != null ? defaults[i] : "";
+    }
+  }
+}
+
 // ---- 欄位工廠 ----
 // 每個工廠回傳整列 DOM，並在「確定變更」時呼叫 commit(value)。
 // value === "" 代表清除該欄位。
@@ -217,6 +234,56 @@ function characterControl(f, value, commit, compact, ctx) {
   });
 }
 
+// 位置槽下拉：內建 left/center/right + story.json 具名位置。
+function slotControl(f, value, commit, compact, ctx) {
+  const named = Object.keys(ctx?.project?.storyMeta?.positions || {});
+  const opts = [["left", "左"], ["center", "中"], ["right", "右"], ...named.map((n) => [n, n])];
+  const sel = document.createElement("select");
+  for (const [v, t] of opts) {
+    const o = document.createElement("option"); o.value = v; o.textContent = t; sel.appendChild(o);
+  }
+  const cur = value || f.default || "center";
+  if (cur && !opts.some(([v]) => v === cur)) {
+    const o = document.createElement("option"); o.value = cur; o.textContent = `${cur}（自訂）`; sel.appendChild(o);
+  }
+  sel.value = cur;
+  sel.addEventListener("change", () => commit(sel.value));
+  return fieldCls(sel, compact);
+}
+
+// 表情下拉：選項為「同一指令某個位置參數所指角色」的表情差分。
+function emotionControl(f, value, commit, compact, ctx, args) {
+  const char = args?.positional?.[f.charFrom ?? 0];
+  const emotions = Object.keys(ctx?.project?.storyMeta?.characters?.[char]?.emotions || {});
+  return createSelectField({
+    value: value || "", options: emotions,
+    placeholder: f.placeholder || "（預設表情）",
+    addLabel: "編輯角色表情…", onAdd: () => ctx?.onManage?.("characters"),
+    onChange: (v) => commit(v),
+    className: compact ? "instr-field" : "",
+  });
+}
+
+// X/Y 座標：讀寫單一具名值的 "x,y" 字串（例如 @show 的 pos）。
+function xyControl(f, value, commit, compact) {
+  const [px = "", py = ""] = value ? String(value).split(",").map((s) => s.trim()) : [];
+  const wrap = document.createElement("div");
+  wrap.className = "insp-xy";
+  const xi = document.createElement("input");
+  xi.type = "number"; xi.placeholder = "X %"; xi.value = px;
+  const yi = document.createElement("input");
+  yi.type = "number"; yi.placeholder = "Y %"; yi.value = py;
+  const commitXY = () => {
+    const x = xi.value.trim(), y = yi.value.trim();
+    commit(x === "" && y === "" ? "" : `${x || 0},${y || 0}`);
+  };
+  xi.addEventListener("change", commitXY);
+  yi.addEventListener("change", commitXY);
+  fieldCls(xi, compact); fieldCls(yi, compact);
+  wrap.append(xi, yi);
+  return wrap;
+}
+
 const CONTROLS = {
   slider: sliderControl,
   number: numberControl,
@@ -226,6 +293,9 @@ const CONTROLS = {
   text: textControl,
   asset: assetControl,
   character: characterControl,
+  slot: slotControl,
+  emotion: emotionControl,
+  xy: xyControl,
 };
 
 /**
@@ -247,15 +317,17 @@ export function renderDirectiveForm(host, ins, schema, onCommit, { compact = fal
     const factory = CONTROLS[f.type] || textControl;
     return factory(f, readVal(args, f), (v) => {
       writeVal(args, f, v);
+      applyPositionalDefaults(args, schema);
       const out = JSON.parse(JSON.stringify(args));
       stripEmpties(out);
       onCommit(out);
-    }, compact, context);
+    }, compact, context, args);
   };
 
   if (compact) {
     // 卡片：inline，badge 已由外部附上，不清空 host
     for (const f of schema.fields) {
+      if (f.detailOnly) continue;   // 僅檢查器顯示的欄位（如定位）不進卡片
       if (typeof f.when === "function" && !f.when(args)) continue;
       const group = document.createElement("span");
       group.className = "instr-schema-field";
@@ -288,12 +360,42 @@ export function renderDirectiveForm(host, ins, schema, onCommit, { compact = fal
 
   const note = document.createElement("div");
   note.className = "insp-note";
-  note.textContent = schema.note || "調整後即時套用到預覽；留空的欄位會回到引擎預設。";
+  note.textContent = (typeof schema.note === "function" ? schema.note(args, context) : schema.note)
+    || "調整後即時套用到預覽；留空的欄位會回到引擎預設。";
   host.appendChild(note);
 }
 
 // ---- 指令欄位 schema（欄位鍵嚴格對齊 GameRuntime 實際消費的參數）----
 export const DIRECTIVE_SCHEMAS = {
+  // 顯示立繪：卡片顯示 角色/位置槽/表情；檢查器另加 定位（X/Y、錨點、縮放）
+  show: {
+    title: "show · 顯示立繪",
+    note: (args, ctx) => {
+      const slot = args.positional?.[1] || "center";
+      const preset = ctx?.project?.storyMeta?.positions?.[slot];
+      if (args.pos || args.anchor || args.scale != null) return "此指令有自訂定位，會覆寫位置槽的版面。";
+      if (preset) {
+        return `目前套用 story.json 的「${slot}」具名預設（x:${preset.x} y:${preset.y}` +
+          `${preset.anchor ? " / " + preset.anchor : ""}${preset.scale != null ? " / ×" + preset.scale : ""}）。`;
+      }
+      return `目前沿用原本的三格版面（${slot}）。填入座標即可自由定位。`;
+    },
+    fields: [
+      { positional: 0, label: "角色", type: "character" },
+      { positional: 1, label: "位置槽", clabel: "位置", type: "slot", default: "center" },
+      { positional: 2, label: "表情", type: "emotion", charFrom: 0 },
+      { key: "pos", label: "位置 X/Y", type: "xy", detailOnly: true,
+        hint: "錨點落在畫面的百分比座標；留空則用位置槽的版面" },
+      { key: "anchor", label: "錨點", type: "select", optional: true, detailOnly: true,
+        emptyLabel: "（預設 · 底部置中）",
+        options: [["left_top", "左上"], ["center_top", "上方置中"], ["right_top", "右上"],
+                  ["left_center", "左中"], ["center", "正中"], ["right_center", "右中"],
+                  ["left_bottom", "左下"], ["center_bottom", "底部置中"], ["right_bottom", "右下"]],
+        hint: "圖片的哪一點對齊到座標；縮放也以此點為中心" },
+      { key: "scale", label: "縮放", type: "number", step: 0.1, min: 0.1, detailOnly: true, hint: "留空為原始大小" },
+    ],
+  },
+
   camera: {
     title: "camera · 鏡頭",
     fields: [
