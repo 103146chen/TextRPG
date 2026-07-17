@@ -359,6 +359,17 @@ input, textarea, select {
 .instr-field.condition { flex: 1; min-width: 200px; font-family: var(--e-font-mono); font-size: 12.5px; }
 .instr-field.label { font-family: var(--e-font-mono); font-size: 12.5px; min-width: 140px; }
 
+/* schema 驅動的緊湊卡片欄位 */
+.instr-schema-field { display: inline-flex; align-items: center; gap: 5px; }
+.instr-inline-label { color: var(--e-text-faded); font-size: 11px; font-family: var(--e-font-mono); white-space: nowrap; }
+.instr-schema-field .instr-field { min-width: 0; width: 86px; }
+.instr-schema-field select.instr-field { width: auto; }
+.instr-schema-field input[type="checkbox"] { width: auto; min-width: 0; }
+.instr-schema-field .insp-num-suffix.compact { display: inline-flex; align-items: center; gap: 3px; }
+.instr-schema-field .insp-num-suffix.compact .instr-field { width: 62px; }
+.instr-schema-field .insp-color { display: inline-flex; }
+.instr-schema-field .insp-color input[type="color"] { width: 34px; height: 26px; padding: 1px; }
+
 .instr-readonly {
   color: var(--e-text-dim);
   font-family: var(--e-font-mono);

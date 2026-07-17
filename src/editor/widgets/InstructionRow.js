@@ -4,6 +4,7 @@
 // ============================================
 
 import { createSelectField } from "./selectField.js";
+import { renderDirectiveForm, DIRECTIVE_SCHEMAS } from "./directiveFields.js";
 
 export class InstructionRow {
   /**
@@ -214,6 +215,13 @@ export class InstructionRow {
     const args = this.ins.args || {};
     const pos = args.positional || [];
 
+    // schema 驅動的指令：卡片與檢查器共用同一份欄位定義（compact 版型）
+    if (DIRECTIVE_SCHEMAS[name]) {
+      renderDirectiveForm(container, this.ins, DIRECTIVE_SCHEMAS[name],
+        (newArgs) => this.onChange({ args: newArgs }), { compact: true });
+      return;
+    }
+
     switch (name) {
       case "bg": {
         const files = this.project.resources.backgrounds;
@@ -356,105 +364,6 @@ export class InstructionRow {
         container.appendChild(movInput);
         break;
       }
-      case "shake": {
-        const iInput = this.#numberInput(pos[0], "強度(px)");
-        iInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, positional: [parseInt(e.target.value) || 8] } });
-        });
-        container.appendChild(iInput);
-        container.appendChild(this.#labelInline("時長"));
-        const dInput = this.#numberInput(args.duration, "ms");
-        dInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, duration: parseInt(e.target.value) || undefined } });
-        });
-        container.appendChild(dInput);
-        break;
-      }
-      case "flash": {
-        const cInput = document.createElement("input");
-        cInput.className = "instr-field";
-        cInput.value = pos[0] || "";
-        cInput.placeholder = "#ffffff";
-        cInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, positional: [e.target.value] } });
-        });
-        container.appendChild(cInput);
-        container.appendChild(this.#labelInline("時長"));
-        const dInput = this.#numberInput(args.duration, "ms");
-        dInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, duration: parseInt(e.target.value) || undefined } });
-        });
-        container.appendChild(dInput);
-        break;
-      }
-      case "tint": {
-        const cInput = document.createElement("input");
-        cInput.className = "instr-field";
-        cInput.value = pos[0] || "";
-        cInput.placeholder = "#000000";
-        cInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, positional: [e.target.value] } });
-        });
-        container.appendChild(cInput);
-        container.appendChild(this.#labelInline("透明度"));
-        const oInput = this.#numberInput(args.opacity, "0~1");
-        oInput.step = "0.1";
-        oInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, opacity: parseFloat(e.target.value) } });
-        });
-        container.appendChild(oInput);
-        container.appendChild(this.#labelInline("時長"));
-        const dInput = this.#numberInput(args.duration, "ms");
-        dInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, duration: parseInt(e.target.value) || undefined } });
-        });
-        container.appendChild(dInput);
-        break;
-      }
-      case "curtain": {
-        const modeSel = document.createElement("select");
-        modeSel.className = "instr-field";
-        for (const [val, txt] of [["close", "合上"], ["open", "打開"]]) {
-          const o = document.createElement("option");
-          o.value = val; o.textContent = txt;
-          if ((pos[0] || "close") === val) o.selected = true;
-          modeSel.appendChild(o);
-        }
-        modeSel.addEventListener("change", () => {
-          this.onChange({ args: { ...args, positional: [modeSel.value] } });
-        });
-        container.appendChild(modeSel);
-
-        const cInput = document.createElement("input");
-        cInput.className = "instr-field";
-        cInput.value = args.color || "";
-        cInput.placeholder = "#000000";
-        cInput.style.maxWidth = "90px";
-        cInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, color: e.target.value || undefined } });
-        });
-        container.appendChild(cInput);
-
-        container.appendChild(this.#labelInline("時長"));
-        const dInput = this.#numberInput(args.duration, "ms");
-        dInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, duration: parseInt(e.target.value) || undefined } });
-        });
-        container.appendChild(dInput);
-
-        const fullLabel = document.createElement("label");
-        fullLabel.className = "instr-inline-label";
-        const fullCb = document.createElement("input");
-        fullCb.type = "checkbox";
-        fullCb.checked = args.full === true || args.full === "true";
-        fullCb.addEventListener("change", () => {
-          this.onChange({ args: { ...args, full: fullCb.checked ? true : undefined } });
-        });
-        fullLabel.appendChild(fullCb);
-        fullLabel.appendChild(document.createTextNode(" 全屏"));
-        container.appendChild(fullLabel);
-        break;
-      }
       case "ui": {
         const modeSel = document.createElement("select");
         modeSel.className = "instr-field";
@@ -469,102 +378,6 @@ export class InstructionRow {
         });
         container.appendChild(modeSel);
         container.appendChild(this.#labelInline("隱藏後點擊畫面會先恢復界面"));
-        break;
-      }
-      case "textcfg": {
-        container.appendChild(this.#labelInline("速度"));
-        const sInput = this.#numberInput(args.speed, "ms/字");
-        sInput.addEventListener("change", (e) => {
-          const v = e.target.value.trim();
-          this.onChange({ args: { ...args, speed: v === "" ? undefined : parseInt(v) } });
-        });
-        container.appendChild(sInput);
-
-        container.appendChild(this.#labelInline("淡入"));
-        const fInput = this.#numberInput(args.fade, "ms/字");
-        fInput.addEventListener("change", (e) => {
-          const v = e.target.value.trim();
-          this.onChange({ args: { ...args, fade: v === "" ? undefined : parseInt(v) } });
-        });
-        container.appendChild(fInput);
-
-        container.appendChild(this.#labelInline("等待圖標"));
-        const iSel = document.createElement("select");
-        iSel.className = "instr-field";
-        for (const [val, txt] of [["", "（不變）"], ["on", "顯示"], ["off", "隱藏"]]) {
-          const o = document.createElement("option");
-          o.value = val; o.textContent = txt;
-          if (String(args.indicator ?? "") === val) o.selected = true;
-          iSel.appendChild(o);
-        }
-        iSel.addEventListener("change", () => {
-          this.onChange({ args: { ...args, indicator: iSel.value || undefined } });
-        });
-        container.appendChild(iSel);
-        break;
-      }
-      case "camera": {
-        const numField = (key, label, ph, step) => {
-          container.appendChild(this.#labelInline(label));
-          const input = this.#numberInput(args[key], ph);
-          if (step) input.step = step;
-          input.addEventListener("change", (e) => {
-            const v = e.target.value.trim();
-            this.onChange({ args: { ...args, [key]: v === "" ? undefined : parseFloat(v) } });
-          });
-          container.appendChild(input);
-        };
-        numField("zoom", "縮放", "1.0", "0.1");
-        numField("x", "X%", "0");
-        numField("y", "Y%", "0");
-        numField("vignette", "暗角", "0~1", "0.1");
-        numField("duration", "時長", "ms");
-        break;
-      }
-      case "camera-reset": {
-        container.appendChild(this.#labelInline("時長"));
-        const dInput = this.#numberInput(args.duration, "ms");
-        dInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, duration: parseInt(e.target.value) || undefined } });
-        });
-        container.appendChild(dInput);
-        break;
-      }
-      case "sprite": {
-        const charNames = Object.keys(this.project.storyMeta?.characters || {});
-        const charInput = this.#selectOrInput(pos[0], charNames, "角色名");
-        charInput.addEventListener("change", (e) => {
-          this.onChange({ args: { ...args, positional: [e.target.value, pos[1] || "jump"] } });
-        });
-        container.appendChild(charInput);
-
-        const fxSel = document.createElement("select");
-        fxSel.className = "instr-field";
-        for (const [val, txt] of [["jump", "跳動"], ["shake", "搖晃"], ["move", "位移"]]) {
-          const o = document.createElement("option");
-          o.value = val; o.textContent = txt;
-          if ((pos[1] || "jump") === val) o.selected = true;
-          fxSel.appendChild(o);
-        }
-        fxSel.addEventListener("change", () => {
-          this.onChange({ args: { ...args, positional: [pos[0] || "", fxSel.value] } });
-        });
-        container.appendChild(fxSel);
-
-        const numField = (key, label, ph) => {
-          container.appendChild(this.#labelInline(label));
-          const input = this.#numberInput(args[key], ph);
-          input.addEventListener("change", (e) => {
-            const v = e.target.value.trim();
-            this.onChange({ args: { ...args, [key]: v === "" ? undefined : parseFloat(v) } });
-          });
-          container.appendChild(input);
-        };
-        const effect = pos[1] || "jump";
-        if (effect === "jump") { numField("height", "高度", "px"); numField("times", "次數", "1"); }
-        else if (effect === "shake") { numField("intensity", "強度", "px"); }
-        else if (effect === "move") { numField("x", "X%", "0"); numField("y", "Y%", "0"); }
-        numField("duration", "時長", "ms");
         break;
       }
       case "float": {
@@ -655,29 +468,6 @@ export class InstructionRow {
       case "video-stop":
       case "stopvideo": {
         container.appendChild(this.#labelInline("停止並移除視頻層"));
-        break;
-      }
-      case "particles": {
-        const typeSel = document.createElement("select");
-        typeSel.className = "instr-field";
-        for (const [val, txt] of [["snow", "雪"], ["rain", "雨"], ["petals", "花瓣"]]) {
-          const o = document.createElement("option");
-          o.value = val; o.textContent = txt;
-          if ((pos[0] || "snow") === val) o.selected = true;
-          typeSel.appendChild(o);
-        }
-        typeSel.addEventListener("change", () => {
-          this.onChange({ args: { ...args, positional: [typeSel.value] } });
-        });
-        container.appendChild(typeSel);
-
-        container.appendChild(this.#labelInline("密度"));
-        const dInput = this.#numberInput(args.density, "預設值");
-        dInput.addEventListener("change", (e) => {
-          const v = e.target.value.trim();
-          this.onChange({ args: { ...args, density: v === "" ? undefined : parseInt(v) } });
-        });
-        container.appendChild(dInput);
         break;
       }
       case "particles-stop":
