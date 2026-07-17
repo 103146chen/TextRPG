@@ -36,6 +36,7 @@ export class ParticleLayer {
     if (!preset) { this.stop(); return; }
     this.stop();
     this.type = type;
+    this.density = density ?? null;   // 存檔快照用（null = 用預設）
     this.#resize();
     const n = Math.max(1, Math.round(density ?? preset.count));
     const { width: w, height: h } = this.canvas;

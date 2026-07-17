@@ -89,8 +89,80 @@ export class GameRuntime {
   advance() { return this.engine.advance(); }
   rollback() { return this.engine.rollback(); }
   canRollback() { return this.engine.canRollback(); }
-  serialize() { return this.engine.serialize(); }
-  loadState(data) { return this.engine.loadState(data); }
+  serialize() {
+    // 引擎進度 + 視覺快照：讀檔時重建染色/帷幕/鏡頭/粒子/立繪定位等持續狀態
+    return { ...this.engine.serialize(), visual: this.getVisualSnapshot() };
+  }
+
+  async loadState(data) {
+    // 快照先套、引擎後跑：engine.loadState 的 step() 會停在文字行等玩家點擊，
+    // 若等它 resolve 再套快照，畫面要到第一次點擊後才會還原。
+    // 快照存在時抑制 onSceneChange 的場景預設 bg/bgm（快照才是存檔當下的實況）。
+    if (data.visual) {
+      this._skipNextSceneMeta = true;
+      await this.applyVisualSnapshot(data.visual);
+    }
+    return this.engine.loadState(data);
+  }
+
+  /** 蒐集目前所有「持續性」的演出狀態（存檔用） */
+  getVisualSnapshot() {
+    const chars = [];
+    for (const [slot, cur] of Object.entries(this.characterLayer.current || {})) {
+      if (cur) chars.push({ slot, charName: cur.charName, emotion: cur.emotion, opts: cur.opts || {} });
+    }
+    return {
+      bg: this.backgroundLayer.current || null,
+      bgm: this.audio.currentBgmFile || null,
+      chars,
+      tint: this.effects?.tintState || null,
+      curtain: this.effects?.curtainState || null,
+      vignette: this.effects?.vignetteOpacity || 0,
+      camera: { ...this.camera },
+      particles: this.particles?.type
+        ? { type: this.particles.type, density: this.particles.density ?? undefined }
+        : null,
+      uiHidden: this.uiHidden,
+      textcfg: {
+        speed: this.textBox.typingSpeed,
+        fade: this.textBox.fadeMs,
+        indicator: this.textBox.showIndicator,
+      },
+      video: (this._videoEl && this._videoOpts?.loop && this._videoFile)
+        ? { file: this._videoFile, volume: this._videoOpts.volume ?? undefined }
+        : null,
+    };
+  }
+
+  /** 讀檔後套用視覺快照（一律瞬間完成）。舊存檔沒有快照就跳過。 */
+  async applyVisualSnapshot(v) {
+    if (!v) return;
+    if (v.textcfg) this.textBox.configure(v.textcfg);
+    if (v.bg && this.backgroundLayer.current !== v.bg) {
+      await this.backgroundLayer.change(v.bg, 0);
+    }
+    // 立繪整批重建（含定位覆寫）
+    await this.characterLayer.hideAll(0);
+    for (const c of v.chars || []) {
+      await this.characterLayer.show(c.charName, c.slot, c.emotion, c.opts || {});
+    }
+    if (this.effects) {
+      if (v.tint) this.effects.tint({ ...v.tint, duration: 0 });
+      else this.effects.clearTint({ duration: 0 });
+      if (v.curtain) this.effects.curtain({ mode: "close", color: v.curtain.color, full: v.curtain.full, duration: 0 });
+      else this.effects.curtain({ mode: "open", duration: 0 });
+      this.effects.vignette({ opacity: v.vignette || 0, duration: 0 });
+    }
+    this.#applyCamera(v.camera || { zoom: 1, x: 0, y: 0 }, 0);
+    if (v.particles) this.particles?.start(v.particles.type, { density: v.particles.density });
+    else this.particles?.stop();
+    this.#setUiHidden(!!v.uiHidden);
+    if (v.bgm && this.audio.currentBgmFile !== v.bgm) {
+      await this.audio.playBgm(v.bgm, { fadeIn: 300 });
+    }
+    if (v.video) await this.#startVideo(v.video.file, { loop: true, volume: v.video.volume });
+    else this.#removeVideo();
+  }
   getPreviewText() { return this.textBox.getPreview(); }
 
   /**
@@ -165,6 +237,32 @@ export class GameRuntime {
     this._videoEl.src = "";
     this._videoEl.remove();
     this._videoEl = null;
+    this._videoFile = null;
+    this._videoOpts = null;
+  }
+
+  /** 建立並播放視頻層；播放失敗回傳 null（不卡劇情） */
+  async #startVideo(file, { loop = false, volume = null } = {}) {
+    this.#removeVideo();
+    const v = document.createElement("video");
+    v.className = "fx-video";
+    v.src = await this.#videoUrl(file);
+    v.loop = loop;
+    v.muted = this.audio.muted;
+    if (volume != null) v.volume = Math.max(0, Math.min(1, Number(volume)));
+    v.playsInline = true;
+    this.dom.screen.appendChild(v);
+    this._videoEl = v;
+    this._videoFile = file;
+    this._videoOpts = { loop, volume };
+    try {
+      await v.play();
+    } catch {
+      // autoplay 被擋或載入失敗：不能卡死劇情
+      this.#removeVideo();
+      return null;
+    }
+    return v;
   }
 
   /** @ui hide/show：切換文字框與選項的可見性（持續狀態） */
@@ -369,23 +467,11 @@ export class GameRuntime {
         if (this.instant) break;
         const file = args.positional[0];
         if (!file || !this.dom.screen) break;
-        this.#removeVideo();
-        const v = document.createElement("video");
-        v.className = "fx-video";
-        v.src = await this.#videoUrl(file);
-        v.loop = args.loop === true || args.loop === "true";
-        v.muted = this.audio.muted;
-        if (args.volume != null) v.volume = Math.max(0, Math.min(1, Number(args.volume)));
-        v.playsInline = true;
-        this.dom.screen.appendChild(v);
-        this._videoEl = v;
-        try {
-          await v.play();
-        } catch {
-          // autoplay 被擋或載入失敗：不能卡死劇情，直接收掉繼續
-          this.#removeVideo();
-          break;
-        }
+        const v = await this.#startVideo(file, {
+          loop: args.loop === true || args.loop === "true",
+          volume: args.volume,
+        });
+        if (!v) break;
         if (!v.loop) {
           await new Promise((res) => {
             v.addEventListener("ended", res, { once: true });
@@ -506,6 +592,8 @@ export class GameRuntime {
   }
 
   async #handleSceneChange(sceneMeta) {
+    // 讀檔還原時跳過一次：視覺快照已重建實際畫面，場景 meta 的預設值不可蓋掉
+    if (this._skipNextSceneMeta) { this._skipNextSceneMeta = false; return; }
     if (sceneMeta.background) await this.backgroundLayer.change(sceneMeta.background, this.#d(600));
     if (sceneMeta.bgm && !this.instant) await this.audio.playBgm(sceneMeta.bgm, { fadeIn: 800 });
   }

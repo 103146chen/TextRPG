@@ -122,7 +122,7 @@ export class CharacterLayer {
     await this.#wait(20);
     img.classList.add("show");
 
-    this.current[slot] = { charName, emotion, fileName };
+    this.current[slot] = { charName, emotion, fileName, opts: { ...opts } };   // opts 供存檔快照還原定位
   }
 
   async hide(charName, fadeMs = 400) {

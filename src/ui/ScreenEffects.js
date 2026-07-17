@@ -38,6 +38,11 @@ export class ScreenEffects {
     this.curtainFullEl = document.createElement("div");
     this.curtainFullEl.className = "fx-curtain-full";
     screenEl.appendChild(this.curtainFullEl);
+
+    // 持續狀態的資料化紀錄（存檔快照用；DOM 樣式不可靠地反查）
+    this.tintState = null;       // { color, opacity } | null
+    this.curtainState = null;    // { color, full } | null
+    this.vignetteOpacity = 0;
   }
 
   // 震動整個畫面：intensity=位移像素峰值，duration=毫秒
@@ -74,6 +79,7 @@ export class ScreenEffects {
 
   // 染色：持續的色調覆蓋，直到再次呼叫或 clearTint
   tint({ color = "#000000", opacity = 0.4, duration = 600 } = {}) {
+    this.tintState = { color, opacity };
     this.tintEl.style.transition = `opacity ${duration}ms ease, background-color ${duration}ms ease`;
     this.tintEl.style.backgroundColor = color;
     // 強制 reflow 讓後續 opacity 變化能觸發 transition；
@@ -84,12 +90,14 @@ export class ScreenEffects {
 
   // 暗角（持續狀態）：radial-gradient 邊緣壓暗，opacity 0~1；0 = 關閉
   vignette({ opacity = 0.5, duration = 600 } = {}) {
+    this.vignetteOpacity = Math.max(0, Math.min(1, opacity));
     this.vignetteEl.style.transition = duration > 0 ? `opacity ${duration}ms ease` : "none";
     void this.vignetteEl.offsetWidth;
     this.vignetteEl.style.opacity = String(Math.max(0, Math.min(1, opacity)));
   }
 
   clearTint({ duration = 600 } = {}) {
+    this.tintState = null;
     this.tintEl.style.transition = `opacity ${duration}ms ease`;
     this.tintEl.style.opacity = "0";
   }
@@ -106,17 +114,22 @@ export class ScreenEffects {
       el.style.opacity = show ? "1" : "0";
     };
     if (mode === "open") {
+      this.curtainState = null;
       apply(this.curtainEl, false);
       apply(this.curtainFullEl, false);
       return;
     }
     // close：兩層互斥，只留指定的那層
+    this.curtainState = { color, full: !!full };
     apply(full ? this.curtainFullEl : this.curtainEl, true);
     apply(full ? this.curtainEl : this.curtainFullEl, false);
   }
 
   // 立即清除所有特效（重新開始遊戲/預覽時用）
   reset() {
+    this.tintState = null;
+    this.curtainState = null;
+    this.vignetteOpacity = 0;
     this.screenEl.style.transform = "";
     this.flashEl.style.opacity = "0";
     this.tintEl.style.transition = "none";
