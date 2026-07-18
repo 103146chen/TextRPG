@@ -1401,7 +1401,23 @@ input, textarea, select {
 
 .page { display: none; height: 100%; min-height: 0; }
 .page.active { display: grid; }
-.page-script.active { grid-template-columns: 260px minmax(0, 1fr) 420px; }
+.page-script.active {
+  grid-template-columns:
+    var(--w-structure, 260px) 5px minmax(0, 1fr) 5px var(--w-preview, 420px);
+}
+.col-splitter {
+  background: transparent;
+  cursor: col-resize;
+  position: relative;
+  z-index: 5;
+}
+.col-splitter::before {
+  content: "";
+  position: absolute; inset: 0 2px;
+  background: var(--e-border);
+  transition: background 0.12s;
+}
+.col-splitter:hover::before, .col-splitter.dragging::before { background: var(--e-accent); }
 .page-map.active { grid-template-columns: 180px minmax(0, 1fr); }
 .page-assets.active, .page-plain.active { display: block; overflow-y: auto; }
 
@@ -2159,6 +2175,9 @@ video.asset-thumb { object-fit: cover; cursor: pointer; }
   margin: 8px 0;
   cursor: pointer;
 }
+.pref-row #pref-zoom { flex: 0 0 180px; accent-color: var(--e-accent); }
+.pref-row .pref-zoom-val { font-family: var(--e-font-mono); width: 44px; }
+.pref-row #pref-zoom-reset { padding: 2px 10px; font-size: 12px; }
 
 /* 優化①：資產總覽 */
 .ov-grid {

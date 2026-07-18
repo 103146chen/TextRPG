@@ -58,6 +58,8 @@
           <ul id="scene-list" class="scene-list"></ul>
         </aside>
 
+        <div class="col-splitter" data-resize="structure" title="拖曳調整寬度"></div>
+
         <main class="col col-events">
           <div class="events-head">
             <span id="events-scene-name" class="events-scene-name">—</span>
@@ -77,6 +79,8 @@
             </div>
           </div>
         </main>
+
+        <div class="col-splitter" data-resize="preview" title="拖曳調整寬度"></div>
 
         <aside class="col col-preview">
           <div id="preview-host" class="preview-host"></div>
@@ -175,6 +179,12 @@
             <input type="checkbox" id="pref-autosave" />
             自動存檔（任何改動後 2.5 秒自動寫回；狀態列可隨時切換）
           </label>
+          <div class="pref-row">
+            <label for="pref-zoom">介面縮放</label>
+            <input type="range" id="pref-zoom" min="0.8" max="1.4" step="0.05" />
+            <span id="pref-zoom-val" class="pref-zoom-val"></span>
+            <button id="pref-zoom-reset" class="tb-btn">重設</button>
+          </div>
         </div>
       </section>
     </div>

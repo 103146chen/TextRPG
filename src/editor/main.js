@@ -25,6 +25,7 @@ import { SceneParser } from "../engine/SceneParser.js";
 import { MarkdownWriter } from "./core/MarkdownWriter.js";
 import { SceneJson } from "./core/SceneJson.js";
 import { createAutosave } from "./core/autosave.js";
+import { initUiPrefs } from "./core/uiPrefs.js";
 import { promptDialog, confirmDialog } from "./widgets/dialog.js";
 import { toast } from "./widgets/toast.js";
 import { renderDirectiveForm, DIRECTIVE_SCHEMAS } from "./widgets/directiveFields.js";
@@ -96,6 +97,7 @@ const chapterManager = new ChapterManager($("#chapter-manage"), project, (id) =>
 });
 new ProjectSettings($("#project-settings"), project);
 new ThemeEditor($("#theme-editor"), project);
+initUiPrefs();
 // 資產頁分類入口（優化①）：總覽 + 每類一個過濾後的 AssetPanel
 new AssetOverview($("#asset-overview"), project, { onNavigate: (view) => setAssetView(view) });
 new AssetPanel($("#asset-files-characters"), project, { kinds: ["characters"] });
