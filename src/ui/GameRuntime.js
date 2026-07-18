@@ -461,6 +461,42 @@ export class GameRuntime {
         this.effects?.vignette({ opacity: 0, duration: dur });
         break;
       }
+      case "chapter": {
+        // 章節標題卡：淡入→停留→淡出，播放時停住此節奏（靜態求值略過）
+        if (this.instant) break;
+        const title = args.title || args.positional[0] || "";
+        const subtitle = args.subtitle || "";
+        if (!title || !this.dom.screen) break;
+        const el = document.createElement("div");
+        el.className = "chapter-card";
+        const inner = document.createElement("div");
+        inner.className = "chapter-card-inner";
+        const t = document.createElement("div");
+        t.className = "chapter-card-title";
+        t.textContent = title;
+        inner.appendChild(t);
+        if (subtitle) {
+          const s = document.createElement("div");
+          s.className = "chapter-card-sub";
+          s.textContent = subtitle;
+          inner.appendChild(s);
+        }
+        el.appendChild(inner);
+        this.dom.screen.appendChild(el);
+        const hold = args.duration ?? 2500;
+        await new Promise((res) => {
+          let done = false;
+          const finish = () => { if (done) return; done = true; el.remove(); res(); };
+          try {
+            const anim = el.animate(
+              [{ opacity: 0 }, { opacity: 1, offset: 0.15 }, { opacity: 1, offset: 0.85 }, { opacity: 0 }],
+              { duration: hold, easing: "ease" });
+            anim.finished.catch(() => {}).finally(finish);
+          } catch { /* 動畫不支援 */ }
+          setTimeout(finish, hold + 200);   // 背景分頁後備
+        });
+        break;
+      }
       case "video": {
         // 視頻層：loop=true 循環（背景影片，用 @video-stop 收掉）；
         // 無 loop 播一次、等結束才繼續。靜態求值跳過（動態內容無法凍結呈現）。

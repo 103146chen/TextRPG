@@ -536,6 +536,17 @@ export const DIRECTIVE_SCHEMAS = {
     ],
   },
 
+  // 章節標題卡（過場）
+  chapter: {
+    title: "chapter · 章節標題卡",
+    note: "顯示章節標題的過場卡；播放時停留數秒後自動繼續（靜態預覽略過）。",
+    fields: [
+      { key: "title", label: "標題", type: "text", placeholder: "第一章 · 相遇" },
+      { key: "subtitle", label: "副標", type: "text", placeholder: "（選填）" },
+      { key: "duration", label: "停留", type: "number", min: 0, step: 100, suffix: "ms", hint: "預設 2500" },
+    ],
+  },
+
   // 文字設定（持續狀態）
   textcfg: {
     title: "textcfg · 文字設定",

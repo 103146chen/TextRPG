@@ -298,6 +298,7 @@ export class SceneEditor {
         { kind: "voice", label: "語音（對話配音）", color: "var(--e-accent)", template: () => ({ type: "directive", name: "voice", args: { positional: [""] } }) },
       ]},
       { label: "節奏與界面", items: [
+        { kind: "chapter", label: "章節標題卡", color: "var(--e-accent)", template: () => ({ type: "directive", name: "chapter", args: { positional: [], title: "第一章", subtitle: "", duration: 2500 } }) },
         { kind: "wait", label: "等待", color: "var(--e-accent)", template: () => ({ type: "directive", name: "wait", args: { positional: [1000] } }) },
         { kind: "auto", label: "自動播放", color: "var(--e-accent)", template: () => ({ type: "directive", name: "auto", args: { positional: ["on"], delay: 1500 } }) },
         { kind: "textcfg", label: "文本參數", color: "var(--e-accent)", template: () => ({ type: "directive", name: "textcfg", args: { positional: [], speed: 35 } }) },
