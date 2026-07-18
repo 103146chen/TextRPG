@@ -88,7 +88,7 @@ const flagInspector = new FlagInspector($("#flag-panel"), project, (sceneId, ind
 
 // 原「資料庫 Hub」拆分後的常駐視圖（S4.5）：
 // 角色→資產頁、旗標/結局→敘事地圖、基本資訊→設定頁
-new CharacterManager($("#character-manager"), project);
+const characterManager = new CharacterManager($("#character-manager"), project);
 new FlagManager($("#var-manage"), project);
 new EndingManager($("#ending-manage"), project);
 const chapterManager = new ChapterManager($("#chapter-manage"), project, (id) => {
@@ -412,6 +412,8 @@ function setAssetView(view) {
   for (const [v, sel] of Object.entries(ASSET_VIEWS)) {
     $(sel).style.display = v === view ? "" : "none";
   }
+  // 角色頁在隱藏時量不到尺寸（裁切框無法定位），現身時重繪一次
+  if (view === "characters") characterManager.render();
 }
 document.querySelectorAll(".asset-nav-btn").forEach((btn) => {
   btn.addEventListener("click", () => setAssetView(btn.dataset.assetView));

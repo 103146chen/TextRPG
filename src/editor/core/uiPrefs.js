@@ -71,6 +71,9 @@ function initZoom(app) {
 
   const apply = (z) => {
     app.style.zoom = String(z);
+    // #editor-app 是 height:100vh 的 grid；zoom 會把它放大成 100vh*z 而把狀態列
+    // 擠出畫面，因此把高度反向補償回去，讓縮放後仍剛好滿一個視窗高。
+    app.style.height = z === 1 ? "" : `calc(100vh / ${z})`;
     if (valEl) valEl.textContent = Math.round(z * 100) + "%";
   };
 

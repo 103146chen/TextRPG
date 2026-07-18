@@ -1096,7 +1096,8 @@ input, textarea, select {
   padding-top: 7px;
 }
 
-.sm-field input[type="text"], .sm-field textarea, .sm-field select {
+.sm-field input:not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+.sm-field textarea, .sm-field select {
   flex: 1;
   background: var(--e-bg);
   border: 1px solid var(--e-border);
@@ -1911,7 +1912,8 @@ input, textarea, select {
 .mgr-md-badge { flex: 0 0 auto; font-size: 10.5px; padding: 1px 7px; border-radius: 9px; }
 .mgr-md-badge.on { background: rgba(107, 142, 123, 0.25); color: var(--e-green); }
 .mgr-md-badge.off { background: var(--e-bg-4); color: var(--e-text-faded); }
-.mgr-md-detail { min-width: 0; max-width: 520px; }
+.mgr-md-detail { min-width: 0; display: flex; flex-direction: column; gap: 10px; }
+.mgr-md-detail .sm-field > label { min-width: 76px; }
 .mgr-md-empty { color: var(--e-text-dim); padding: 40px 20px; text-align: center; border: 1px dashed var(--e-border); border-radius: 8px; }
 .mgr-md-add { margin-top: 10px; align-self: flex-start; }
 .mgr-md-list-col { display: flex; flex-direction: column; min-width: 0; }

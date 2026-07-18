@@ -41,6 +41,8 @@ export class CharacterManager {
   #revokeThumbs() {
     for (const u of this._thumbUrls) URL.revokeObjectURL(u);
     this._thumbUrls = [];
+    this._cropRO?.disconnect();   // 舊裁切框的觀察器隨 DOM 一起收掉
+    this._cropRO = null;
   }
 
   // 非同步把某個立繪縮圖填進 img（找不到就顯示 placeholder 樣式）
@@ -395,25 +397,35 @@ export class CharacterManager {
     return { left: b.left + (b.width - w) / 2, top: b.top + (b.height - h) / 2, width: w, height: h };
   }
 
-  // 架設裁切框：定位到既有 crop（或預設上半置中），支援移動 + 右下角縮放
+  // 架設裁切框：定位到既有 crop（或預設上半置中），支援移動 + 右下角縮放。
+  // 注意：資產頁在初次 render 時可能還是 display:none（量到 0），所以
+  // 尺寸一律「用到才量」，並以 ResizeObserver 在面板現身／改寬時重新定位。
   #setupCrop(stage, img, box, file) {
-    const content = this.#imageContentRect(img);
-    const stageRect = stage.getBoundingClientRect();
-    // 內容矩形相對 stage 的偏移（供正規化 ↔ 像素換算）
-    const ox = content.left - stageRect.left, oy = content.top - stageRect.top;
-    const cw = content.width, ch = content.height;
-    if (cw <= 0 || ch <= 0) return;
-
     const saved = this.project.getSpriteCrop(file);
     let n = saved || { x: 0.25, y: 0.05, w: 0.5, h: 0.4 };   // 預設：上半置中（臉部）
 
+    // 影像內容矩形（相對 stage）
+    const metrics = () => {
+      const c = this.#imageContentRect(img);
+      const s = stage.getBoundingClientRect();
+      return { ox: c.left - s.left, oy: c.top - s.top, cw: c.width, ch: c.height };
+    };
+
     const place = () => {
+      const { ox, oy, cw, ch } = metrics();
+      if (cw <= 0 || ch <= 0) { box.style.visibility = "hidden"; return; }
+      box.style.visibility = "";
       box.style.left = `${ox + n.x * cw}px`;
       box.style.top = `${oy + n.y * ch}px`;
       box.style.width = `${n.w * cw}px`;
       box.style.height = `${n.h * ch}px`;
     };
     place();
+
+    // 面板由隱藏轉可見／欄寬改變時重新定位
+    this._cropRO?.disconnect();
+    this._cropRO = new ResizeObserver(() => place());
+    this._cropRO.observe(stage);
 
     const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
     const save = () => {
@@ -426,6 +438,8 @@ export class CharacterManager {
     };
 
     const onDown = (e, mode) => {
+      const { cw, ch } = metrics();          // 拖曳當下才量，確保是可見時的正確尺寸
+      if (cw <= 0 || ch <= 0) return;
       e.preventDefault(); e.stopPropagation();
       const sx = e.clientX, sy = e.clientY;
       const start = { ...n };
