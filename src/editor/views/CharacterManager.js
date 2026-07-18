@@ -24,6 +24,7 @@ export class CharacterManager {
     this._selected = null;         // 目前選中的角色名
     this._selectedEmotion = "__default__";  // 目前選中的表情（或預設立繪）
     this._spriteTab = "crop";               // 右欄分頁：crop（縮圖裁切）/ preview（畫面預覽）
+    this._simCropMode = false;              // 畫面預覽內：是否處於「設定顯示裁切」模式
     this._unsub = project.subscribe((t) => {
       if (this._writing) return;
       if (EVENTS.has(t)) this.render();
@@ -389,8 +390,12 @@ export class CharacterManager {
         box.className = "crop-box";
         box.innerHTML = `<span class="crop-handle"></span>`;
         stage.appendChild(box);
-        if (img.complete && img.naturalWidth) this.#setupCrop(stage, img, box, file);
-        else img.addEventListener("load", () => this.#setupCrop(stage, img, box, file), { once: true });
+        const store = {
+          get: () => this.project.getSpriteCrop(file),
+          set: (n) => this.project.setSpriteCrop(file, n),
+        };
+        if (img.complete && img.naturalWidth) this.#setupCrop(stage, img, box, store);
+        else img.addEventListener("load", () => this.#setupCrop(stage, img, box, store), { once: true });
       }
       view.appendChild(stage);
     }
@@ -452,11 +457,81 @@ export class CharacterManager {
       empty.className = "sprite-sim-empty";
       empty.textContent = "尚未指定立繪檔案";
       frame.appendChild(empty);
-    } else {
+      wrap.appendChild(frame);
+      return wrap;
+    }
+
+    const adj = this.project.getSpriteAdjust(file) || {};
+    const patch = (partial) => {
+      this.#write(() => this.project.setSpriteAdjust(file, { ...adj, ...partial }));
+      this.render();
+    };
+
+    if (this._simCropMode) {
+      // 裁切編輯：顯示整張原圖 + 裁切框（選好之後切回預覽看結果）
+      const stage = document.createElement("div");
+      stage.className = "sprite-sim-cropstage";
       const img = document.createElement("img");
-      img.className = "sprite-sim-char";
+      img.className = "sprite-sim-fullimg";
       this.#fillImage(img, file);
-      frame.appendChild(img);
+      stage.appendChild(img);
+      const box = document.createElement("div");
+      box.className = "crop-box";
+      box.innerHTML = `<span class="crop-handle"></span>`;
+      stage.appendChild(box);
+      const store = {
+        get: () => this.project.getSpriteAdjust(file)?.crop || null,
+        set: (n) => this.project.setSpriteAdjust(file, { ...(this.project.getSpriteAdjust(file) || {}), crop: n }),
+      };
+      if (img.complete && img.naturalWidth) this.#setupCrop(stage, img, box, store);
+      else img.addEventListener("load", () => this.#setupCrop(stage, img, box, store), { once: true });
+      frame.appendChild(stage);
+    } else {
+      // 結果預覽：用與引擎相同的方式套用裁切／位移／縮放，並可直接拖曳定位
+      const holder = document.createElement("div");
+      holder.className = "sprite-sim-adj";
+      const img = document.createElement("img");
+      this.#fillImage(img, file);
+      const c = adj.crop;
+      if (c && c.w > 0 && c.h > 0) {
+        holder.classList.add("cropped");
+        img.style.width = `${100 / c.w}%`;
+        img.style.height = `${100 / c.h}%`;
+        img.style.left = `${-(c.x / c.w) * 100}%`;
+        img.style.top = `${-(c.y / c.h) * 100}%`;
+        const setRatio = () => {
+          const nW = img.naturalWidth, nH = img.naturalHeight;
+          if (nW && nH) holder.style.aspectRatio = `${c.w * nW} / ${c.h * nH}`;
+        };
+        if (img.complete && img.naturalWidth) setRatio();
+        else img.addEventListener("load", setRatio, { once: true });
+      }
+      const dx = Number(adj.dx) || 0, dy = Number(adj.dy) || 0;
+      const s = Number.isFinite(adj.scale) ? adj.scale : 1;
+      holder.style.transform = `translate(${dx}%, ${dy}%)${s !== 1 ? ` scale(${s})` : ""}`;
+      holder.appendChild(img);
+      frame.appendChild(holder);
+
+      // 拖曳定位：位移量換算成 holder 自身尺寸的百分比（與引擎的 translate 一致）
+      holder.addEventListener("mousedown", (e) => {
+        e.preventDefault();
+        const r = holder.getBoundingClientRect();
+        if (!r.width || !r.height) return;
+        const sx = e.clientX, sy = e.clientY;
+        let nx = dx, ny = dy;
+        const move = (ev) => {
+          nx = dx + ((ev.clientX - sx) / r.width) * 100;
+          ny = dy + ((ev.clientY - sy) / r.height) * 100;
+          holder.style.transform = `translate(${nx}%, ${ny}%)${s !== 1 ? ` scale(${s})` : ""}`;
+        };
+        const up = () => {
+          document.removeEventListener("mousemove", move);
+          document.removeEventListener("mouseup", up);
+          patch({ dx: +nx.toFixed(2), dy: +ny.toFixed(2) });
+        };
+        document.addEventListener("mousemove", move);
+        document.addEventListener("mouseup", up);
+      });
     }
 
     const box = document.createElement("div");
@@ -465,9 +540,52 @@ export class CharacterManager {
     frame.appendChild(box);
     wrap.appendChild(frame);
 
+    // ---- 控制列 ----
+    const ctl = document.createElement("div");
+    ctl.className = "sim-controls";
+
+    const cropBtn = document.createElement("button");
+    cropBtn.className = "tb-btn" + (this._simCropMode ? " primary" : "");
+    cropBtn.textContent = this._simCropMode ? "完成裁切" : "設定裁切";
+    cropBtn.addEventListener("click", () => { this._simCropMode = !this._simCropMode; this.render(); });
+    ctl.appendChild(cropBtn);
+
+    if (!this._simCropMode) {
+      const lab = document.createElement("span");
+      lab.className = "sim-ctl-label";
+      lab.textContent = "縮放";
+      const range = document.createElement("input");
+      range.type = "range"; range.min = "0.3"; range.max = "2"; range.step = "0.05";
+      range.value = String(Number.isFinite(adj.scale) ? adj.scale : 1);
+      const val = document.createElement("span");
+      val.className = "sim-ctl-val";
+      val.textContent = Number(range.value).toFixed(2) + "×";
+      const holder = frame.querySelector(".sprite-sim-adj");
+      range.addEventListener("input", () => {
+        val.textContent = Number(range.value).toFixed(2) + "×";
+        const dx0 = Number(adj.dx) || 0, dy0 = Number(adj.dy) || 0;
+        if (holder) holder.style.transform = `translate(${dx0}%, ${dy0}%) scale(${range.value})`;
+      });
+      range.addEventListener("change", () => patch({ scale: Number(range.value) }));
+      ctl.append(lab, range, val);
+    }
+
+    const reset = document.createElement("button");
+    reset.className = "tb-btn";
+    reset.textContent = "重設";
+    reset.disabled = !this.project.getSpriteAdjust(file);
+    reset.addEventListener("click", () => {
+      this.#write(() => this.project.setSpriteAdjust(file, null));
+      this.render();
+    });
+    ctl.appendChild(reset);
+    wrap.appendChild(ctl);
+
     const hint = document.createElement("small");
     hint.className = "crop-hint";
-    hint.textContent = "模擬遊戲中的立繪大小與位置。若人物過小、或上下留白過多，代表原圖可能需要先裁切再匯入。";
+    hint.textContent = this._simCropMode
+      ? "拖曳方框選擇這張圖要顯示的範圍（會套用到遊戲畫面）。"
+      : "拖曳人物調整位置、用滑桿調整大小。這些設定只影響這一張圖，會與位置與錨點的設定相疊加。";
     wrap.appendChild(hint);
     return wrap;
   }
@@ -485,8 +603,8 @@ export class CharacterManager {
   // 架設裁切框：定位到既有 crop（或預設上半置中），支援移動 + 右下角縮放。
   // 注意：資產頁在初次 render 時可能還是 display:none（量到 0），所以
   // 尺寸一律「用到才量」，並以 ResizeObserver 在面板現身／改寬時重新定位。
-  #setupCrop(stage, img, box, file) {
-    const saved = this.project.getSpriteCrop(file);
+  #setupCrop(stage, img, box, store) {
+    const saved = store.get();
     let n = saved || { x: 0.25, y: 0.05, w: 0.5, h: 0.4 };   // 預設：上半置中（臉部）
 
     // 影像內容矩形（相對 stage）
@@ -524,7 +642,7 @@ export class CharacterManager {
         x: +n.x.toFixed(4), y: +n.y.toFixed(4),
         w: +n.w.toFixed(4), h: +n.h.toFixed(4),
       };
-      this.#write(() => this.project.setSpriteCrop(file, n));
+      this.#write(() => store.set(n));
       this.render();   // 更新縮圖與「清除裁切」可用性
     };
 

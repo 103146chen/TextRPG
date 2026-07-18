@@ -232,6 +232,26 @@ html, body {
 .char-slot[data-slot="center"] { left: 30%; }
 .char-slot[data-slot="right"] { right: 2%; }
 
+/* 單張立繪修正：wrapper 承載位移/縮放與裁切；沒有修正的圖不會有這層 */
+.char-sprite-adj {
+  height: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.char-sprite-adj.cropped {
+  position: relative;
+  overflow: hidden;
+  height: 100%;
+  display: block;
+}
+.char-sprite-adj.cropped img {
+  position: absolute;
+  max-width: none;
+  max-height: none;
+  object-fit: fill;
+}
+
 .char-slot img, .char-slot svg {
   max-width: 100%;
   max-height: 100%;

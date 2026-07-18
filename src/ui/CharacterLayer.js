@@ -15,12 +15,15 @@ export class CharacterLayer {
    * @param {object} [positions] - story.json 的具名位置預設：
    *   { center: { x, y, anchor, scale }, ... }。未提供時沿用原本的 CSS 三格版面。
    */
-  constructor(layerEl, storyPath, characterMap = {}, resolveAsset = null, positions = null) {
+  constructor(layerEl, storyPath, characterMap = {}, resolveAsset = null, positions = null, spriteAdjust = null) {
     this.layerEl = layerEl;
     this.storyPath = storyPath;
     this.resolveAsset = resolveAsset;
     this.characterMap = characterMap;
     this.positions = positions || null;
+    // 單張立繪的顯示修正 { 檔名: {crop,dx,dy,scale} }：修正「這張圖本身」的
+    // 構圖，與槽位/指令的定位相疊加，不取代它們。
+    this.spriteAdjust = spriteAdjust || null;
     // 內建三格沿用 HTML 既有元素；其餘具名位置在需要時動態建立
     this.slots = {
       left: layerEl.querySelector('[data-slot="left"]'),
@@ -116,11 +119,14 @@ export class CharacterLayer {
 
     slotEl.innerHTML = "";
     const url = await this.#assetUrl("characters", fileName);
-    const img = this.#createImg(url, charName);
-    slotEl.appendChild(img);
+    // 有單張修正才包 wrapper；沒有的話維持原本的純 <img>（零行為變動）
+    const adj = this.spriteAdjust?.[fileName] || null;
+    const node = adj ? this.#createAdjustedImg(url, charName, adj) : this.#createImg(url, charName);
+    slotEl.appendChild(node);
+    const img = node.tagName === "IMG" ? node : node.querySelector("img");
     // 強制重繪
     await this.#wait(20);
-    img.classList.add("show");
+    img?.classList.add("show");
 
     this.current[slot] = { charName, emotion, fileName, opts: { ...opts } };   // opts 供存檔快照還原定位
   }
@@ -213,6 +219,46 @@ export class CharacterLayer {
       requestAnimationFrame(() => svg.classList.add("show"));
     };
     return img;
+  }
+
+  /**
+   * 帶「單張修正」的立繪節點：外層 wrapper 吃位移/縮放與裁切，內層 img 保留
+   * 原本的淡入動畫（.show）。沒有修正的圖不會走這裡——維持原本的純 <img>，
+   * 確保既有劇本的渲染完全不變。
+   *
+   * 裁切用「外層 overflow:hidden ＋ 內層等比放大位移」：
+   *   wrapper 長寬比 = 裁切區的實際長寬比 → 內層百分比放大不會變形。
+   */
+  #createAdjustedImg(url, charName, adj) {
+    const wrap = document.createElement("div");
+    wrap.className = "char-sprite-adj";
+
+    const img = this.#createImg(url, charName);
+    const c = adj.crop;
+
+    if (c && c.w > 0 && c.h > 0) {
+      wrap.classList.add("cropped");
+      img.style.width = `${100 / c.w}%`;
+      img.style.height = `${100 / c.h}%`;
+      img.style.left = `${-(c.x / c.w) * 100}%`;
+      img.style.top = `${-(c.y / c.h) * 100}%`;
+      // 長寬比要等圖片載入拿到原始尺寸才算得出來
+      const setRatio = () => {
+        const nW = img.naturalWidth, nH = img.naturalHeight;
+        if (nW && nH) wrap.style.aspectRatio = `${c.w * nW} / ${c.h * nH}`;
+      };
+      if (img.complete && img.naturalWidth) setRatio();
+      else img.addEventListener("load", setRatio, { once: true });
+    }
+
+    const dx = Number(adj.dx) || 0, dy = Number(adj.dy) || 0;
+    const s = Number.isFinite(adj.scale) ? adj.scale : 1;
+    if (dx || dy || s !== 1) {
+      wrap.style.transform = `translate(${dx}%, ${dy}%)${s !== 1 ? ` scale(${s})` : ""}`;
+    }
+
+    wrap.appendChild(img);
+    return wrap;
   }
 
   #createPlaceholder(name) {

@@ -45,7 +45,8 @@ export class GameRuntime {
       storyPath,
       storyMeta.characters || {},
       resolveAsset,
-      storyMeta.positions || null
+      storyMeta.positions || null,
+      storyMeta.spriteAdjust || null
     );
     this.backgroundLayer = new BackgroundLayer(dom.backgroundLayer, storyPath, resolveAsset);
     this.audio = new AudioManager(storyPath, resolveAsset);

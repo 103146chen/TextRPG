@@ -650,6 +650,34 @@ export class StoryProject {
     return this.storyMeta?.spriteCrops?.[file] || null;
   }
 
+  // ---- 單張立繪的顯示修正：story.json.spriteAdjust[檔名] ----
+  // { crop:{x,y,w,h}, dx, dy, scale }，全部可省略。
+  // 與 spriteCrops（純編輯器的清單縮圖）刻意分開：這一份會真的影響遊戲畫面。
+  getSpriteAdjust(file) {
+    return this.storyMeta?.spriteAdjust?.[file] || null;
+  }
+
+  setSpriteAdjust(file, adjust) {
+    if (!file) return;
+    this.#pushUndo();
+    this.metaDirty = true;
+
+    // 只留下「非預設」的欄位，story.json 才不會被一堆 dx:0 塞滿
+    const clean = {};
+    if (adjust) {
+      const c = adjust.crop;
+      if (c && c.w > 0 && c.h > 0 && !(c.x === 0 && c.y === 0 && c.w === 1 && c.h === 1)) clean.crop = c;
+      if (Number.isFinite(adjust.dx) && adjust.dx !== 0) clean.dx = adjust.dx;
+      if (Number.isFinite(adjust.dy) && adjust.dy !== 0) clean.dy = adjust.dy;
+      if (Number.isFinite(adjust.scale) && adjust.scale !== 1) clean.scale = adjust.scale;
+    }
+
+    const all = { ...(this.storyMeta.spriteAdjust || {}) };
+    if (Object.keys(clean).length) all[file] = clean; else delete all[file];
+    this.storyMeta.spriteAdjust = Object.keys(all).length ? all : undefined;
+    this.notify("resources-updated", { file });
+  }
+
   setSpriteCrop(file, crop) {
     if (!file) return;
     this.#pushUndo();

@@ -2087,6 +2087,30 @@ input, textarea, select {
   display: flex; align-items: center; justify-content: center;
   color: var(--e-text-faded); font-size: 12px;
 }
+
+/* 預覽內的可編輯立繪：版型比照遊戲的 .char-slot（底部 26%、高 74%、寬 40%） */
+.sprite-sim-adj {
+  position: absolute;
+  left: 30%; width: 40%;
+  bottom: 26%; height: 74%;
+  display: flex; align-items: flex-end; justify-content: center;
+  cursor: grab;
+}
+.sprite-sim-adj:active { cursor: grabbing; }
+.sprite-sim-adj > img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.sprite-sim-adj.cropped { display: block; overflow: hidden; }
+.sprite-sim-adj.cropped > img {
+  position: absolute; max-width: none; max-height: none; object-fit: fill;
+}
+
+/* 裁切模式：整張原圖鋪在畫框內供框選 */
+.sprite-sim-cropstage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
+.sprite-sim-fullimg { max-width: 100%; max-height: 100%; object-fit: contain; }
+
+.sim-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.sim-controls input[type="range"] { flex: 0 0 150px; accent-color: var(--e-accent); }
+.sim-ctl-label { font-size: 12px; color: var(--e-text-dim); }
+.sim-ctl-val { font-size: 12px; color: var(--e-text-dim); font-family: var(--e-font-mono); width: 44px; }
 .char-sprite-head { font-size: 14px; }
 .char-sprite-stage {
   position: relative;
