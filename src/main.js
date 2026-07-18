@@ -6,6 +6,7 @@
 import { StoryEngine } from "./engine/StoryEngine.js";
 import { SaveManager } from "./engine/SaveManager.js";
 import { GameRuntime } from "./ui/GameRuntime.js";
+import { applyTheme } from "./ui/theme.js";
 
 // 設定：目前的劇本路徑
 // 需透過 URL 參數 ?story=xxx 指定，例如 index.html?story=demo_story
@@ -50,6 +51,9 @@ async function initRuntime() {
   // 載入 story.json 取得角色等設定
   const metaRes = await fetch(`${STORY_PATH}/story.json`);
   const storyMeta = await metaRes.json();
+
+  // 個性化主題：把 story.json 的 theme 套成 CSS 變數（未設定則沿用預設）
+  applyTheme(storyMeta.theme, document.documentElement);
 
   runtime = new GameRuntime({
     dom: {

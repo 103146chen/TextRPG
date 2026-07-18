@@ -15,6 +15,7 @@ import { FlagManager } from "./views/FlagManager.js";
 import { EndingManager } from "./views/EndingManager.js";
 import { ChapterManager } from "./views/ChapterManager.js";
 import { ProjectSettings } from "./views/ProjectSettings.js";
+import { ThemeEditor } from "./views/ThemeEditor.js";
 import { AssetPanel } from "./views/AssetPanel.js";
 import { AssetOverview } from "./views/AssetOverview.js";
 import { PositionEditor } from "./views/PositionEditor.js";
@@ -94,6 +95,7 @@ const chapterManager = new ChapterManager($("#chapter-manage"), project, (id) =>
   setPage("script");
 });
 new ProjectSettings($("#project-settings"), project);
+new ThemeEditor($("#theme-editor"), project);
 // 資產頁分類入口（優化①）：總覽 + 每類一個過濾後的 AssetPanel
 new AssetOverview($("#asset-overview"), project, { onNavigate: (view) => setAssetView(view) });
 new AssetPanel($("#asset-files-characters"), project, { kinds: ["characters"] });

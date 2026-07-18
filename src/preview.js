@@ -6,6 +6,7 @@
 // ============================================
 
 import { GameRuntime } from "./ui/GameRuntime.js";
+import { applyTheme } from "./ui/theme.js";
 
 const $ = (sel) => document.querySelector(sel);
 const gameScreen = $("#game-screen");
@@ -60,6 +61,9 @@ async function loadPreview(data) {
   currentData = data;
   const { storyMeta, scenes, startSceneId, startPc, mode = "scrub" } = data;
   currentMode = mode;
+
+  // 個性化主題：反映編輯中的 theme（未設定則沿用預設）
+  applyTheme(storyMeta.theme, document.documentElement);
 
   // 收拾上一輪
   if (runtime) {

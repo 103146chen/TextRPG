@@ -2479,3 +2479,74 @@ video.asset-thumb { object-fit: cover; cursor: pointer; }
 .page-assets.active .asset-item { padding: 8px; gap: 5px; }
 .page-assets.active .asset-name { font-size: 11.5px; }
 .page-assets.active .asset-usage { font-size: 10.5px; }
+
+/* ============================================
+   個性化（Track B）
+   ============================================ */
+.theme-page { padding: 16px 22px; }
+.theme-page > h2 { margin-bottom: 4px; }
+.theme-grid {
+  display: grid;
+  grid-template-columns: minmax(260px, 340px) minmax(0, 1fr);
+  gap: 28px;
+  align-items: start;
+  margin-top: 16px;
+}
+.theme-controls { max-width: 340px; }
+
+.theme-color { display: flex; align-items: center; gap: 10px; }
+.theme-color input[type="color"] { width: 46px; height: 30px; padding: 2px; cursor: pointer; flex: 0 0 auto; }
+.theme-color-tag { font-size: 12px; color: var(--e-text-dim); font-family: var(--e-font-mono); }
+.theme-slider { display: flex; align-items: center; gap: 10px; }
+.theme-slider input[type="range"] { flex: 1; accent-color: var(--e-accent); }
+.theme-slider-val { font-size: 12px; color: var(--e-text-dim); font-family: var(--e-font-mono); width: 34px; text-align: right; }
+
+/* 即時範例：套用遊戲端的 CSS 變數（applyTheme 寫在 .theme-sample-stage 上），
+   fallback 為 main.css 的預設值，未設定主題時就長得跟預設遊戲一樣。 */
+.theme-sample { position: sticky; top: 8px; }
+.theme-sample-stage {
+  border-radius: 10px;
+  padding: 26px 22px 22px;
+  min-height: 240px;
+  display: flex; flex-direction: column; justify-content: flex-end; gap: 0;
+  background:
+    linear-gradient(160deg, #2b2f3a 0%, #1a1d23 60%, #14100c 100%);
+  border: 1px solid var(--e-border);
+  overflow: hidden;
+}
+.theme-sample-stage .ts-speaker {
+  align-self: flex-start;
+  background: var(--speaker-bg, rgba(122, 46, 68, 0.9));
+  color: #f5efe3;
+  font-family: var(--font-body, "Noto Serif TC", serif);
+  font-size: 14px;
+  padding: 4px 16px;
+  border-radius: 6px 6px 0 0;
+  border: 1px solid var(--textbox-border, rgba(201, 164, 94, 0.6));
+  border-bottom: none;
+  position: relative; z-index: 1;
+}
+.theme-sample-stage .ts-box {
+  position: relative;
+  background: var(--textbox-bg, rgba(20, 16, 12, 0.82));
+  border: 1px solid var(--textbox-border, rgba(201, 164, 94, 0.6));
+  border-radius: 0 8px 8px 8px;
+  padding: 18px 22px;
+  color: var(--textbox-text, #f0e6d2);
+  font-family: var(--font-body, "Noto Serif TC", serif);
+}
+.theme-sample-stage .ts-text { font-size: 16px; line-height: 1.9; letter-spacing: 0.03em; }
+.theme-sample-stage .ts-indicator {
+  position: absolute; right: 14px; bottom: 8px;
+  color: var(--gold, #c9a45e); font-size: 12px;
+}
+.theme-sample-stage .ts-choices { display: flex; flex-direction: column; gap: 8px; margin-top: 14px; align-items: center; }
+.theme-sample-stage .ts-choice {
+  min-width: 60%;
+  background: rgba(20, 16, 12, 0.7);
+  border: 1px solid var(--gold, #c9a45e);
+  color: var(--textbox-text, #f0e6d2);
+  font-family: var(--font-body, "Noto Serif TC", serif);
+  padding: 8px 14px; border-radius: 6px; font-size: 14px; cursor: default;
+}
+.theme-sample-hint { margin-top: 10px; font-size: 11px; text-align: center; }
