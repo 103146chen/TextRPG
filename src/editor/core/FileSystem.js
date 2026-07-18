@@ -125,9 +125,7 @@ export class ProjectFileSystem {
     const dir = dirMap[kind];
     if (!dir) throw new Error(`未知的資源類型: ${kind}`);
     const handle = await dir.getFileHandle(fileName, { create: true });
-    const writable = await handle.createWritable();
-    await writable.write(blob);
-    await writable.close();
+    await ProjectFileSystem.#writeWithRetry(handle, blob);
   }
 
   async deleteResource(kind, fileName) {
@@ -165,20 +163,39 @@ export class ProjectFileSystem {
 
   // ==================== 寫入 ====================
 
+  /**
+   * 實際寫入單一檔案，並對「檔案在磁碟上被外部改動」的情況重試。
+   *
+   * File System Access 的 createWritable() 若偵測到檔案自 handle 取得後曾被
+   * 改動，會丟出 InvalidStateError。常見來源是同步工具（OneDrive/Dropbox）、
+   * 防毒掃描或外部編輯器。這是暫時性的：重試會重新讀取磁碟狀態，通常第二次
+   * 就成功。本專案就放在 OneDrive 底下，因此會偶發。
+   */
+  static async #writeWithRetry(handle, data, tries = 3) {
+    for (let attempt = 1; ; attempt++) {
+      try {
+        const writable = await handle.createWritable();
+        await writable.write(data);
+        await writable.close();
+        return;
+      } catch (err) {
+        if (err?.name !== "InvalidStateError" || attempt >= tries) throw err;
+        await new Promise((r) => setTimeout(r, 120 * attempt));
+      }
+    }
+  }
+
   async writeStoryJson(data) {
-    const writable = await this.storyJsonHandle.createWritable();
     const bom = '\uFEFF';
-    await writable.write(bom + JSON.stringify(data, null, 2));
-    await writable.close();
+    await ProjectFileSystem.#writeWithRetry(
+      this.storyJsonHandle, bom + JSON.stringify(data, null, 2));
   }
 
   async writeScene(fileName, markdownText) {
     const handle = await this.scenesDirHandle.getFileHandle(fileName, { create: true });
-    const writable = await handle.createWritable();
     const bom = '\uFEFF';
     const content = markdownText.startsWith(bom) ? markdownText : bom + markdownText;
-    await writable.write(content);
-    await writable.close();
+    await ProjectFileSystem.#writeWithRetry(handle, content);
   }
 
   async deleteScene(fileName) {
