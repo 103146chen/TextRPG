@@ -6,6 +6,7 @@
 import { createSelectField } from "./selectField.js";
 import { renderDirectiveForm, DIRECTIVE_SCHEMAS } from "./directiveFields.js";
 import { speakerColor } from "../core/speakerColor.js";
+import { escapeHtml } from "./formFields.js";
 
 export class InstructionRow {
   /**
@@ -497,37 +498,56 @@ export class InstructionRow {
   }
 
   // ---------- Ending ----------
+  // 結局：內容以敘事地圖的結局註冊表為唯一真相，這裡只選 id + 唯讀預覽，
+  // 要改文字就跳到敘事地圖編輯（避免兩邊各改一份而分歧）。
   #renderEnding(container) {
+    container.classList.add("is-ending");
     container.appendChild(this.#badge("結局"));
 
-    const idInput = document.createElement("input");
-    idInput.className = "instr-field";
-    idInput.style.minWidth = "140px";
-    idInput.style.fontFamily = "var(--e-font-mono)";
-    idInput.value = this.ins.id || "";
-    idInput.placeholder = "ending_id";
-    idInput.addEventListener("change", () => this.onChange({ id: idInput.value }));
-    container.appendChild(this.#labelInline("id"));
-    container.appendChild(idInput);
+    const registry = this.project.storyMeta?.endings || [];
+    const id = this.ins.id || "";
+    const reg = registry.find((e) => e.id === id);
 
-    const titleInput = document.createElement("input");
-    titleInput.className = "instr-field";
-    titleInput.style.minWidth = "140px";
-    titleInput.value = this.ins.title || "";
-    titleInput.placeholder = "結局標題";
-    titleInput.addEventListener("change", () => this.onChange({ title: titleInput.value }));
-    container.appendChild(this.#labelInline("title"));
-    container.appendChild(titleInput);
+    const head = document.createElement("div");
+    head.className = "ending-card-head";
 
-    const descInput = document.createElement("input");
-    descInput.className = "instr-field";
-    descInput.style.flex = "1";
-    descInput.style.minWidth = "200px";
-    descInput.value = this.ins.desc || "";
-    descInput.placeholder = "描述（圖鑑顯示）";
-    descInput.addEventListener("change", () => this.onChange({ desc: descInput.value }));
-    container.appendChild(this.#labelInline("desc"));
-    container.appendChild(descInput);
+    const idField = createSelectField({
+      value: id,
+      options: registry.map((e) => e.id).filter(Boolean),
+      placeholder: "選擇結局…",
+      addLabel: "到敘事地圖新增…",
+      onAdd: () => this.onManage?.("endings"),
+      onChange: (v) => this.onChange({ id: v }),
+    });
+    idField.style.minWidth = "180px";
+    head.appendChild(this.#labelInline("id"));
+    head.appendChild(idField);
+
+    const editBtn = document.createElement("button");
+    editBtn.className = "tb-btn ending-card-edit";
+    editBtn.textContent = "到敘事地圖編輯";
+    editBtn.title = "結局的標題與描述統一在敘事地圖維護";
+    editBtn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      this.onManage?.(id ? `ending:${id}` : "endings");
+    });
+    head.appendChild(editBtn);
+    container.appendChild(head);
+
+    const body = document.createElement("div");
+    body.className = "ending-card-body";
+    if (!id) {
+      body.innerHTML = `<span class="ending-card-warn">尚未選擇結局。</span>`;
+    } else if (!reg) {
+      body.innerHTML =
+        `<span class="ending-card-warn">「${escapeHtml(id)}」尚未登記於結局清單，` +
+        `遊戲會退回使用這條指令自帶的文字。建議到敘事地圖登記。</span>`;
+    } else {
+      body.innerHTML =
+        `<div class="ending-card-title">${escapeHtml(reg.title || id)}</div>` +
+        `<div class="ending-card-desc">${escapeHtml(reg.description || "（尚無描述）")}</div>`;
+    }
+    container.appendChild(body);
   }
 
   // ---------- If/Elif ----------

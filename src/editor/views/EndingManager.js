@@ -31,6 +31,13 @@ export class EndingManager {
 
   destroy() { this._unsub?.(); this.containerEl.innerHTML = ""; }
 
+  /** 由劇本卡片跳轉過來時，選中指定 id 的結局 */
+  selectById(id) {
+    const idx = (this.project.storyMeta?.endings || []).findIndex((e) => e.id === id);
+    if (idx >= 0) this._selected = idx;
+    this.render();
+  }
+
   #write(fn) { this._writing = true; try { fn(); } finally { this._writing = false; } }
 
   // 蒐集劇本中實際出現的 ending id
@@ -62,7 +69,7 @@ export class EndingManager {
     head.innerHTML = `<span>結局</span><span class="panel-count">${endings.length}</span>`;
 
     const body = document.createElement("div");
-    body.className = "mgr-panel flag-mgr-body";
+    body.className = "mgr-panel mgr-wide flag-mgr-body";
 
     const actualIds = this.#collectActualIds();
 

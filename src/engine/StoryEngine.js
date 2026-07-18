@@ -518,8 +518,10 @@ export class StoryEngine {
     try {
       const key = `galgame.endings.${this.storyMeta.id}`;
       const unlocked = JSON.parse(localStorage.getItem(key) || "{}");
+      // 標題以 story.json 的 endings 註冊表為準（唯一真相），指令自帶的僅作後備
+      const reg = (this.storyMeta?.endings || []).find((e) => e.id === endingIns.id);
       unlocked[endingIns.id] = {
-        title: endingIns.title,
+        title: reg?.title || endingIns.title || endingIns.id,
         unlockedAt: Date.now(),
       };
       localStorage.setItem(key, JSON.stringify(unlocked));

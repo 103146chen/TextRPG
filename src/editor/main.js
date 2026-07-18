@@ -78,7 +78,7 @@ const flagInspector = new FlagInspector($("#flag-panel"), project, jumpToInstruc
 // 角色→資產頁、旗標/結局→敘事地圖、基本資訊→設定頁
 const characterManager = new CharacterManager($("#character-manager"), project);
 new FlagManager($("#var-manage"), project, jumpToInstruction);
-new EndingManager($("#ending-manage"), project);
+const endingManager = new EndingManager($("#ending-manage"), project);
 const chapterManager = new ChapterManager($("#chapter-manage"), project, (id) => {
   currentSceneId = id;
   setPage("script");
@@ -360,6 +360,13 @@ async function handleManage(tab) {
   }
   if (!project.storyMeta) { toast("請先開啟專案", "error"); return; }
   if (tab === "flags") { setPage("map"); setMapView("flags"); return; }
+  if (tab === "endings") { setPage("map"); setMapView("endings"); return; }
+  // 劇本的結局卡片「到敘事地圖編輯」：跳過去並選中該結局
+  if (tab.startsWith("ending:")) {
+    setPage("map"); setMapView("endings");
+    endingManager.selectById(tab.slice(7));
+    return;
+  }
   if (tab === "characters") { setPage("assets"); setAssetView("characters"); return; }
   if (tab.startsWith("asset-")) { setPage("assets"); setAssetView(tab.slice(6)); return; }
   if (tab === "assets") { setPage("assets"); setAssetView("overview"); return; }

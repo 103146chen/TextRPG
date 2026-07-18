@@ -69,7 +69,7 @@ export class FlagManager {
     head.innerHTML = `<span>旗標登記</span><span class="panel-count">${total}</span>`;
 
     const body = document.createElement("div");
-    body.className = "mgr-panel flag-mgr-body";
+    body.className = "mgr-panel mgr-wide flag-mgr-body";
 
     // ---- 搜尋 + 篩選（S5）----
     const controls = document.createElement("div");

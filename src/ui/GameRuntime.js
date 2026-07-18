@@ -634,15 +634,28 @@ export class GameRuntime {
     if (sceneMeta.bgm && !this.instant) await this.audio.playBgm(sceneMeta.bgm, { fadeIn: 800 });
   }
 
+  /**
+   * 結局的標題／描述以 story.json 的 endings 註冊表為準（唯一真相），
+   * 指令自帶的 title/desc 僅作為未登記結局的後備，避免兩處內容不一致。
+   */
+  #endingInfo(ins) {
+    const reg = (this.storyMeta?.endings || []).find((e) => e.id === ins.id);
+    return {
+      title: reg?.title || ins.title || ins.id || "結局",
+      desc: reg?.description || ins.desc || "你的故事走到了這裡。",
+    };
+  }
+
   async #handleEnding(endingIns) {
+    const { title, desc } = this.#endingInfo(endingIns);
     if (this.instant) {
-      this.textBox.showInstant("", `—— 結局：${endingIns.title} ——`);
+      this.textBox.showInstant("", `—— 結局：${title} ——`);
       return;
     }
     await wait(500);
-    await this.textBox.showText("", `—— 結局：${endingIns.title} ——`);
+    await this.textBox.showText("", `—— 結局：${title} ——`);
     await wait(1500);
-    await this.textBox.showText("", endingIns.desc || "你的故事走到了這裡。");
+    await this.textBox.showText("", desc);
     await wait(2000);
     if (this.onEndingCb) this.onEndingCb(endingIns);
   }
