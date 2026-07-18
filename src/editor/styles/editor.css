@@ -1997,9 +1997,16 @@ input, textarea, select {
 /* 三欄式：角色 ｜ 表情 ｜ 立繪完整檢視 */
 .char-md-3col {
   display: grid;
-  grid-template-columns: 210px 210px minmax(0, 1fr);
+  /* 立繪檢視要保底寬度：以前是 minmax(0,1fr)，視窗一窄就被兩個固定欄吃光
+     算成 0px，圖變成 0×0、裁切框根本量不到位置。 */
+  grid-template-columns: 200px 200px minmax(280px, 1fr);
   gap: 16px;
   align-items: start;
+}
+/* 真的塞不下時，立繪檢視換到下一列佔滿整寬，而不是被壓扁 */
+@media (max-width: 1180px) {
+  .char-md-3col { grid-template-columns: minmax(150px, 1fr) minmax(150px, 1fr); }
+  .char-md-3col .char-sprite-view { grid-column: 1 / -1; }
 }
 .char-emo-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
 .char-emo-head { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 2px 2px 6px; border-bottom: 1px solid var(--e-border); }

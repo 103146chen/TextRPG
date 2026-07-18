@@ -83,14 +83,25 @@ export class CharacterManager {
       el.style.backgroundImage = `url("${url}")`;
       el.style.backgroundRepeat = "no-repeat";
       const c = this.project.getSpriteCrop(file);
-      if (c && c.w > 0 && c.h > 0) {
-        el.style.backgroundSize = `${100 / c.w}% ${100 / c.h}%`;
-        el.style.backgroundPosition =
-          `${c.w < 1 ? (c.x / (1 - c.w)) * 100 : 50}% ${c.h < 1 ? (c.y / (1 - c.h)) * 100 : 50}%`;
-      } else {
+      if (!c || !(c.w > 0) || !(c.h > 0)) {
         el.style.backgroundSize = "contain";
         el.style.backgroundPosition = "center";
+        return;
       }
+      // 等比例填滿（cover）並對齊裁切中心。
+      // 用百分比把裁切區「拉滿」縮圖雖然簡單，但縮圖是正方形、裁切區通常不是，
+      // 會把臉壓扁；因此改成依原圖實際尺寸換算，只縮放不變形。
+      const probe = new Image();
+      probe.onload = () => {
+        const B = el.clientWidth, H = el.clientHeight;
+        const nW = probe.naturalWidth, nH = probe.naturalHeight;
+        if (!B || !H || !nW || !nH) return;     // 面板還沒顯示 → 之後重繪再算
+        const s = Math.max(B / (c.w * nW), H / (c.h * nH));
+        const cx = (c.x + c.w / 2) * nW * s, cy = (c.y + c.h / 2) * nH * s;
+        el.style.backgroundSize = `${nW * s}px ${nH * s}px`;
+        el.style.backgroundPosition = `${B / 2 - cx}px ${H / 2 - cy}px`;
+      };
+      probe.src = url;
     }).catch(() => el.classList.add("empty"));
   }
 
@@ -425,7 +436,13 @@ export class CharacterManager {
     const metrics = () => {
       const c = this.#imageContentRect(img);
       const s = stage.getBoundingClientRect();
-      return { ox: c.left - s.left, oy: c.top - s.top, cw: c.width, ch: c.height };
+      // 絕對定位的基準是 stage 的 padding box，量到的卻是 border box，
+      // 要扣掉邊框寬度（clientLeft/Top）否則裁切框會整體偏一個邊框。
+      return {
+        ox: c.left - s.left - stage.clientLeft,
+        oy: c.top - s.top - stage.clientTop,
+        cw: c.width, ch: c.height,
+      };
     };
 
     const place = () => {
