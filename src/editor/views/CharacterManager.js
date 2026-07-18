@@ -56,6 +56,41 @@ export class CharacterManager {
     }).catch(() => img.classList.add("empty"));
   }
 
+  // 載入完整立繪到 <img>（不套縮圖尺寸 class，供右欄大圖用）
+  #fillImage(img, file) {
+    if (!file) { img.classList.add("empty"); return; }
+    this.project.fs?.readResource?.("characters", file).then((blob) => {
+      if (!blob) { img.classList.add("empty"); return; }
+      const url = URL.createObjectURL(blob);
+      this._thumbUrls.push(url);
+      img.src = url;
+      img.classList.remove("empty");
+    }).catch(() => img.classList.add("empty"));
+  }
+
+  // 背景式裁切縮圖：套用 spriteCrops[檔名] 的正規化裁切範圍（無裁切則 contain）
+  #fillCropThumb(el, file) {
+    el.classList.add("crop-thumb");
+    if (!file) { el.classList.add("empty"); return; }
+    this.project.fs?.readResource?.("characters", file).then((blob) => {
+      if (!blob) { el.classList.add("empty"); return; }
+      const url = URL.createObjectURL(blob);
+      this._thumbUrls.push(url);
+      el.classList.remove("empty");
+      el.style.backgroundImage = `url("${url}")`;
+      el.style.backgroundRepeat = "no-repeat";
+      const c = this.project.getSpriteCrop(file);
+      if (c && c.w > 0 && c.h > 0) {
+        el.style.backgroundSize = `${100 / c.w}% ${100 / c.h}%`;
+        el.style.backgroundPosition =
+          `${c.w < 1 ? (c.x / (1 - c.w)) * 100 : 50}% ${c.h < 1 ? (c.y / (1 - c.h)) * 100 : 50}%`;
+      } else {
+        el.style.backgroundSize = "contain";
+        el.style.backgroundPosition = "center";
+      }
+    }).catch(() => el.classList.add("empty"));
+  }
+
   render() {
     this.#revokeThumbs();
     this.containerEl.innerHTML = "";
@@ -147,9 +182,9 @@ export class CharacterManager {
     const item = document.createElement("div");
     item.className = "char-md-item" + (name === this._selected ? " active" : "");
 
-    const thumb = document.createElement("img");
+    const thumb = document.createElement("div");
     thumb.classList.add("char-md-thumb");
-    this.#fillThumb(thumb, data.default);
+    this.#fillCropThumb(thumb, data.default);
     item.appendChild(thumb);
 
     const label = document.createElement("span");
@@ -244,9 +279,9 @@ export class CharacterManager {
     const item = document.createElement("div");
     item.className = "char-emo-item" + (this._selectedEmotion === key ? " active" : "");
 
-    const thumb = document.createElement("img");
+    const thumb = document.createElement("div");
     thumb.classList.add("char-emo-thumb");
-    this.#fillThumb(thumb, file);
+    this.#fillCropThumb(thumb, file);
     item.appendChild(thumb);
 
     const lab = document.createElement("span");
@@ -296,8 +331,17 @@ export class CharacterManager {
     stage.className = "char-sprite-stage";
     const img = document.createElement("img");
     img.className = "char-sprite-big";
-    this.#fillThumb(img, file);
+    this.#fillImage(img, file);
     stage.appendChild(img);
+    // 裁切框（設定縮圖範圍）—— 圖片載入取得原始尺寸後才架設
+    if (file) {
+      const box = document.createElement("div");
+      box.className = "crop-box";
+      box.innerHTML = `<span class="crop-handle"></span>`;
+      stage.appendChild(box);
+      if (img.complete && img.naturalWidth) this.#setupCrop(stage, img, box, file);
+      else img.addEventListener("load", () => this.#setupCrop(stage, img, box, file), { once: true });
+    }
     view.appendChild(stage);
 
     const fld = document.createElement("div");
@@ -311,7 +355,7 @@ export class CharacterManager {
         if (isDefault) data.default = v;
         else data.emotions[key] = v;
         this.#write(() => this.project.upsertCharacter(name, data));
-        this.#fillThumb(img, v);
+        this.#fillImage(img, v);
         // 中欄縮圖也要更新 → 重繪
         this.render();
       }
@@ -319,7 +363,94 @@ export class CharacterManager {
     fld.appendChild(input);
     view.appendChild(fld);
 
+    if (file) {
+      const cropRow = document.createElement("div");
+      cropRow.className = "crop-row";
+      const hint = document.createElement("small");
+      hint.className = "crop-hint";
+      hint.textContent = "拖曳方框設定縮圖範圍（角色/表情欄的縮圖會套用）。";
+      cropRow.appendChild(hint);
+      const clear = document.createElement("button");
+      clear.className = "tb-btn";
+      clear.textContent = "清除裁切";
+      clear.disabled = !this.project.getSpriteCrop(file);
+      clear.addEventListener("click", () => {
+        this.#write(() => this.project.setSpriteCrop(file, null));
+        this.render();
+      });
+      cropRow.appendChild(clear);
+      view.appendChild(cropRow);
+    }
+
     return view;
+  }
+
+  // 影像在 object-fit:contain 下的實際內容矩形（相對 viewport）
+  #imageContentRect(img) {
+    const b = img.getBoundingClientRect();
+    const nW = img.naturalWidth, nH = img.naturalHeight;
+    if (!nW || !nH) return b;
+    const scale = Math.min(b.width / nW, b.height / nH);
+    const w = nW * scale, h = nH * scale;
+    return { left: b.left + (b.width - w) / 2, top: b.top + (b.height - h) / 2, width: w, height: h };
+  }
+
+  // 架設裁切框：定位到既有 crop（或預設上半置中），支援移動 + 右下角縮放
+  #setupCrop(stage, img, box, file) {
+    const content = this.#imageContentRect(img);
+    const stageRect = stage.getBoundingClientRect();
+    // 內容矩形相對 stage 的偏移（供正規化 ↔ 像素換算）
+    const ox = content.left - stageRect.left, oy = content.top - stageRect.top;
+    const cw = content.width, ch = content.height;
+    if (cw <= 0 || ch <= 0) return;
+
+    const saved = this.project.getSpriteCrop(file);
+    let n = saved || { x: 0.25, y: 0.05, w: 0.5, h: 0.4 };   // 預設：上半置中（臉部）
+
+    const place = () => {
+      box.style.left = `${ox + n.x * cw}px`;
+      box.style.top = `${oy + n.y * ch}px`;
+      box.style.width = `${n.w * cw}px`;
+      box.style.height = `${n.h * ch}px`;
+    };
+    place();
+
+    const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
+    const save = () => {
+      n = {
+        x: +n.x.toFixed(4), y: +n.y.toFixed(4),
+        w: +n.w.toFixed(4), h: +n.h.toFixed(4),
+      };
+      this.#write(() => this.project.setSpriteCrop(file, n));
+      this.render();   // 更新縮圖與「清除裁切」可用性
+    };
+
+    const onDown = (e, mode) => {
+      e.preventDefault(); e.stopPropagation();
+      const sx = e.clientX, sy = e.clientY;
+      const start = { ...n };
+      const move = (ev) => {
+        const dx = (ev.clientX - sx) / cw, dy = (ev.clientY - sy) / ch;
+        if (mode === "move") {
+          n.x = clamp(start.x + dx, 0, 1 - n.w);
+          n.y = clamp(start.y + dy, 0, 1 - n.h);
+        } else {
+          n.w = clamp(start.w + dx, 0.05, 1 - n.x);
+          n.h = clamp(start.h + dy, 0.05, 1 - n.y);
+        }
+        place();
+      };
+      const up = () => {
+        document.removeEventListener("mousemove", move);
+        document.removeEventListener("mouseup", up);
+        save();
+      };
+      document.addEventListener("mousemove", move);
+      document.addEventListener("mouseup", up);
+    };
+
+    box.addEventListener("mousedown", (e) => onDown(e, "move"));
+    box.querySelector(".crop-handle").addEventListener("mousedown", (e) => onDown(e, "resize"));
   }
 
   // 從立繪檔案直接設為表情：選圖 → 命名（自動猜）→ 建立差分

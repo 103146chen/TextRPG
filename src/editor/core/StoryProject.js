@@ -645,6 +645,21 @@ export class StoryProject {
     this.notify("story-meta-updated");
   }
 
+  // ---- 立繪縮圖裁切：story.json.spriteCrops[檔名]={x,y,w,h}（正規化 0–1，純編輯器用）----
+  getSpriteCrop(file) {
+    return this.storyMeta?.spriteCrops?.[file] || null;
+  }
+
+  setSpriteCrop(file, crop) {
+    if (!file) return;
+    this.#pushUndo();
+    this.metaDirty = true;
+    const crops = { ...(this.storyMeta.spriteCrops || {}) };
+    if (crop) crops[file] = crop; else delete crops[file];
+    this.storyMeta.spriteCrops = Object.keys(crops).length ? crops : undefined;
+    this.notify("resources-updated", { file });
+  }
+
   upsertCharacter(name, data) {
     this.#pushUndo();
     this.metaDirty = true;
