@@ -2038,6 +2038,55 @@ input, textarea, select {
 .char-emo-item .char-delete:hover { color: var(--e-red); }
 
 .char-sprite-view { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+
+/* 右欄分頁：縮圖裁切 / 畫面預覽 */
+.sprite-tabs { display: flex; gap: 2px; border-bottom: 1px solid var(--e-border); }
+.sprite-tab {
+  background: transparent; border: none; cursor: pointer;
+  color: var(--e-text-dim); font-size: 12.5px;
+  padding: 6px 14px; border-bottom: 2px solid transparent;
+}
+.sprite-tab:hover { color: var(--e-text); }
+.sprite-tab.active { color: var(--e-accent); border-bottom-color: var(--e-accent); }
+
+/* 畫面預覽：以遊戲版面比例模擬 */
+.sprite-sim { display: flex; flex-direction: column; gap: 8px; }
+.sprite-sim-frame {
+  position: relative;
+  /* 用寬度收斂高度，維持真正的 16:9；若改用 max-height 會把比例壓扁，
+     模擬出來的立繪大小就不等於遊戲裡的實際觀感。 */
+  width: min(100%, calc(52vh * 16 / 9));
+  aspect-ratio: 16 / 9;
+  margin: 0 auto;
+  background: linear-gradient(180deg, #2b3340 0%, #1b2027 60%, #14171c 100%);
+  border: 1px solid var(--e-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.sprite-sim-char {
+  position: absolute;
+  left: 50%; transform: translateX(-50%);
+  bottom: 26%;               /* = --char-bottom-offset */
+  max-height: 74%;           /* = 立繪槽高度上限 */
+  max-width: 40%;            /* = .char-slot width */
+  object-fit: contain;
+  filter: drop-shadow(0 6px 18px rgba(0, 0, 0, 0.5));
+}
+.sprite-sim-textbox {
+  position: absolute;
+  left: 4%; right: 4%; bottom: 3%;
+  height: 30%;               /* = --textbox-height */
+  display: flex; align-items: center; justify-content: center;
+  background: rgba(20, 16, 12, 0.82);
+  border: 1px solid rgba(201, 164, 94, 0.6);
+  border-radius: 6px;
+  color: #f0e6d2; font-size: 11px; letter-spacing: 0.1em;
+}
+.sprite-sim-empty {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--e-text-faded); font-size: 12px;
+}
 .char-sprite-head { font-size: 14px; }
 .char-sprite-stage {
   position: relative;

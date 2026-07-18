@@ -404,6 +404,10 @@ export const DIRECTIVE_SCHEMAS = {
       { key: "y", label: "垂直位移 Y", clabel: "Y", type: "number", step: 5, suffix: "%", hint: "正值＝鏡頭下移" },
       { key: "duration", label: "時長", type: "number", min: 0, step: 50, suffix: "ms", hint: "過場時間，預設 800" },
       { key: "vignette", label: "暗角", type: "slider", min: 0, max: 1, step: 0.05, default: 0, hint: "邊緣壓暗，0 為關閉" },
+      { key: "layer", label: "作用範圍", clabel: "範圍", type: "select", optional: true,
+        emptyLabel: "（預設 · 背景＋立繪）",
+        options: [["all", "背景＋立繪"], ["bg", "只有背景（立繪不縮放）"]],
+        hint: "選「只有背景」時，立繪維持原本大小與位置" },
     ],
   },
   "camera-reset": {

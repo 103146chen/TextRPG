@@ -64,7 +64,9 @@ export class GameRuntime {
     this._autoTimer = null;
 
     // 鏡頭狀態（zoom/x/y 為持續狀態；預覽重建 runtime 時清掉上一輪的 transform）
-    this.camera = { zoom: 1, x: 0, y: 0 };
+    // layer：鏡頭作用範圍。"all"＝背景＋立繪一起（真正的鏡頭）；
+    // "bg"＝只推背景，立繪維持原本大小與位置（想單獨強調景色時用）
+    this.camera = { zoom: 1, x: 0, y: 0, layer: "all" };
     for (const el of [dom.backgroundLayer, dom.characterLayer]) {
       if (el) { el.style.transform = ""; el.style.transition = ""; }
     }
@@ -278,16 +280,19 @@ export class GameRuntime {
    */
   #applyCamera(partial, duration) {
     Object.assign(this.camera, partial);
-    const { zoom, x, y } = this.camera;
+    const { zoom, x, y, layer } = this.camera;
     const idle = zoom === 1 && x === 0 && y === 0;
     const t = idle ? "" : `scale(${zoom}) translate(${-x}%, ${-y}%)`;
-    for (const el of [this.dom.backgroundLayer, this.dom.characterLayer]) {
-      if (!el) continue;
+    const setT = (el, transform) => {
+      if (!el) return;
       el.style.transformOrigin = "center center";
       el.style.transition = duration > 0 ? `transform ${duration}ms ease` : "none";
       void el.offsetWidth;   // 讓 transition 生效（背景分頁 rAF 不可靠）
-      el.style.transform = t;
-    }
+      el.style.transform = transform;
+    };
+    setT(this.dom.backgroundLayer, t);
+    // layer="bg" 時立繪不跟著縮放；切換回來時這裡也會把殘留的 transform 清掉
+    setT(this.dom.characterLayer, layer === "bg" ? "" : t);
   }
 
   /** 靜態求值到第 pc 條指令（畫面停在該點，不播放） */
@@ -450,6 +455,7 @@ export class GameRuntime {
         if (args.zoom != null) p.zoom = Number(args.zoom);
         if (args.x != null) p.x = Number(args.x);
         if (args.y != null) p.y = Number(args.y);
+        if (args.layer != null) p.layer = String(args.layer) === "bg" ? "bg" : "all";
         const dur = this.#d(args.duration ?? 800);
         if (Object.keys(p).length) this.#applyCamera(p, dur);
         if (args.vignette != null && this.effects) {
@@ -459,7 +465,7 @@ export class GameRuntime {
       }
       case "camera-reset": {
         const dur = this.#d(args.duration ?? 800);
-        this.#applyCamera({ zoom: 1, x: 0, y: 0 }, dur);
+        this.#applyCamera({ zoom: 1, x: 0, y: 0, layer: "all" }, dur);
         this.effects?.vignette({ opacity: 0, duration: dur });
         break;
       }
@@ -485,10 +491,19 @@ export class GameRuntime {
         }
         el.appendChild(inner);
         this.dom.screen.appendChild(el);
+        // 標題卡期間收起文字框與選項，否則（尤其帷幕已拉上時）會從半透明的
+        // 卡片後面透出對話框。用獨立 class，不干擾 @ui hide 的既有狀態。
+        this.dom.screen.classList.add("chapter-showing");
         const hold = args.duration ?? 2500;
         await new Promise((res) => {
           let done = false;
-          const finish = () => { if (done) return; done = true; el.remove(); res(); };
+          const finish = () => {
+            if (done) return;
+            done = true;
+            el.remove();
+            this.dom.screen.classList.remove("chapter-showing");
+            res();
+          };
           try {
             const anim = el.animate(
               [{ opacity: 0 }, { opacity: 1, offset: 0.15 }, { opacity: 1, offset: 0.85 }, { opacity: 0 }],
@@ -589,7 +604,7 @@ export class GameRuntime {
         await this.characterLayer.hideAll(d);
         if (args.bg !== false) await this.backgroundLayer.clear(d);
         this.effects?.reset();
-        this.#applyCamera({ zoom: 1, x: 0, y: 0 }, 0);
+        this.#applyCamera({ zoom: 1, x: 0, y: 0, layer: "all" }, 0);
         break;
       }
       case "auto": {

@@ -975,6 +975,14 @@ html, body {
 /* ============================================
    章節標題卡（@chapter）
    ============================================ */
+/* 標題卡期間收起文字框／選項（帷幕拉上時尤其明顯：否則會從卡片後透出來） */
+.chapter-showing .text-box,
+.chapter-showing .choice-container {
+  opacity: 0 !important;
+  pointer-events: none;
+  transition: opacity 0.25s ease;
+}
+
 .chapter-card {
   position: absolute;
   inset: 0;

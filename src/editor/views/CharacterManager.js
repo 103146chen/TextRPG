@@ -23,6 +23,7 @@ export class CharacterManager {
     this._writing = false;
     this._selected = null;         // 目前選中的角色名
     this._selectedEmotion = "__default__";  // 目前選中的表情（或預設立繪）
+    this._spriteTab = "crop";               // 右欄分頁：crop（縮圖裁切）/ preview（畫面預覽）
     this._unsub = project.subscribe((t) => {
       if (this._writing) return;
       if (EVENTS.has(t)) this.render();
@@ -357,22 +358,42 @@ export class CharacterManager {
     head.innerHTML = `<strong>${escapeHtml(label)}</strong>`;
     view.appendChild(head);
 
-    const stage = document.createElement("div");
-    stage.className = "char-sprite-stage";
-    const img = document.createElement("img");
-    img.className = "char-sprite-big";
-    this.#fillImage(img, file);
-    stage.appendChild(img);
-    // 裁切框（設定縮圖範圍）—— 圖片載入取得原始尺寸後才架設
-    if (file) {
-      const box = document.createElement("div");
-      box.className = "crop-box";
-      box.innerHTML = `<span class="crop-handle"></span>`;
-      stage.appendChild(box);
-      if (img.complete && img.naturalWidth) this.#setupCrop(stage, img, box, file);
-      else img.addEventListener("load", () => this.#setupCrop(stage, img, box, file), { once: true });
+    // 分頁：縮圖裁切（設定清單縮圖範圍） / 畫面預覽（模擬遊戲中的呈現）
+    const tabs = document.createElement("div");
+    tabs.className = "sprite-tabs";
+    for (const [id, text] of [["crop", "縮圖裁切"], ["preview", "畫面預覽"]]) {
+      const b = document.createElement("button");
+      b.className = "sprite-tab" + (this._spriteTab === id ? " active" : "");
+      b.textContent = text;
+      b.addEventListener("click", () => {
+        if (this._spriteTab === id) return;
+        this._spriteTab = id;
+        this.render();
+      });
+      tabs.appendChild(b);
     }
-    view.appendChild(stage);
+    view.appendChild(tabs);
+
+    if (this._spriteTab === "preview") {
+      view.appendChild(this.#renderGamePreview(file));
+    } else {
+      const stage = document.createElement("div");
+      stage.className = "char-sprite-stage";
+      const img = document.createElement("img");
+      img.className = "char-sprite-big";
+      this.#fillImage(img, file);
+      stage.appendChild(img);
+      // 裁切框（設定縮圖範圍）—— 圖片載入取得原始尺寸後才架設
+      if (file) {
+        const box = document.createElement("div");
+        box.className = "crop-box";
+        box.innerHTML = `<span class="crop-handle"></span>`;
+        stage.appendChild(box);
+        if (img.complete && img.naturalWidth) this.#setupCrop(stage, img, box, file);
+        else img.addEventListener("load", () => this.#setupCrop(stage, img, box, file), { once: true });
+      }
+      view.appendChild(stage);
+    }
 
     const fld = document.createElement("div");
     fld.className = "char-field";
@@ -385,15 +406,13 @@ export class CharacterManager {
         if (isDefault) data.default = v;
         else data.emotions[key] = v;
         this.#write(() => this.project.upsertCharacter(name, data));
-        this.#fillImage(img, v);
-        // 中欄縮圖也要更新 → 重繪
-        this.render();
+        this.render();   // 重繪即會重載大圖與中欄縮圖
       }
     });
     fld.appendChild(input);
     view.appendChild(fld);
 
-    if (file) {
+    if (file && this._spriteTab !== "preview") {
       const cropRow = document.createElement("div");
       cropRow.className = "crop-row";
       const hint = document.createElement("small");
@@ -413,6 +432,44 @@ export class CharacterManager {
     }
 
     return view;
+  }
+
+  /**
+   * 畫面預覽：用遊戲的實際版面比例擺一次立繪，讓作者判斷這張圖是否需要裁切
+   * （人物太小、上下留白太多、被文字框蓋住等，在這裡一眼看得出來）。
+   * 比例對齊 main.css：立繪槽 bottom = --char-bottom-offset(26vh)、寬 40%、
+   * 高度上限即槽高；文字框高 --textbox-height(30vh)。
+   */
+  #renderGamePreview(file) {
+    const wrap = document.createElement("div");
+    wrap.className = "sprite-sim";
+
+    const frame = document.createElement("div");
+    frame.className = "sprite-sim-frame";
+
+    if (!file) {
+      const empty = document.createElement("div");
+      empty.className = "sprite-sim-empty";
+      empty.textContent = "尚未指定立繪檔案";
+      frame.appendChild(empty);
+    } else {
+      const img = document.createElement("img");
+      img.className = "sprite-sim-char";
+      this.#fillImage(img, file);
+      frame.appendChild(img);
+    }
+
+    const box = document.createElement("div");
+    box.className = "sprite-sim-textbox";
+    box.textContent = "文字框位置（示意）";
+    frame.appendChild(box);
+    wrap.appendChild(frame);
+
+    const hint = document.createElement("small");
+    hint.className = "crop-hint";
+    hint.textContent = "模擬遊戲中的立繪大小與位置。若人物過小、或上下留白過多，代表原圖可能需要先裁切再匯入。";
+    wrap.appendChild(hint);
+    return wrap;
   }
 
   // 影像在 object-fit:contain 下的實際內容矩形（相對 viewport）
