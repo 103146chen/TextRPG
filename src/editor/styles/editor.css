@@ -1893,6 +1893,56 @@ input, textarea, select {
 /* 角色管理：主從式（左清單 ｜ 右表情差分） */
 .char-mgr { max-width: none; }
 .char-md { display: flex; gap: 20px; align-items: flex-start; }
+
+/* 三欄式：角色 ｜ 表情 ｜ 立繪完整檢視 */
+.char-md-3col {
+  display: grid;
+  grid-template-columns: 210px 210px minmax(0, 1fr);
+  gap: 16px;
+  align-items: start;
+}
+.char-emo-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.char-emo-head { font-size: 13px; padding: 2px 2px 6px; border-bottom: 1px solid var(--e-border); }
+.char-emo-list { display: flex; flex-direction: column; gap: 3px; }
+.char-emo-item {
+  display: flex; align-items: center; gap: 9px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  cursor: pointer;
+}
+.char-emo-item:hover { background: var(--e-bg-3); }
+.char-emo-item.active { background: var(--e-bg-3); border-color: var(--e-accent); }
+.char-emo-thumb {
+  width: 34px; height: 34px; object-fit: contain;
+  background: var(--e-bg-4); border: 1px solid var(--e-border); border-radius: 4px; flex: 0 0 auto;
+}
+.char-emo-thumb.empty { opacity: 0.4; }
+.char-emo-name {
+  flex: 1; min-width: 0; font-size: 13px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.char-emo-name.is-default { color: var(--e-accent); font-weight: 600; }
+.char-emo-item .char-delete {
+  flex: 0 0 auto; background: transparent; border: none;
+  color: var(--e-text-faded); font-size: 15px; line-height: 1; padding: 2px 4px; opacity: 0;
+}
+.char-emo-item:hover .char-delete { opacity: 1; }
+.char-emo-item .char-delete:hover { color: var(--e-red); }
+
+.char-sprite-view { min-width: 0; display: flex; flex-direction: column; gap: 12px; }
+.char-sprite-head { font-size: 14px; }
+.char-sprite-stage {
+  display: flex; align-items: center; justify-content: center;
+  min-height: 300px; max-height: 52vh;
+  background:
+    repeating-conic-gradient(var(--e-bg-2) 0% 25%, var(--e-bg-3) 0% 50%) 0 / 24px 24px;
+  border: 1px solid var(--e-border);
+  border-radius: 8px;
+  overflow: hidden;
+}
+.char-sprite-big { max-width: 100%; max-height: 52vh; object-fit: contain; }
+.char-sprite-big.empty { opacity: 0.3; min-width: 120px; min-height: 120px; }
 .char-md-list {
   width: 210px; flex: 0 0 auto;
   display: flex; flex-direction: column; gap: 3px;

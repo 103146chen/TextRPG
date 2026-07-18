@@ -20,7 +20,8 @@ export class CharacterManager {
     this.project = project;
     this._thumbUrls = [];   // 縮圖 objectURL，重繪／卸載時撤銷
     this._writing = false;
-    this._selected = null;  // 主從式：目前選中的角色名
+    this._selected = null;         // 目前選中的角色名
+    this._selectedEmotion = "__default__";  // 目前選中的表情（或預設立繪）
     this._unsub = project.subscribe((t) => {
       if (this._writing) return;
       if (EVENTS.has(t)) this.render();
@@ -79,11 +80,24 @@ export class CharacterManager {
     intro.style.marginBottom = "12px";
     wrap.appendChild(intro);
 
-    // 主從式：左側角色清單 ｜ 右側選中角色的表情差分
+    // 三欄式：角色 ｜ 表情 ｜ 立繪完整檢視
     const md = document.createElement("div");
-    md.className = "char-md";
+    md.className = "char-md char-md-3col";
     md.appendChild(this.#renderMasterList(chars, names));
-    md.appendChild(this.#renderDetail(this._selected, this._selected ? chars[this._selected] : null));
+
+    if (this._selected) {
+      const data = chars[this._selected];
+      // 解析選中的表情（預設 / 某表情），失效則退回預設立繪
+      const keys = ["__default__", ...Object.keys(data.emotions || {})];
+      if (!keys.includes(this._selectedEmotion)) this._selectedEmotion = "__default__";
+      md.appendChild(this.#renderEmotionColumn(this._selected, data));
+      md.appendChild(this.#renderSpriteView(this._selected, data));
+    } else {
+      const empty = document.createElement("div");
+      empty.className = "char-md-empty";
+      empty.textContent = "從左側選擇一個角色，即可編輯其立繪與表情差分。";
+      md.appendChild(empty);
+    }
     wrap.appendChild(md);
 
     this.containerEl.appendChild(wrap);
@@ -163,77 +177,36 @@ export class CharacterManager {
     item.addEventListener("click", () => {
       if (this._selected === name) return;
       this._selected = name;
+      this._selectedEmotion = "__default__";   // 換角色 → 回到預設立繪
       this.render();
     });
 
     return item;
   }
 
-  // ---- 右欄：選中角色的預設立繪 + 表情差分牆 ----
-  #renderDetail(name, data) {
-    const detail = document.createElement("div");
-    detail.className = "char-md-detail";
+  // ---- 中欄：表情清單（預設立繪 + 各表情，縮圖列） ----
+  #renderEmotionColumn(name, data) {
+    const col = document.createElement("div");
+    col.className = "char-emo-col";
 
-    if (!name || !data) {
-      detail.innerHTML = `<div class="char-md-empty">從左側選擇一個角色，即可編輯其立繪與表情差分。</div>`;
-      return detail;
+    const head = document.createElement("div");
+    head.className = "char-emo-head";
+    head.innerHTML = `<strong class="char-name">${escapeHtml(name)}</strong>`;
+    col.appendChild(head);
+
+    const list = document.createElement("div");
+    list.className = "char-emo-list";
+
+    // 預設立繪（特殊項，永遠在最上）
+    list.appendChild(this.#renderEmoItem(name, data, "__default__", data.default, "預設立繪", true));
+    // 各表情
+    for (const [emoName, emoFile] of Object.entries(data.emotions || {})) {
+      list.appendChild(this.#renderEmoItem(name, data, emoName, emoFile, emoName, false));
     }
+    col.appendChild(list);
 
-    const charResources = this.project.resources.characters;
-
-    const header = document.createElement("div");
-    header.className = "char-md-detail-head";
-    header.innerHTML = `<strong class="char-name">${escapeHtml(name)}</strong>`;
-    detail.appendChild(header);
-
-    // 預設立繪（含縮圖）
-    const defWrap = document.createElement("div");
-    defWrap.className = "char-field";
-    defWrap.appendChild(subLabel("預設立繪"));
-    const defRow = document.createElement("div");
-    defRow.className = "char-thumb-row";
-    const defImg = document.createElement("img");
-    this.#fillThumb(defImg, data.default);
-    defRow.appendChild(defImg);
-    const defInput = datalistInput({
-      value: data.default || "",
-      options: charResources,
-      placeholder: "檔名，例 alice_normal.png",
-      onChange: (v) => {
-        data.default = v;
-        this.#write(() => this.project.upsertCharacter(name, data));
-        this.#fillThumb(defImg, v);   // 立即換縮圖
-      }
-    });
-    defRow.appendChild(defInput);
-    defWrap.appendChild(defRow);
-    detail.appendChild(defWrap);
-
-    // 表情差分牆
-    const emoSection = document.createElement("div");
-    emoSection.className = "char-emotions";
-    const emoTitle = document.createElement("div");
-    emoTitle.className = "char-section-label";
-    emoTitle.textContent = "表情";
-    emoSection.appendChild(emoTitle);
-
-    const emoGrid = document.createElement("div");
-    emoGrid.className = "emotion-grid";
-    const emotions = data.emotions || {};
-    for (const [emoName, emoFile] of Object.entries(emotions)) {
-      emoGrid.appendChild(this.#renderEmotionCard(name, data, emoName, emoFile, charResources));
-    }
-    if (Object.keys(emotions).length === 0) {
-      const empty = document.createElement("div");
-      empty.className = "panel-empty";
-      empty.textContent = "尚未定義表情差分";
-      emoGrid.appendChild(empty);
-    }
-    emoSection.appendChild(emoGrid);
-
-    const emoActions = document.createElement("div");
-    emoActions.className = "emotion-actions";
-
+    const actions = document.createElement("div");
+    actions.className = "emotion-actions";
     const addEmoBtn = document.createElement("button");
     addEmoBtn.className = "emotion-add";
     addEmoBtn.textContent = "+ 新表情";
@@ -251,21 +224,102 @@ export class CharacterManager {
       if (emoName === null) return;
       if (!data.emotions) data.emotions = {};
       data.emotions[emoName.trim()] = "";
+      this._selectedEmotion = emoName.trim();
       this.#write(() => this.project.upsertCharacter(name, data));
       this.render();
     });
-    emoActions.appendChild(addEmoBtn);
+    actions.appendChild(addEmoBtn);
 
     const pickBtn = document.createElement("button");
     pickBtn.className = "emotion-add";
     pickBtn.textContent = "＋ 從立繪加入";
     pickBtn.addEventListener("click", () => this.#pickSpriteAsEmotion(name, data));
-    emoActions.appendChild(pickBtn);
+    actions.appendChild(pickBtn);
+    col.appendChild(actions);
 
-    emoSection.appendChild(emoActions);
-    detail.appendChild(emoSection);
+    return col;
+  }
 
-    return detail;
+  #renderEmoItem(charName, data, key, file, label, isDefault) {
+    const item = document.createElement("div");
+    item.className = "char-emo-item" + (this._selectedEmotion === key ? " active" : "");
+
+    const thumb = document.createElement("img");
+    thumb.classList.add("char-emo-thumb");
+    this.#fillThumb(thumb, file);
+    item.appendChild(thumb);
+
+    const lab = document.createElement("span");
+    lab.className = "char-emo-name" + (isDefault ? " is-default" : "");
+    lab.textContent = label;
+    item.appendChild(lab);
+
+    if (!isDefault) {
+      const del = document.createElement("button");
+      del.className = "char-delete";
+      del.title = "刪除表情";
+      del.textContent = "×";
+      del.addEventListener("click", (e) => {
+        e.stopPropagation();
+        delete data.emotions[key];
+        if (this._selectedEmotion === key) this._selectedEmotion = "__default__";
+        this.#write(() => this.project.upsertCharacter(charName, data));
+        this.render();
+      });
+      item.appendChild(del);
+    }
+
+    item.addEventListener("click", () => {
+      if (this._selectedEmotion === key) return;
+      this._selectedEmotion = key;
+      this.render();
+    });
+    return item;
+  }
+
+  // ---- 右欄：選中立繪的完整檢視 + 檔名設定 ----
+  #renderSpriteView(name, data) {
+    const view = document.createElement("div");
+    view.className = "char-sprite-view";
+
+    const key = this._selectedEmotion;
+    const isDefault = key === "__default__";
+    const file = isDefault ? data.default : (data.emotions || {})[key];
+    const label = isDefault ? "預設立繪" : key;
+
+    const head = document.createElement("div");
+    head.className = "char-sprite-head";
+    head.innerHTML = `<strong>${escapeHtml(label)}</strong>`;
+    view.appendChild(head);
+
+    const stage = document.createElement("div");
+    stage.className = "char-sprite-stage";
+    const img = document.createElement("img");
+    img.className = "char-sprite-big";
+    this.#fillThumb(img, file);
+    stage.appendChild(img);
+    view.appendChild(stage);
+
+    const fld = document.createElement("div");
+    fld.className = "char-field";
+    fld.appendChild(subLabel("立繪檔案"));
+    const input = datalistInput({
+      value: file || "",
+      options: this.project.resources.characters,
+      placeholder: "檔名，例 alice_normal.png",
+      onChange: (v) => {
+        if (isDefault) data.default = v;
+        else data.emotions[key] = v;
+        this.#write(() => this.project.upsertCharacter(name, data));
+        this.#fillThumb(img, v);
+        // 中欄縮圖也要更新 → 重繪
+        this.render();
+      }
+    });
+    fld.appendChild(input);
+    view.appendChild(fld);
+
+    return view;
   }
 
   // 從立繪檔案直接設為表情：選圖 → 命名（自動猜）→ 建立差分
@@ -331,44 +385,4 @@ export class CharacterManager {
     return guess;
   }
 
-  #renderEmotionCard(charName, charData, emoName, emoFile, charResources) {
-    const card = document.createElement("div");
-    card.className = "emotion-card";
-
-    const thumb = document.createElement("img");
-    thumb.classList.add("emotion-card-thumb");
-    this.#fillThumb(thumb, emoFile);
-    card.appendChild(thumb);
-
-    const nameRow = document.createElement("div");
-    nameRow.className = "emotion-card-name";
-    const label = document.createElement("span");
-    label.textContent = emoName;
-    nameRow.appendChild(label);
-    const delBtn = document.createElement("button");
-    delBtn.className = "emotion-delete";
-    delBtn.textContent = "×";
-    delBtn.title = "刪除表情";
-    delBtn.addEventListener("click", () => {
-      delete charData.emotions[emoName];
-      this.#write(() => this.project.upsertCharacter(charName, charData));
-      card.remove();
-    });
-    nameRow.appendChild(delBtn);
-    card.appendChild(nameRow);
-
-    const input = datalistInput({
-      value: emoFile || "",
-      options: charResources,
-      placeholder: "檔名",
-      onChange: (v) => {
-        charData.emotions[emoName] = v;
-        this.#write(() => this.project.upsertCharacter(charName, charData));
-        this.#fillThumb(thumb, v);   // 立即換縮圖
-      }
-    });
-    card.appendChild(input);
-
-    return card;
-  }
 }
