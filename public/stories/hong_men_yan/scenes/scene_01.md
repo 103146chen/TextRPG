@@ -20,10 +20,13 @@ next: scene_02
 天子儀仗，旌旗蔽日，車馬千乘。萬人空巷，伏在道旁，大氣都不敢出。
 你和叔父，也在人群裡。
 你看著那頂天子車蓋，從你面前緩緩駛過。
+@camera zoom=1.8 x=-20 y=0 duration=3000 vignette=0.3
 項羽: 「彼可取而代也。」
 @show 項梁 center earnest
 項梁一把摀住你的嘴，聲音壓得極低。
+@sprite 項梁 shake intensity=5 duration=300
 項梁: 「毋妄言——族矣！」
+@camera-reset
 @hide 項梁 fade=600
 話雖如此，叔父看你的眼神，從那天起就不一樣了。
 

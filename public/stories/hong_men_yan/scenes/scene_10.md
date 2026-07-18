@@ -1,4 +1,4 @@
----
+﻿---
 id: scene_10
 title: 第十章 · 垓下
 background: gaixia_night.png
@@ -7,6 +7,7 @@ bgm: bgm_gaixia.mp3
 
 此後的事，史書寫了整整四年。
 @bg xianyang_fire.png fade=1500
+@se se_fire.mp3
 你引兵西屠咸陽，殺子嬰，燒秦宮室，火三月不滅。
 
 :: if 降卒處置 == "坑殺"
@@ -28,8 +29,9 @@ bgm: bgm_gaixia.mp3
 :: else
 鴻門宴上你不聽他，滎陽軍中你疑了他。這個為項家謀劃到七十五歲的老人，到死都沒等到你再叫他一聲亞父。
 :: endif
-鴻溝議和,，中分天下。你引兵東歸，他背約追擊。
+鴻溝議和，中分天下。你引兵東歸，他背約追擊。
 @bg gaixia_night.png fade=2000
+@tint #1a2538 opacity=0.4 duration=2000
 然後，垓下。
 @wait 2000
 夜。
@@ -42,12 +44,15 @@ bgm: bgm_gaixia.mp3
 你這一生不曾服過誰，不曾輸過誰，此刻卻唱出了那首歌——
 項羽: 「力拔山兮氣蓋世，時不利兮騅不逝。」
 項羽: 「騅不逝兮可奈何——虞兮虞兮奈若何！」
+@sprite 虞姬 shake intensity=2 duration=500
 歌數闋，美人和之。
 你哭了。項王泣數行下。
 左右皆泣，莫能仰視。
 @hide 虞姬 fade=1500
 @wait 2000
 @bg gaixia_breakout.png fade=1200
+@tint-clear
+@se se_horse_gallop.mp3
 是夜，你率八百餘騎潰圍南出，渡淮，迷失道。
 田父紿曰——「左。」左，乃陷大澤中。
 連一個種田的老人，都要騙你。
@@ -58,7 +63,7 @@ bgm: bgm_gaixia.mp3
 你又說了一遍。像是說給二十八騎聽，又像是說給自己聽。
 @wait 1500
 @bg wujiang_shore.png fade=1500
-於是,，烏江。
+於是，烏江。
 @show 亭長 center normal
 烏江亭長檥船岸邊，等著你。全烏江，只有這一條船。
 亭長: 「江東雖小，地方千里，眾數十萬人——亦足王也！」

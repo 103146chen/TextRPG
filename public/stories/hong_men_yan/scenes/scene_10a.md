@@ -1,4 +1,4 @@
-﻿---
+---
 id: scene_10a
 title: 結局 · 烏江
 background: wujiang_shore.png
@@ -14,6 +14,8 @@ bgm: bgm_ending_tragic.mp3
 然後下馬，令騎兵皆下馬步行，持短兵接戰。
 @wait 1500
 最後一戰。
+@se se_sword_clash.mp3
+@flash #ffffff duration=300
 獨你一人，所殺漢軍數百。身被十餘創。
 混戰中，你回頭，看見一張熟悉的臉——漢騎司馬呂馬童，你的故人。
 項羽: 「若非吾故人乎？」
@@ -21,6 +23,8 @@ bgm: bgm_ending_tragic.mp3
 項羽: 「吾聞漢購我頭千金，邑萬戶——」
 項羽: 「吾為若德。」
 我把這份人情，送給你。
+@se se_sword_draw.mp3
+@tint #880000 opacity=0.6 duration=2500
 乃自刎而死。
 @wait 2500
 

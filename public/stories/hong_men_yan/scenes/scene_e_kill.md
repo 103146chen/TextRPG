@@ -1,4 +1,4 @@
-﻿---
+---
 id: scene_e_kill
 title: 結局 · 玉玦落地之時
 background: banquet_tent.png
@@ -6,13 +6,18 @@ bgm: bgm_ending_tragic.mp3
 ---
 
 杯落，酒濺。
+@se se_cup_smash.mp3
 你的聲音壓過了帳中所有的絲竹。
+@shake 8 duration=500
+@tint #880000 opacity=0.5 duration=2000
 項羽: 「來人——拿下劉邦！」
+@se se_sword_clash.mp3
 帳下武士一擁而上。
 劉邦連「為之奈何」都來不及說出口。張良撲向帳口，被戟架住；帳外傳來樊噲的怒吼和兵刃相撞的聲音。一個人再猛，也撞不開四十萬人的軍營。
 方半晌，帳中便安靜下來。
 沛公劉邦，死於鴻門。
 @wait 2000
+@tint-clear
 @show 范增 center normal
 亞父緩緩走到你面前，深深一揖，揖到了底。
 范增: 「大王今日之斷——老臣，拜服。」

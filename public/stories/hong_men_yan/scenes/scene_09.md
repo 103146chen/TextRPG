@@ -23,10 +23,10 @@ next: scene_10
 帳中所有人都屏住了呼吸。
 
 ?? choice
-- text: 接過白璧,置之坐上——「罷了,他既已臣服」
+- text: 接過白璧，置之坐上——「罷了，他既已臣服」
   set: { 白璧: "受" }
   goto: after_bi
-- text: 「好一個『已至軍矣』!點兵——追!」
+- text: 「好一個『已至軍矣』！點兵——追！」
   goto: scene_e_chase
 - text: 把白璧擲在案上，拂袖起身
   set: { 白璧: "摔" }
@@ -54,10 +54,15 @@ next: scene_10
 @show 范增 center angry
 亞父接過那雙玉斗。
 他看著玉斗，又看看你，忽然把它擲在地上——拔劍，一劍撞碎。
+@se se_jade_break.mp3
+@shake 5 duration=400
 玉屑四濺。
+@camera zoom=1.2 x=50 y=50 duration=800
 范增: 「唉！豎子不足與謀！」
 范增: 「奪項王天下者，必沛公也！」
+@sprite 范增 shake intensity=5 duration=300
 范增: 「吾屬今為之虜矣！」
+@camera-reset
 @hide 范增 fade=800
 滿帳死寂。
 「豎子」，罵項莊，罵他不明大義，袒護外人。

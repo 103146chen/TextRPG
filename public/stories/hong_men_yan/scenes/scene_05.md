@@ -7,6 +7,7 @@ next: scene_06
 ---
 
 四更天。你還未睡，帳外傳來馬蹄聲。
+@se se_horse_gallop.mp3
 @show 項伯 center earnest
 項伯掀帘而入，風塵滿面，靴上還沾著夜露。
 項伯: 「籍兒，天亮的仗——打不得。」
@@ -17,16 +18,17 @@ next: scene_06
 項伯: 「籍兒，你想想——沛公不先破關中，你能這麼順利進來嗎？」
 項伯: 「今人有大功而擊之，不義也。不如因善遇之。」
 「不義」二字，他咬得極重。
+@sprite 項伯 shake intensity=4 duration=300
 帳中燭火劈啪一響。
 
 ?? choice
-- text: 「叔父說得有理。他明日若親自來謝罪,此事便罷」
+- text: 「叔父說得有理。他明日若親自來謝罪，此事便罷」
   set: { 項伯夜說: "許諾" }
   goto: after_xiangbo
 - text: 「且慢——叔父，你深夜去往何處？」
   set: { 項伯夜說: "質問" }
   goto: after_xiangbo
-- text: 「不必說了。傳令各營,天亮照打」
+- text: 「不必說了。傳令各營，天亮照打」
   goto: dawn_attack
 ??
 
@@ -61,6 +63,8 @@ next: scene_06
 :: label dawn_attack
 你把項伯的話砍在半途。
 項羽: 「大功？撿一座空城也叫大功？我在鉅鹿死了多少子弟——」
+@se se_heavy_thud.mp3
+@flash #ffffff duration=300
 項羽: 「傳令！天亮，照打！」
 項伯還想再說，你已拂袖轉身。
 @hide 項伯 fade=400

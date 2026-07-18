@@ -1,7 +1,6 @@
-# 《鴻門宴》圖片素材需求與 AI 生圖提示詞 (Prompt) 總表
+# 《鴻門宴》素材需求與 AI 生成提示詞 (Prompt) 總表
 
-本文件統整《鴻門宴》故事所需的所有背景與立繪素材。
-建議風格：**水墨×寫實歷史畫** (Realistic ink-wash historical painting)，呼應秦漢題材的厚重感。
+本文件統整《鴻門宴》故事所需的所有背景、立繪、音樂 (BGM)、音效 (SE) 與特效鏡頭 (VFX) 等素材設計準則與提示詞。
 
 ## 🎨 圖片風格設定
 - **整體風格**: 寫實水墨歷史畫 (Realistic Chinese ink-wash painting with muted colors)、傳統媒材質感。
@@ -50,6 +49,7 @@
 | **樊噲** | 屠狗出身的猛將，虯髯怒目，圓瞪雙眼，粗獷大漢。 | `realistic Chinese ink-wash painting, pure solid white background, massive fierce Chinese warrior, Fan Kuai, bristling thick beard, wide round eyes, holding sword and shield, hair slightly messy, bold hearty normal expression, full body portrait, NO text, NO stamps, NO watermarks, NO signatures` | **fierce**: `Keep the exact same character, body, clothing, pose, and background. Only change the facial expression to eyes blazing with extreme fury, glaring fiercely, and hair standing up in rage.` |
 | **虞姬** | 楚地美人，瓜子臉，柳葉眉，漢代曲裾深衣。 | `realistic Chinese ink-wash painting, pure solid white background, beautiful ancient Chinese woman, Consort Yu, oval face, delicate willow-leaf eyebrows, elegant Han dynasty curved-hem robes, graceful and ethereal, gentle serene normal expression, full body portrait, NO text, NO stamps, NO watermarks, NO signatures` | **sad**: `Keep the exact same character, body, clothing, pose, and background. Only change the facial expression to a sorrowful, tearful, and heartbroken expression.` |
 | **亭長** | 滄桑老船夫，滿臉皺紋，粗布短衣，戴斗笠。 | `realistic Chinese ink-wash painting, pure solid white background, weathered old Chinese boatman, face deeply covered with wrinkles, coarse hemp clothes, bamboo hat, sincere urgent normal expression, full body portrait, NO text, NO stamps, NO watermarks, NO signatures` | *(無其他差分，僅需要 normal 表情)* |
+| **項梁** | 項羽的叔父，楚國貴族，中年將領，穩重威嚴。 | `realistic Chinese ink-wash painting, pure solid white background, middle-aged Chinese general, Xiang Liang, steady and dignified, noble Chu armor, slightly graying hair, serious and commanding normal expression, full body portrait, NO text, NO stamps, NO watermarks, NO signatures` | **earnest**: `Keep the exact same character, body, clothing, pose, and background. Only change the facial expression to a serious, urgent, and commanding warning expression.` |
 
 ---
 
@@ -65,3 +65,37 @@
 | **bgm_gaixia.mp3** | 第十章(垓下) | 蒼涼的塤與二胡，四面楚歌的悲愴 |
 | **bgm_ending_tragic.mp3** | 烏江、帳中玦、血宴結局 | 悲壯輓歌 |
 | **bgm_ending_open.mp3** | 渡江結局 | 留白、開放式的琴音 |
+
+---
+
+## 🔊 音效素材需求 (SE) - AI 音效生成指南
+
+音效推薦使用 AI 音效生成工具（如 ElevenLabs SFX, AudioCraft 等）或從免版稅音效庫獲取。在生成時，可使用以下提示詞：
+
+| 檔案名稱 | 發生情境 | AI 生成提示詞 / 聲音描述 |
+| :--- | :--- | :--- |
+| **se_horse_gallop.mp3** | 傳令兵急報、深夜項伯騎馬來回 | `Sound of a single horse galloping fast on dirt road, approaching and stopping, ancient era atmosphere.` |
+| **se_heavy_thud.mp3** | 拍桌、重物落地、怒擲酒杯 | `Heavy wooden thud, someone slamming a hand hard on a thick wooden table.` |
+| **se_sword_draw.mp3** | 項莊/樊噲拔劍出鞘 | `Sharp metallic sound of a heavy ancient sword being drawn from a scabbard.` |
+| **se_sword_clash.mp3** | 項莊與項伯劍舞交鋒 | `Two heavy swords clashing together once, sharp metallic ring, ancient battle sound.` |
+| **se_jade_break.mp3** | 范增舉玉玦、摔碎玉玦 | `A sharp, clear sound of a jade pendant dropping onto a hard stone floor and shattering into pieces.` |
+| **se_heartbeat.mp3** | 極度緊張、千鈞一髮的時刻 | `Slow, deep, heavy human heartbeat, tense cinematic sound effect, bass frequency.` |
+| **se_crowd_panic.mp3** | 營帳大亂、血濺鴻門結局 | `Ancient crowd panicking in a confined space, shouts, breaking wooden furniture, chaos.` |
+| **se_fire.mp3** | 咸陽大火 | `Intense crackling of a massive fire burning down wooden structures, deep roaring flames.` |
+
+---
+
+## 🎬 特效鏡頭 (VFX) - 劇本編排說明
+
+在 Markdown 劇本中，我們使用以下指令來呈現視覺張力：
+
+- **震動 (Shake)**: `@shake 8 duration=500`
+  - *使用時機*：項羽大怒、樊噲撞開營門、重兵器碰撞時。
+- **立繪動態 (Sprite Animation)**: `@sprite <角色> shake intensity=8 duration=400`
+  - *使用時機*：角色情緒激動或遭到震懾時。
+- **畫面閃光 (Flash)**: `@flash #ffffff duration=400`
+  - *使用時機*：刀劍出鞘的閃光、雷電、或是斬殺敵人的瞬間。
+- **畫面染色 (Tint)**: `@tint #880000 opacity=0.4 duration=600`
+  - *使用時機*：發生流血衝突（如血濺鴻門）時，染紅畫面；垓下之圍可染藍色營造憂鬱悲壯感。使用 `@tint-clear` 來解除。
+- **鏡頭特寫 (Camera)**: `@camera zoom=1.2 x=50 y=50 duration=800`
+  - *使用時機*：范增眼神銳利、項羽逼問等關鍵對話橋段，用以增加壓迫感。使用 `@camera-reset` 來復原。
