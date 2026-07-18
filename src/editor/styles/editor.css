@@ -1892,6 +1892,30 @@ input, textarea, select {
 
 /* 角色管理：主從式（左清單 ｜ 右表情差分） */
 .mgr-panel.char-mgr { max-width: none; }
+/* 通用主從式（結局／變量）：左一覽 ｜ 右細節 */
+.mgr-md { display: grid; grid-template-columns: minmax(200px, 260px) minmax(0, 1fr); gap: 20px; align-items: start; margin-top: 10px; }
+.mgr-md-list { display: flex; flex-direction: column; gap: 3px; }
+.mgr-md-item {
+  display: flex; align-items: center; gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid transparent; border-radius: 6px; cursor: pointer;
+}
+.mgr-md-item:hover { background: var(--e-bg-3); }
+.mgr-md-item.active { background: var(--e-bg-3); border-color: var(--e-accent); }
+.mgr-md-item-main { flex: 1; min-width: 0; }
+.mgr-md-item-title { font-size: 13px; font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mgr-md-item-sub { font-size: 11px; color: var(--e-text-faded); font-family: var(--e-font-mono); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.mgr-md-item .char-delete { flex: 0 0 auto; background: transparent; border: none; color: var(--e-text-faded); font-size: 15px; line-height: 1; padding: 2px 4px; opacity: 0; }
+.mgr-md-item:hover .char-delete { opacity: 1; }
+.mgr-md-item .char-delete:hover { color: var(--e-red); }
+.mgr-md-badge { flex: 0 0 auto; font-size: 10.5px; padding: 1px 7px; border-radius: 9px; }
+.mgr-md-badge.on { background: rgba(107, 142, 123, 0.25); color: var(--e-green); }
+.mgr-md-badge.off { background: var(--e-bg-4); color: var(--e-text-faded); }
+.mgr-md-detail { min-width: 0; max-width: 520px; }
+.mgr-md-empty { color: var(--e-text-dim); padding: 40px 20px; text-align: center; border: 1px dashed var(--e-border); border-radius: 8px; }
+.mgr-md-add { margin-top: 10px; align-self: flex-start; }
+.mgr-md-list-col { display: flex; flex-direction: column; min-width: 0; }
+
 .char-md { display: flex; gap: 20px; align-items: flex-start; }
 
 /* 三欄式：角色 ｜ 表情 ｜ 立繪完整檢視 */

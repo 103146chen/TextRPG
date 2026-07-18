@@ -21,6 +21,7 @@ export class EndingManager {
     this.containerEl = containerEl;
     this.project = project;
     this._writing = false;
+    this._selected = 0;   // 主從式：選中的結局索引
     this._unsub = project.subscribe((t) => {
       if (this._writing) return;
       if (EVENTS.has(t)) this.render();
@@ -64,30 +65,49 @@ export class EndingManager {
     body.className = "mgr-panel flag-mgr-body";
 
     const actualIds = this.#collectActualIds();
-    const list = document.createElement("div");
-    list.className = "ending-list";
+
+    // 解析選取
+    if (this._selected >= endings.length) this._selected = endings.length - 1;
+    if (this._selected < 0 && endings.length) this._selected = 0;
+
+    const md = document.createElement("div");
+    md.className = "mgr-md";
+
+    // ---- 左：一覽 ----
+    const listCol = document.createElement("div");
+    listCol.className = "mgr-md-list";
     for (let i = 0; i < endings.length; i++) {
-      list.appendChild(this.#renderEndingRow(i, endings[i], actualIds));
+      listCol.appendChild(this.#renderListItem(i, endings[i], actualIds));
     }
     if (endings.length === 0) {
       const empty = document.createElement("div");
       empty.className = "panel-empty";
       empty.textContent = "還沒定義結局。結局清單用來產生圖鑑。";
-      list.appendChild(empty);
+      listCol.appendChild(empty);
     }
-    body.appendChild(list);
-
     const addBtn = document.createElement("button");
-    addBtn.className = "tb-btn";
+    addBtn.className = "tb-btn mgr-md-add";
     addBtn.textContent = "+ 新增結局";
-    addBtn.style.marginTop = "12px";
     addBtn.addEventListener("click", () => {
       const next = [...(this.project.storyMeta.endings || [])];
       next.push({ id: "", title: "", description: "" });
+      this._selected = next.length - 1;
       this.#write(() => this.project.updateStoryMeta({ endings: next }));
       this.render();
     });
-    body.appendChild(addBtn);
+    listCol.appendChild(addBtn);
+    md.appendChild(listCol);
+
+    // ---- 右：細節 ----
+    if (endings.length && this._selected >= 0) {
+      md.appendChild(this.#renderDetail(this._selected, endings[this._selected], actualIds));
+    } else {
+      const empty = document.createElement("div");
+      empty.className = "mgr-md-empty";
+      empty.textContent = "從左側選擇一個結局以編輯，或新增一個。";
+      md.appendChild(empty);
+    }
+    body.appendChild(md);
 
     // 劇本中有 @ending 但清單裡沒定義 → 一鍵加入
     const listedIds = new Set(endings.map((e) => e.id));
@@ -112,41 +132,72 @@ export class EndingManager {
     this.containerEl.appendChild(body);
   }
 
-  #renderEndingRow(idx, ending, actualIds) {
-    const row = document.createElement("div");
-    row.className = "ending-row";
-
+  #renderListItem(idx, ending, actualIds) {
     const idUsed = ending.id && actualIds.has(ending.id);
+    const item = document.createElement("div");
+    item.className = "mgr-md-item" + (idx === this._selected ? " active" : "");
 
-    const header = document.createElement("div");
-    header.className = "ending-row-header";
-    header.innerHTML = `
-      <span class="ending-num">結局 ${idx + 1}</span>
-      ${idUsed ? '<span class="ending-used">✓ 已連結</span>' : '<span class="ending-unused">○ 未連結</span>'}
-      <button class="ending-delete" title="刪除">×</button>
-    `;
-    header.querySelector(".ending-delete").addEventListener("click", async () => {
+    const main = document.createElement("div");
+    main.className = "mgr-md-item-main";
+    main.innerHTML =
+      `<div class="mgr-md-item-title">${escapeHtml(ending.title || `結局 ${idx + 1}`)}</div>` +
+      `<div class="mgr-md-item-sub">${escapeHtml(ending.id || "（未設 ID）")}</div>`;
+    item.appendChild(main);
+
+    const badge = document.createElement("span");
+    badge.className = "mgr-md-badge " + (idUsed ? "on" : "off");
+    badge.textContent = idUsed ? "已連結" : "未連結";
+    item.appendChild(badge);
+
+    const del = document.createElement("button");
+    del.className = "char-delete";
+    del.title = "刪除結局";
+    del.textContent = "×";
+    del.addEventListener("click", async (e) => {
+      e.stopPropagation();
       if (!(await confirmDialog({ title: "刪除這個結局？", confirmText: "刪除", danger: true }))) return;
       const next = [...(this.project.storyMeta.endings || [])];
       next.splice(idx, 1);
+      if (this._selected >= next.length) this._selected = next.length - 1;
       this.#write(() => this.project.updateStoryMeta({ endings: next }));
-      this.render();   // index 會變，整面重繪
+      this.render();
     });
-    row.appendChild(header);
+    item.appendChild(del);
+
+    item.addEventListener("click", () => {
+      if (this._selected === idx) return;
+      this._selected = idx;
+      this.render();
+    });
+    return item;
+  }
+
+  #renderDetail(idx, ending, actualIds) {
+    const detail = document.createElement("div");
+    detail.className = "mgr-md-detail";
+
+    const idUsed = ending.id && actualIds.has(ending.id);
+    const head = document.createElement("div");
+    head.className = "char-md-detail-head";
+    head.innerHTML = `<strong>${escapeHtml(ending.title || `結局 ${idx + 1}`)}</strong>` +
+      `<span class="mgr-md-badge ${idUsed ? "on" : "off"}" style="margin-left:8px">${idUsed ? "已連結" : "未連結"}</span>`;
+    detail.appendChild(head);
 
     const patch = (partial) => {
       const next = [...(this.project.storyMeta.endings || [])];
       next[idx] = { ...next[idx], ...partial };
       this.#write(() => this.project.updateStoryMeta({ endings: next }));
+      // 標題/ID/連結狀態變化要反映到左欄 → 重繪
+      this.render();
     };
 
-    row.appendChild(field("ID", textInput({
+    detail.appendChild(field("ID", textInput({
       value: ending.id || "",
-      placeholder: "ending_id",
+      placeholder: "ending_id（對應劇本的 @ending id）",
       onChange: (v) => patch({ id: v }),
     })));
 
-    row.appendChild(field("標題", textInput({
+    detail.appendChild(field("標題", textInput({
       value: ending.title || "",
       placeholder: "結局標題",
       onChange: (v) => patch({ title: v }),
@@ -155,10 +206,17 @@ export class EndingManager {
     const descInput = document.createElement("textarea");
     descInput.value = ending.description || "";
     descInput.placeholder = "結局描述（顯示在圖鑑中）";
-    descInput.rows = 2;
+    descInput.rows = 4;
     descInput.addEventListener("change", () => patch({ description: descInput.value }));
-    row.appendChild(field("描述", descInput));
+    detail.appendChild(field("描述", descInput));
 
-    return row;
+    const note = document.createElement("div");
+    note.className = "insp-note";
+    note.textContent = idUsed
+      ? "此結局的 ID 在劇本中有對應的 @ending，會出現在圖鑑。"
+      : "劇本中尚無對應的 @ending id；玩家還無法解鎖此結局。";
+    detail.appendChild(note);
+
+    return detail;
   }
 }
