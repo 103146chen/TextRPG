@@ -2107,6 +2107,13 @@ input, textarea, select {
 .sprite-sim-cropstage { position: absolute; inset: 0; display: flex; align-items: center; justify-content: center; }
 .sprite-sim-fullimg { max-width: 100%; max-height: 100%; object-fit: contain; }
 
+/* 對齊參考線：只在拖曳時浮現，平常不干擾預覽 */
+.sim-guides { position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.12s; }
+.sprite-sim-frame.snapping .sim-guides { opacity: 1; }
+.sim-guide-v, .sim-guide-h { position: absolute; background: var(--e-accent); opacity: 0.35; }
+.sim-guide-v { top: 0; bottom: 0; width: 1px; }
+.sim-guide-h { left: 0; right: 0; height: 1px; }
+
 .sim-controls { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
 .sim-controls input[type="range"] { flex: 0 0 150px; accent-color: var(--e-accent); }
 .sim-ctl-label { font-size: 12px; color: var(--e-text-dim); }

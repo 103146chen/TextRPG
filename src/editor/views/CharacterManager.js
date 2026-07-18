@@ -513,25 +513,75 @@ export class CharacterManager {
       frame.appendChild(holder);
 
       // 拖曳定位：位移量換算成 holder 自身尺寸的百分比（與引擎的 translate 一致）
+      // 輔助：Shift 鎖定單軸、靠近畫面 0/25/50/75/100% 自動貼齊、Alt 暫時關閉貼齊
       holder.addEventListener("mousedown", (e) => {
         e.preventDefault();
         const r = holder.getBoundingClientRect();
-        if (!r.width || !r.height) return;
+        const fr = frame.getBoundingClientRect();
+        if (!r.width || !r.height || !fr.width || !fr.height) return;
         const sx = e.clientX, sy = e.clientY;
+
+        // 立繪中心在畫面中的比例（本次拖曳開始時），用來做「畫面等分」貼齊
+        const startCx = (r.left + r.width / 2 - fr.left) / fr.width;
+        const startCy = (r.top + r.height / 2 - fr.top) / fr.height;
+        // 位移量(%) ↔ 中心比例 的互換
+        const cxOf = (v) => startCx + ((v - dx) / 100 * r.width) / fr.width;
+        const cyOf = (v) => startCy + ((v - dy) / 100 * r.height) / fr.height;
+        const dxAtCx = (t) => dx + (t - startCx) * fr.width / r.width * 100;
+        const dyAtCy = (t) => dy + (t - startCy) * fr.height / r.height * 100;
+
+        const LINES = [0, 0.25, 0.5, 0.75, 1];
+        const TOL = 0.02;      // 距離格線 2% 畫面寬/高內就吸附
+        const ZERO_TOL = 1.5;  // 位移接近 0 時回到「無偏移」
+        const snap = (v, cur, toLine, atLine) => {
+          if (Math.abs(v) < ZERO_TOL) return 0;                    // 貼回原位
+          let best = null, bestD = TOL;
+          for (const L of LINES) {
+            const d = Math.abs(cur - L);
+            if (d < bestD) { bestD = d; best = L; }
+          }
+          return best == null ? v : atLine(best);
+        };
+
+        frame.classList.add("snapping");
         let nx = dx, ny = dy;
         const move = (ev) => {
-          nx = dx + ((ev.clientX - sx) / r.width) * 100;
-          ny = dy + ((ev.clientY - sy) / r.height) * 100;
+          let mdx = ((ev.clientX - sx) / r.width) * 100;
+          let mdy = ((ev.clientY - sy) / r.height) * 100;
+          // Shift：只走位移較大的那一軸
+          if (ev.shiftKey) {
+            if (Math.abs(ev.clientX - sx) >= Math.abs(ev.clientY - sy)) mdy = 0; else mdx = 0;
+          }
+          nx = dx + mdx; ny = dy + mdy;
+          if (!ev.altKey) {                                        // Alt：暫時關閉貼齊
+            nx = snap(nx, cxOf(nx), LINES, dxAtCx);
+            ny = snap(ny, cyOf(ny), LINES, dyAtCy);
+          }
           holder.style.transform = `translate(${nx}%, ${ny}%)${s !== 1 ? ` scale(${s})` : ""}`;
         };
         const up = () => {
           document.removeEventListener("mousemove", move);
           document.removeEventListener("mouseup", up);
+          frame.classList.remove("snapping");
           patch({ dx: +nx.toFixed(2), dy: +ny.toFixed(2) });
         };
         document.addEventListener("mousemove", move);
         document.addEventListener("mouseup", up);
       });
+    }
+
+    // 對齊參考線：平常隱藏，拖曳時才浮現（畫面 0/25/50/75/100%）
+    if (!this._simCropMode) {
+      const guides = document.createElement("div");
+      guides.className = "sim-guides";
+      for (const p of [0, 25, 50, 75, 100]) {
+        const v = document.createElement("i");
+        v.className = "sim-guide-v"; v.style.left = `${p}%`;
+        const h = document.createElement("i");
+        h.className = "sim-guide-h"; h.style.top = `${p}%`;
+        guides.append(v, h);
+      }
+      frame.appendChild(guides);
     }
 
     const box = document.createElement("div");
@@ -585,7 +635,8 @@ export class CharacterManager {
     hint.className = "crop-hint";
     hint.textContent = this._simCropMode
       ? "拖曳方框選擇這張圖要顯示的範圍（會套用到遊戲畫面）。"
-      : "拖曳人物調整位置、用滑桿調整大小。這些設定只影響這一張圖，會與位置與錨點的設定相疊加。";
+      : "拖曳人物調整位置、用滑桿調整大小；Shift 鎖定單軸、靠近 0/25/50/75% 會自動貼齊、按住 Alt 可暫時關閉貼齊。"
+        + "這些設定只影響這一張圖，會與位置與錨點的設定相疊加。";
     wrap.appendChild(hint);
     return wrap;
   }
