@@ -10,6 +10,7 @@
 
 import { subLabel, datalistInput, escapeHtml } from "../widgets/formFields.js";
 import { promptDialog, openModal, confirmDialog } from "../widgets/dialog.js";
+import { defaultSpeakerColor } from "../core/speakerColor.js";
 
 // 只關心會改變本面板內容的事件（縮圖要重新讀 blob，重繪不便宜）
 const EVENTS = new Set(["loaded", "characters-updated", "resources-updated", "undo", "redo"]);
@@ -228,7 +229,23 @@ export class CharacterManager {
 
     const head = document.createElement("div");
     head.className = "char-emo-head";
-    head.innerHTML = `<strong class="char-name">${escapeHtml(name)}</strong>`;
+    const nameEl = document.createElement("strong");
+    nameEl.className = "char-name";
+    nameEl.textContent = name;
+    head.appendChild(nameEl);
+
+    // 編輯器用的角色顏色（劇本卡片以此分辨誰在說話；引擎不讀）
+    const colorIn = document.createElement("input");
+    colorIn.type = "color";
+    colorIn.className = "char-color";
+    colorIn.title = "編輯器中此角色的代表色（劇本對話卡用）";
+    colorIn.value = data.color || defaultSpeakerColor(name);
+    colorIn.addEventListener("change", () => {
+      data.color = colorIn.value;
+      this.#write(() => this.project.upsertCharacter(name, data));
+      this.render();
+    });
+    head.appendChild(colorIn);
     col.appendChild(head);
 
     const list = document.createElement("div");

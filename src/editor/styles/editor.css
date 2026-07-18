@@ -313,6 +313,46 @@ input, textarea, select {
   flex-wrap: wrap;
 }
 
+/* 對話卡：上排說話者、下排文字（整列寬、自動換行） */
+.instr-content.is-dialogue {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 6px;
+}
+.dlg-head { display: flex; align-items: center; gap: 8px; }
+.dlg-avatar {
+  flex: 0 0 auto;
+  width: 22px; height: 22px;
+  border-radius: 5px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 700; color: #fff;
+  background: var(--e-bg-4);
+}
+.dlg-avatar.narration { color: var(--e-text-faded); font-weight: 500; }
+.dlg-speaker { flex: 0 0 auto; width: 150px; font-weight: 600; }
+.dlg-text {
+  width: 100%;
+  min-height: 32px;
+  resize: none;
+  overflow: hidden;
+  line-height: 1.7;
+  font-family: inherit;
+  white-space: pre-wrap;
+  word-break: break-word;
+}
+
+/* 角色代表色（編輯器用） */
+.char-emo-head .char-color {
+  margin-left: auto;
+  width: 26px; height: 20px;
+  padding: 1px;
+  background: var(--e-bg);
+  border: 1px solid var(--e-border);
+  border-radius: 4px;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
 .instr-type-badge {
   font-size: 10px;
   font-weight: 600;
@@ -1943,7 +1983,7 @@ input, textarea, select {
   align-items: start;
 }
 .char-emo-col { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.char-emo-head { font-size: 13px; padding: 2px 2px 6px; border-bottom: 1px solid var(--e-border); }
+.char-emo-head { display: flex; align-items: center; gap: 8px; font-size: 13px; padding: 2px 2px 6px; border-bottom: 1px solid var(--e-border); }
 .char-emo-list { display: flex; flex-direction: column; gap: 3px; }
 .char-emo-item {
   display: flex; align-items: center; gap: 9px;
@@ -2387,22 +2427,17 @@ video.asset-thumb { object-fit: cover; cursor: pointer; }
   background: var(--e-bg-2);
 }
 .instr-row[data-type="text"] .instr-type-badge { display: none; }
-.instr-row[data-type="text"] .instr-field.text,
-.instr-row[data-type="text"] .instr-field.speaker {
+.instr-row[data-type="text"] .dlg-text,
+.instr-row[data-type="text"] .dlg-speaker {
   background: transparent;
   border-color: transparent;
   font-size: 14px;
 }
-.instr-row[data-type="text"] .instr-field.speaker {
-  color: var(--e-blue);
-  font-weight: 600;
-  text-align: right;
-}
-.instr-row[data-type="text"][data-narration] .instr-field.text { color: var(--e-text-dim); }
-.instr-row[data-type="text"] .instr-field.text:hover,
-.instr-row[data-type="text"] .instr-field.text:focus,
-.instr-row[data-type="text"] .instr-field.speaker:hover,
-.instr-row[data-type="text"] .instr-field.speaker:focus {
+.instr-row[data-type="text"][data-narration] .dlg-text { color: var(--e-text-dim); }
+.instr-row[data-type="text"] .dlg-text:hover,
+.instr-row[data-type="text"] .dlg-text:focus,
+.instr-row[data-type="text"] .dlg-speaker:hover,
+.instr-row[data-type="text"] .dlg-speaker:focus {
   background: var(--e-bg);
   border-color: var(--e-border);
 }
@@ -2460,7 +2495,7 @@ video.asset-thumb { object-fit: cover; cursor: pointer; }
   border-radius: 4px;
   font-family: var(--e-font-mono);
 }
-.instr-field.speaker, .instr-field.text { font-family: inherit; }
+.dlg-speaker, .dlg-text { font-family: inherit; }
 
 /* 等待快速值 */
 .wait-presets { display: inline-flex; gap: 3px; }

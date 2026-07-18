@@ -5,6 +5,7 @@
 
 import { createSelectField } from "./selectField.js";
 import { renderDirectiveForm, DIRECTIVE_SCHEMAS } from "./directiveFields.js";
+import { speakerColor } from "../core/speakerColor.js";
 
 export class InstructionRow {
   /**
@@ -96,20 +97,29 @@ export class InstructionRow {
   }
 
   // ---------- 文字/對話 ----------
+  // 版型：上排＝說話者（色塊 + 名字），下排＝對話文字（整列寬、自動換行）
   #renderText(container) {
-    const badge = this.#badge(this.ins.speaker ? "對話" : "旁白");
-    container.appendChild(badge);
+    container.classList.add("is-dialogue");
 
+    const speaker = this.ins.speaker || "";
     const charNames = Object.keys(this.project.storyMeta?.characters || {});
-    const speakerWrapper = document.createElement("div");
-    speakerWrapper.style.display = "flex";
-    speakerWrapper.style.gap = "4px";
+
+    // ---- 上排：說話者 ----
+    const head = document.createElement("div");
+    head.className = "dlg-head";
+
+    const avatar = document.createElement("span");
+    avatar.className = "dlg-avatar" + (speaker ? "" : " narration");
+    avatar.textContent = speaker ? speaker.slice(0, 1) : "旁";
+    avatar.style.background = speaker ? speakerColor(this.project, speaker) : "";
+    head.appendChild(avatar);
 
     const speakerInput = document.createElement("input");
-    speakerInput.className = "instr-field speaker";
-    speakerInput.value = this.ins.speaker || "";
+    speakerInput.className = "instr-field dlg-speaker";
+    speakerInput.value = speaker;
     speakerInput.placeholder = "（旁白）";
     speakerInput.setAttribute("list", `speakers-datalist-${this.index}`);
+    if (speaker) speakerInput.style.color = speakerColor(this.project, speaker);
 
     const datalist = document.createElement("datalist");
     datalist.id = `speakers-datalist-${this.index}`;
@@ -117,9 +127,7 @@ export class InstructionRow {
       const opt = document.createElement("option");
       opt.value = name;
       datalist.appendChild(opt);
-      // 也提供「主角」「主角(心聲)」等便利選項
     }
-    // 額外常見角色
     for (const extra of ["主角", "主角(心聲)", "旁白"]) {
       if (!charNames.includes(extra)) {
         const opt = document.createElement("option");
@@ -127,22 +135,36 @@ export class InstructionRow {
         datalist.appendChild(opt);
       }
     }
-
     speakerInput.addEventListener("change", () => {
       this.onChange({ speaker: speakerInput.value });
     });
-    speakerWrapper.appendChild(speakerInput);
-    speakerWrapper.appendChild(datalist);
-    container.appendChild(speakerWrapper);
+    head.append(speakerInput, datalist);
+    container.appendChild(head);
 
-    const textInput = document.createElement("input");
-    textInput.className = "instr-field text";
+    // ---- 下排：文字（textarea 自動長高、自動換行）----
+    const textInput = document.createElement("textarea");
+    textInput.className = "instr-field dlg-text";
+    textInput.rows = 1;
     textInput.value = this.ins.text || "";
     textInput.placeholder = "輸入文字...";
+    const autoGrow = () => {
+      textInput.style.height = "auto";
+      textInput.style.height = `${textInput.scrollHeight}px`;
+    };
+    textInput.addEventListener("input", autoGrow);
     textInput.addEventListener("change", () => {
       this.onChange({ text: textInput.value });
     });
+    // Enter 送出（維持單行語意）；Shift+Enter 才換行
+    textInput.addEventListener("keydown", (e) => {
+      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); textInput.blur(); }
+    });
     container.appendChild(textInput);
+    // 初次依內容長高：要等接上版面才量得到。rAF 在背景／隱藏分頁會被節流而
+    // 不觸發，因此另掛 setTimeout 保底，並在取得焦點時再校正一次。
+    requestAnimationFrame(autoGrow);
+    setTimeout(autoGrow, 0);
+    textInput.addEventListener("focus", autoGrow);
   }
 
   // ---------- 註解（作者筆記，執行時無作用）----------
