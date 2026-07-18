@@ -6,6 +6,10 @@ bgm: bgm_ambition.mp3
 next: scene_02
 ---
 
+@curtain close color=#000000 duration=0 full=true
+@chapter title=第一章 subtitle= duration=2500
+@curtain open color=#000000 duration=600 full=true
+@wait 1000
 你是項籍，字羽，下相人。
 你的祖父項燕，是楚國最後的大將——王翦破楚那年，他兵敗自殺。楚國亡了，項家四散，你跟著叔父項梁，流落到吳中。
 @set 怒氣 = 0
@@ -20,7 +24,7 @@ next: scene_02
 天子儀仗，旌旗蔽日，車馬千乘。萬人空巷，伏在道旁，大氣都不敢出。
 你和叔父，也在人群裡。
 你看著那頂天子車蓋，從你面前緩緩駛過。
-@camera zoom=1.8 x=-20 y=0 duration=3000 vignette=0.3
+@camera zoom=1.8 x=-20 y=0 duration=3000 vignette=0.3 layer=bg
 項羽: 「彼可取而代也。」
 @show 項梁 center earnest
 項梁一把摀住你的嘴，聲音壓得極低。
