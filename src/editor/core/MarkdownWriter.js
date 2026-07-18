@@ -87,7 +87,9 @@ export class MarkdownWriter {
     switch (ins.type) {
       case "text":
         if (ins.speaker) {
-          return `${indent}${ins.speaker}: ${ins.text}`;
+          // 當句表情寫成 "角色名[表情]: 文字"（與 SceneParser 對應）
+          const who = ins.emotion ? `${ins.speaker}[${ins.emotion}]` : ins.speaker;
+          return `${indent}${who}: ${ins.text}`;
         }
         return `${indent}${ins.text}`;
 

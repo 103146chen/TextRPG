@@ -140,6 +140,24 @@ export class InstructionRow {
       this.onChange({ speaker: speakerInput.value });
     });
     head.append(speakerInput, datalist);
+
+    // 當句表情：只在「說話者是已定義且有表情差分的角色」時出現，
+    // 讓演出中途換表情不必另外插一條 @show。
+    const charData = this.project.storyMeta?.characters?.[speaker];
+    const emotions = charData?.emotions ? Object.keys(charData.emotions) : [];
+    if (speaker && charData && emotions.length) {
+      const emoField = createSelectField({
+        value: this.ins.emotion || "",
+        options: emotions,
+        placeholder: "（表情不變）",
+        addLabel: "編輯角色表情…",
+        onAdd: () => this.onManage?.("characters"),
+        onChange: (v) => this.onChange({ emotion: v || undefined }),
+      });
+      emoField.classList.add("dlg-emotion");
+      emoField.title = "這句話播出時，把該角色的立繪切成此表情";
+      head.appendChild(emoField);
+    }
     container.appendChild(head);
 
     // ---- 下排：文字（textarea 自動長高、自動換行）----

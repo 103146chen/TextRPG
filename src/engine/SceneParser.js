@@ -117,14 +117,22 @@ export class SceneParser {
         continue;
       }
 
-      // 對話：格式 "角色名: 文字" 或 "角色名(狀態): 文字"
+      // 對話：格式 "角色名: 文字"，或帶當句表情的 "角色名[表情]: 文字"
+      //
+      // 表情用方括號而非小括號：既有劇本大量把小括號當成名字的一部分
+      // （例如「得參(心聲):」），若改判成表情會讓顯示名稱憑空少一截。
       const dialogMatch = line.match(/^([^\s：:][^：:]*?)[：:]\s*(.+)$/);
       if (dialogMatch) {
-        instructions.push({
-          type: "text",
-          speaker: dialogMatch[1].trim(),
-          text: dialogMatch[2].trim(),
-        });
+        let speaker = dialogMatch[1].trim();
+        let emotion = null;
+        const emoMatch = speaker.match(/^(.*?)\s*\[([^\][]+)\]$/);
+        if (emoMatch) {
+          speaker = emoMatch[1].trim();
+          emotion = emoMatch[2].trim();
+        }
+        const ins = { type: "text", speaker, text: dialogMatch[2].trim() };
+        if (emotion) ins.emotion = emotion;   // 當句切換該角色立繪的表情
+        instructions.push(ins);
         i++;
         continue;
       }

@@ -305,7 +305,9 @@ export class GameRuntime {
   }
 
   // ---------- 引擎回呼 ----------
-  async #handleText(speaker, text) {
+  async #handleText(speaker, text, _state, emotion = null) {
+    // 當句表情：只對已在場上的角色生效（靜態求值也套用，作者才看得到）
+    if (speaker && emotion) await this.characterLayer.setEmotion(speaker, emotion);
     if (speaker) this.characterLayer.setSpeaking(speaker);
     else this.characterLayer.clearSpeaking();
     if (this.instant) { this.textBox.showInstant(speaker, text); return; }

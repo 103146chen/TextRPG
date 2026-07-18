@@ -330,6 +330,7 @@ input, textarea, select {
 }
 .dlg-avatar.narration { color: var(--e-text-faded); font-weight: 500; }
 .dlg-speaker { flex: 0 0 auto; width: 150px; font-weight: 600; }
+.dlg-emotion { flex: 0 0 auto; width: 140px; font-size: 12px; }
 .dlg-text {
   width: 100%;
   min-height: 32px;

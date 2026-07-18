@@ -125,6 +125,22 @@ export class CharacterLayer {
     this.current[slot] = { charName, emotion, fileName, opts: { ...opts } };   // opts 供存檔快照還原定位
   }
 
+  /**
+   * 只切換「已在場上」角色的表情，位置與縮放沿用原本的設定。
+   * 角色不在場上時什麼都不做——對話行的表情只是修飾，不該無中生有把人叫出來。
+   * @returns {boolean} 是否真的切了
+   */
+  async setEmotion(charName, emotion) {
+    for (const [slot, cur] of Object.entries(this.current)) {
+      if (cur?.charName === charName) {
+        if (cur.emotion === emotion) return true;      // 已經是這個表情
+        await this.show(charName, slot, emotion, cur.opts || {});
+        return true;
+      }
+    }
+    return false;
+  }
+
   async hide(charName, fadeMs = 400) {
     for (const slot of Object.keys(this.slots)) {
       if (this.current[slot]?.charName === charName) {
