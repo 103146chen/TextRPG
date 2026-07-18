@@ -71,22 +71,7 @@ const lintPanel = new LintPanel($("#lint-panel"), project, (sceneId, index) => {
   }, 100);
 });
 
-// 跳到劇本中的某條指令並高亮（旗標使用處、檢查器共用）
-function jumpToInstruction(sceneId, index) {
-  currentSceneId = sceneId;
-  setPage("script");
-  setTimeout(() => {
-    if (index !== null) {
-      const row = document.querySelector(`.instr-row[data-index="${index}"]`);
-      if (row) {
-        row.scrollIntoView({ behavior: "smooth", block: "center" });
-        row.style.outline = "2px solid var(--e-accent)";
-        setTimeout(() => { row.style.outline = ""; }, 2000);
-      }
-    }
-  }, 100);
-}
-
+// 跳到劇本中的某條指令並高亮：沿用全域搜尋那支 jumpToInstruction（宣告會提升）
 const flagInspector = new FlagInspector($("#flag-panel"), project, jumpToInstruction);
 
 // 原「資料庫 Hub」拆分後的常駐視圖（S4.5）：
