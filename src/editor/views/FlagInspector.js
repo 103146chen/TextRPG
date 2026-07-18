@@ -4,6 +4,7 @@
 // ============================================
 
 import { promptDialog } from "../widgets/dialog.js";
+import { collectFlagUsages } from "../core/flagUsage.js";
 
 const FLAG_NAME_RE = /^[a-zA-Z_一-鿿㐀-䶿豈-﫿][\w一-鿿㐀-䶿豈-﫿]*$/;
 
@@ -233,66 +234,11 @@ export class FlagInspector {
 
   // ============ 蒐集 flag ============
 
+  // 使用處蒐集邏輯與 FlagManager 共用（core/flagUsage.js），避免兩份實作漂移
   #collectFlags() {
-    const result = {};  // name -> { sets: [...], reads: [...] }
-    const ensure = (name) => {
-      if (!result[name]) result[name] = { sets: [], reads: [] };
-      return result[name];
-    };
-
-    for (const sceneId of this.project.getAllSceneIds()) {
-      const scene = this.project.getScene(sceneId);
-      scene.instructions.forEach((ins, idx) => {
-        if (ins.type === "set") {
-          ensure(ins.key).sets.push({
-            sceneId, index: idx,
-            detail: `${ins.key} ${ins.op} ${this.#formatValue(ins.value)}`,
-          });
-        }
-        if (ins.type === "if" || ins.type === "elif") {
-          for (const flag of this.#extractFlags(ins.condition)) {
-            ensure(flag).reads.push({
-              sceneId, index: idx,
-              detail: `${ins.type}: ${ins.condition}`,
-            });
-          }
-        }
-        if (ins.type === "choice") {
-          for (const opt of ins.options) {
-            for (const [k, v] of Object.entries(opt.set || {})) {
-              ensure(k).sets.push({
-                sceneId, index: idx,
-                detail: (v && typeof v === "object" && "op" in v)
-                  ? `選項「${opt.text}」→ ${k} ${v.op} ${this.#formatValue(v.value)}`
-                  : `選項「${opt.text}」→ ${k} = ${this.#formatValue(v)}`,
-              });
-            }
-          }
-        }
-      });
-    }
-    return result;
+    return collectFlagUsages(this.project);
   }
 
-  #extractFlags(expr) {
-    if (!expr) return [];
-    const withoutStrings = expr
-      .replace(/"([^"\\]|\\.)*"/g, "")
-      .replace(/'([^'\\]|\\.)*'/g, "");
-    const flags = [];
-    const reserved = new Set(["true", "false", "null"]);
-    const regex = /([a-zA-Z_\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff][\w\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]*)/g;
-    let m;
-    while ((m = regex.exec(withoutStrings)) !== null) {
-      if (!reserved.has(m[1])) flags.push(m[1]);
-    }
-    return [...new Set(flags)];
-  }
-
-  #formatValue(v) {
-    if (typeof v === "string") return `"${v}"`;
-    return String(v);
-  }
 }
 
 function escapeHtml(s) {

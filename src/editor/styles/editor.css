@@ -1918,6 +1918,21 @@ input, textarea, select {
 .mgr-md-add { margin-top: 10px; align-self: flex-start; }
 .mgr-md-list-col { display: flex; flex-direction: column; min-width: 0; }
 
+/* 變量細節下方：此變量在劇本中的使用處 */
+.flag-usages { margin-top: 14px; border-top: 1px solid var(--e-border); padding-top: 12px; }
+.flag-usages-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
+.flag-usages-count { font-size: 11.5px; color: var(--e-text-faded); font-family: var(--e-font-mono); }
+.flag-usages-sub { font-size: 11.5px; color: var(--e-text-dim); margin: 10px 0 4px; }
+.flag-usage-row {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 5px 8px; border-radius: 4px; cursor: pointer;
+  border-left: 2px solid transparent;
+}
+.flag-usage-row:hover { background: var(--e-bg-3); }
+.flag-usage-row.set { border-left-color: var(--e-pink); }
+.flag-usage-row.read { border-left-color: var(--e-blue); }
+.flag-usage-row .flag-ref-detail { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
 .char-md { display: flex; gap: 20px; align-items: flex-start; }
 
 /* 三欄式：角色 ｜ 表情 ｜ 立繪完整檢視 */

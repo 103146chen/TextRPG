@@ -9,6 +9,7 @@
 
 import { field, subLabel, escapeHtml } from "../widgets/formFields.js";
 import { promptDialog, confirmDialog } from "../widgets/dialog.js";
+import { usagesOf } from "../core/flagUsage.js";
 
 const EVENTS = new Set([
   "loaded", "flags-updated", "undo", "redo",
@@ -20,9 +21,10 @@ const EVENTS = new Set([
 const USAGE_LABELS = { counter: "計數", switch: "開關", mark: "標記", other: "其他" };
 
 export class FlagManager {
-  constructor(containerEl, project) {
+  constructor(containerEl, project, onJumpTo) {
     this.containerEl = containerEl;
     this.project = project;
+    this.onJumpTo = onJumpTo;   // (sceneId, index) → 跳到劇本該指令
     this._writing = false;
     this.search = "";          // 搜尋字串（名稱/說明）
     this.usageFilter = "all";  // all | counter | switch | mark | other
@@ -320,6 +322,49 @@ export class FlagManager {
     });
     this.detailHost.appendChild(field("說明", labelInput));
 
+    // ---- 下方：此變量在劇本中的使用處 ----
+    this.detailHost.appendChild(this.#renderUsages(name));
     return this.detailHost;
+  }
+
+  #renderUsages(name) {
+    const { sets, reads } = usagesOf(this.project, name);
+    const wrap = document.createElement("div");
+    wrap.className = "flag-usages";
+
+    const head = document.createElement("div");
+    head.className = "flag-usages-head";
+    head.innerHTML = `<strong>使用處</strong>` +
+      `<span class="flag-usages-count">寫入 ${sets.length} ・ 讀取 ${reads.length}</span>`;
+    wrap.appendChild(head);
+
+    if (sets.length === 0 && reads.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "panel-empty";
+      empty.textContent = "劇本中還沒有用到這個變量。";
+      wrap.appendChild(empty);
+      return wrap;
+    }
+
+    const section = (title, list, kind) => {
+      if (!list.length) return;
+      const t = document.createElement("div");
+      t.className = "flag-usages-sub";
+      t.textContent = title;
+      wrap.appendChild(t);
+      for (const loc of list) {
+        const row = document.createElement("div");
+        row.className = `flag-usage-row ${kind}`;
+        row.innerHTML =
+          `<span class="flag-ref-scene">${escapeHtml(loc.sceneId)}</span>` +
+          `<span class="flag-ref-detail">${escapeHtml(loc.detail)}</span>`;
+        row.title = "點擊跳到劇本中的這個位置";
+        row.addEventListener("click", () => this.onJumpTo?.(loc.sceneId, loc.index));
+        wrap.appendChild(row);
+      }
+    };
+    section("寫入", sets, "set");
+    section("讀取", reads, "read");
+    return wrap;
   }
 }

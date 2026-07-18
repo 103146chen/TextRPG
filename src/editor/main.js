@@ -71,7 +71,8 @@ const lintPanel = new LintPanel($("#lint-panel"), project, (sceneId, index) => {
   }, 100);
 });
 
-const flagInspector = new FlagInspector($("#flag-panel"), project, (sceneId, index) => {
+// 跳到劇本中的某條指令並高亮（旗標使用處、檢查器共用）
+function jumpToInstruction(sceneId, index) {
   currentSceneId = sceneId;
   setPage("script");
   setTimeout(() => {
@@ -84,12 +85,14 @@ const flagInspector = new FlagInspector($("#flag-panel"), project, (sceneId, ind
       }
     }
   }, 100);
-});
+}
+
+const flagInspector = new FlagInspector($("#flag-panel"), project, jumpToInstruction);
 
 // 原「資料庫 Hub」拆分後的常駐視圖（S4.5）：
 // 角色→資產頁、旗標/結局→敘事地圖、基本資訊→設定頁
 const characterManager = new CharacterManager($("#character-manager"), project);
-new FlagManager($("#var-manage"), project);
+new FlagManager($("#var-manage"), project, jumpToInstruction);
 new EndingManager($("#ending-manage"), project);
 const chapterManager = new ChapterManager($("#chapter-manage"), project, (id) => {
   currentSceneId = id;
