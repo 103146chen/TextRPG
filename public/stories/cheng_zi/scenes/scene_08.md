@@ -19,19 +19,13 @@ next: scene_09
 ?? choice
 - text: 低頭認了——要在這世道討生活，就得這樣
   set: { 面對罰金: "低頭" }
-  goto: after_home
 - text: 咬牙吞下，默默告訴自己：這次的錢，要賺回來
   set: { 面對罰金: "硬吞" }
-  goto: after_home
 - text: 心裡一直想：如果當時動手搶回那桿秤，會怎樣？
   set: { 面對罰金: "想搶" }
-  goto: after_home
 - text: 想起阿母說的話——「怨嘆無路用」
   set: { 面對罰金: "遺言" }
-  goto: after_home
 ??
-
-:: label after_home
 
 :: if 面對罰金 == "低頭"
 你深吸了一口氣。

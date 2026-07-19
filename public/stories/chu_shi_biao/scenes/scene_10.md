@@ -16,34 +16,34 @@ bgm: bgm_departure.mp3
 ?? choice
 - text: 「鞠躬盡瘁,死而後已。成敗利鈍,非臣所能逆睹。」
   set: { 最終心境: "盡力" }
-  goto: after_final
 - text: 「滿朝無人真正懂我。但這條路,總要有人走。」
   set: { 最終心境: "孤獨" }
-  goto: after_final
 - text: 「漢賊不兩立。哪怕傾盡蜀中之力,我也要北定中原。」
   set: { 最終心境: "執念" }
-  goto: after_final
 - text: 「表也寫了,人也薦了。我已盡我所能,此後成敗,交給天意。」
   set: { 最終心境: "釋然" }
-  goto: after_final
 - text: 「興復漢室,還於舊都——這八個字,我怕是看不到了。」
   set: { 最終心境: "未竟" }
-  goto: after_final
 ??
 
-:: label after_final
-
 @wait 800
+
 :: if 最終心境 == "盡力" && 臣節 == "純臣" && 北伐之由 == "報恩"
+
 @goto scene_10f
 :: elif 最終心境 == "盡力"
+
 @goto scene_10a
 :: elif 最終心境 == "孤獨"
+
 @goto scene_10b
 :: elif 最終心境 == "執念"
+
 @goto scene_10c
 :: elif 最終心境 == "釋然"
+
 @goto scene_10d
 :: else
+
 @goto scene_10e
 :: endif

@@ -82,13 +82,10 @@ bgm: bgm_gaixia.mp3
 ?? choice
 - text: 不渡。誓死抵抗——與其賴活，不如拚上最後一口氣
   set: { 最終抉擇: "自刎" }
-  goto: after_choice
 - text: 上船。還守江東——只要活著，就有捲土重來的一天
   set: { 最終抉擇: "渡江" }
-  goto: after_choice
 ??
 
-:: label after_choice
 @wait 2000
 
 :: if 最終抉擇== "自刎"

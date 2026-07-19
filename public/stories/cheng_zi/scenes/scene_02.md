@@ -14,19 +14,13 @@ next: scene_03
 ?? choice
 - text: 去糖廠做工——雖然像牛馬，但每天有錢可算
   set: { 少年工作: "糖廠" }
-  goto: after_job
 - text: 繼續在鄉里做散工——今天搬磚、明天挑水，比較自由
   set: { 少年工作: "散工" }
-  goto: after_job
 - text: 找個大戶人家做長工——比較穩，包住包吃
   set: { 少年工作: "長工" }
-  goto: after_job
 - text: 跟村裡的人學做私菸——風險大，但賺得多
   set: { 少年工作: "私菸" }
-  goto: after_job
 ??
-
-:: label after_job
 
 :: if 少年工作 == "糖廠"
 你進了製糖會社做日工。

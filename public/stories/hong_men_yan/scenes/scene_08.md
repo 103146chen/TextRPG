@@ -24,15 +24,11 @@ next: scene_09
 ?? choice
 - text: 「壯士！賜之卮酒！」
   set: { 樊噲處置: "賜酒" }
-  goto: after_fankuai
 - text: 「放肆！衛士——拿下！」
   goto: scene_e_blood
 - text: 按著劍，不說話，看他敢做什麼
   set: { 樊噲處置: "冷眼" }
-  goto: after_fankuai
 ??
-
-:: label after_fankuai
 
 :: if 樊噲處置 == "賜酒"
 你看著他，忽然笑了。

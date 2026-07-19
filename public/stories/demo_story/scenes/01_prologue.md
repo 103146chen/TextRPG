@@ -15,13 +15,9 @@ next: 02_bookstore
 ?? choice
 - text: 往前走到對街那家舊書店躲雨
   set: { chose_bookstore: true }
-  goto: continue
 - text: 留在騎樓，等待雨停
   set: { chose_bookstore: false }
-  goto: continue
 ??
-
-:: label continue
 
 :: if chose_bookstore
 我記得這條街的轉角有間舊書店，招牌是手寫的，店面小小的，總是亮著暖黃的燈。

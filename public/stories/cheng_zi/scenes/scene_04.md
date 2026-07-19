@@ -18,16 +18,11 @@ next: scene_05
 ?? choice
 - text: 請西醫診治——花兩塊多錢，但藥效真的比較快
   set: { 治病方式: "西醫" }
-  goto: after_sick
 - text: 煎青草藥喝——不花錢，但效果慢
   set: { 治病方式: "青草" }
-  goto: after_sick
 - text: 什麼都不治，硬撐著繼續出門做輕工
   set: { 治病方式: "硬撐" }
-  goto: after_sick
 ??
-
-:: label after_sick
 
 :: if 治病方式 == "西醫"
 你花了兩塊多錢看了一次西醫。

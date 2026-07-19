@@ -15,19 +15,13 @@ next: scene_06
 ?? choice
 - text: 讓阿秀回娘家走一遭，看嫂嫂願不願意幫忙
   set: { 借錢對象: "岳家" }
-  goto: after_borrow
 - text: 去廟口找老頭家借——他待人還算厚道
   set: { 借錢對象: "廟口" }
-  goto: after_borrow
 - text: 典當家裡最後一件首飾——阿秀的金花髮簪
   set: { 借錢對象: "典當" }
-  goto: after_borrow
 - text: 去找你幫過工的頭家，借支下個月的工錢
   set: { 借錢對象: "頭家" }
-  goto: after_borrow
 ??
-
-:: label after_borrow
 
 :: if 借錢對象 == "岳家"
 @set 上當鋪 = true

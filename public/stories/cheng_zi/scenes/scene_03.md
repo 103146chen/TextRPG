@@ -26,19 +26,13 @@ next: scene_04
 ?? choice
 - text: 我要替阿母好好活下去，不讓她擔心
   set: { 面對喪母: "承擔" }
-  goto: after_mama
 - text: 心裡空掉了，說不清楚是什麼感覺
   set: { 面對喪母: "空虛" }
-  goto: after_mama
 - text: 一股說不清楚的氣在胸口——為什麼人活著這麼累？
   set: { 面對喪母: "憤怒" }
-  goto: after_mama
 - text: 記著她說的那句話：「怨嘆無路用。」
   set: { 面對喪母: "遺言" }
-  goto: after_mama
 ??
-
-:: label after_mama
 
 :: if 面對喪母 == "承擔"
 你跪在那裡，心裡默默立了個誓。

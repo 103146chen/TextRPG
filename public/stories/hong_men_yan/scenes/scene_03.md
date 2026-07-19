@@ -32,16 +32,11 @@ next: scene_04
 ?? choice
 - text: 拍案而起:「旦日饗士卒，為擊破沛公軍！」
   set: { 函谷之怒: "立擊" }
-  goto: after_rage
 - text: 壓下火，先派探子去霸上查證，再作打算
   set: { 函谷之怒: "查證" }
-  goto: after_rage
 - text: 把密使晾在一旁，先召亞父來商議
   set: { 函谷之怒: "問增" }
-  goto: after_rage
 ??
-
-:: label after_rage
 
 :: if 函谷之怒 == "立擊"
 @set 怒氣 += 2

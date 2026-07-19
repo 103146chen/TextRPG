@@ -20,10 +20,7 @@ next: scene_08
   set: { 回答: "打折" }
 - text: 「大人，正好兩斤！」
   set: { 回答: "原價" }
-  goto: after_answer
 ??
-
-:: label after_answer
 
 :: if 回答 == "打折"
 巡查: 「一斤十四兩？不錯罷？」
@@ -40,19 +37,14 @@ next: scene_08
 ?? choice
 - text: 恭敬地說「大人說得是，小人不懂，請大人指點」
   set: { 面對巡查: "老實" }
-  goto: after_weigh
 - text: 裝傻，說「啊，我也不太會用，可能是小人笨」
   set: { 面對巡查: "裝傻" }
-  goto: after_weigh
 - text: 泰然地說「這桿還新新呢，大人要不信可以再驗」
   set: { 面對巡查: "辯解" }
-  goto: after_weigh
 - text: 把花菜湊過去：「大人，這些就送您，請笑收」
   set: { 面對巡查: "送菜" }
-  goto: after_weigh
 ??
 
-:: label after_weigh
 @show 巡查 right angry
 
 :: if 面對巡查 == "老實"

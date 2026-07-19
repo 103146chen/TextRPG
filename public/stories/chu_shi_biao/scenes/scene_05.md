@@ -24,16 +24,12 @@ next: scene_06
 ?? choice
 - text: 當面直諫後主,請他疏遠這等人
   set: { 治國之道: "直諫" }
-  goto: after_court
 - text: 不急著動人,先立下法度——宮中府中,賞罰同出一體
   set: { 治國之道: "制度" }
-  goto: after_court
 - text: 此刻不宜激化,先隱忍,穩住朝局再說
   set: { 治國之道: "隱忍" }
-  goto: after_court
 ??
 
-:: label after_court
 @hide 黃皓 fade=400
 
 :: if 治國之道 == "直諫"

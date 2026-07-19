@@ -28,16 +28,11 @@ next: scene_02
 ?? choice
 - text: 問阿母：「林阿伯做錯了什麼事？」
   set: { 童年印象: "疑惑" }
-  goto: after_question
 - text: 不敢問，把疑問悄悄藏在心裡
   set: { 童年印象: "畏懼" }
-  goto: after_question
 - text: 心裡暗暗發誓：「我以後絕對不要變成那樣」
   set: { 童年印象: "憤怒" }
-  goto: after_question
 ??
-
-:: label after_question
 
 :: if 童年印象 == "疑惑"
 @show 母親 center worried

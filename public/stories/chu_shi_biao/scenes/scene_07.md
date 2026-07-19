@@ -25,16 +25,11 @@ next: scene_08
 ?? choice
 - text: 兵者,不得已而用之。能少傷一個,就少傷一個
   set: { 渡瀘之念: "仁政" }
-  goto: after_lu
 - text: 攻城為下,攻心為上。要他心服,蜀漢的南邊才能真正安穩
   set: { 渡瀘之念: "攻心" }
-  goto: after_lu
 - text: 我比誰都不願走這一趟。可若不走這一趟,北伐便無從談起
   set: { 渡瀘之念: "無奈" }
-  goto: after_lu
 ??
-
-:: label after_lu
 
 :: if 渡瀘之念 == "仁政"
 你親自為孟獲鬆綁,以禮相待。

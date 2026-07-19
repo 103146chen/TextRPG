@@ -24,15 +24,11 @@ next: scene_06
 ?? choice
 - text: 「叔父說得有理。他明日若親自來謝罪，此事便罷」
   set: { 項伯夜說: "許諾" }
-  goto: after_xiangbo
 - text: 「且慢——叔父，你深夜去往何處？」
   set: { 項伯夜說: "質問" }
-  goto: after_xiangbo
 - text: 「不必說了。傳令各營，天亮照打」
   goto: dawn_attack
 ??
-
-:: label after_xiangbo
 
 :: if 項伯夜說 == "許諾"
 你沉吟半晌，點了頭。

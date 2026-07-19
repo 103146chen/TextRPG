@@ -31,13 +31,9 @@ next: scene_08
   goto: scene_e_kill
 - text: 別開眼，舉杯一飲而盡——他已稱臣，殺之不武
   set: { 舉玦回應: "默然" }
-  goto: after_jue
 - text: 舉杯敬向劉邦，把亞父的目光擋在杯影之外
   set: { 舉玦回應: "迴避" }
-  goto: after_jue
 ??
-
-:: label after_jue
 
 :: if 舉玦回應 == "默然"
 你別開了眼。
@@ -83,16 +79,11 @@ next: scene_08
 ?? choice
 - text: 抬手:「舞得夠了，都坐下」
   set: { 劍舞應對: "叫停" }
-  goto: after_dance
 - text: 由他們舞——一個要殺，一個要護，你倒想看看天意向著誰
   set: { 劍舞應對: "看天意" }
-  goto: after_dance
 - text: 皺眉盯著叔父——他今日，為何處處攔著項莊？
   set: { 劍舞應對: "疑項伯" }
-  goto: after_dance
 ??
-
-:: label after_dance
 
 :: if 劍舞應對 == "叫停"
 你抬起手。

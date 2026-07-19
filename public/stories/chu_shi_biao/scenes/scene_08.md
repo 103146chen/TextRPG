@@ -23,19 +23,15 @@ next: scene_09
 ?? choice
 - text: 北伐——「先帝託付之恩未報,我一刻也不能安坐。」
   set: { 北伐之由: "報恩" }
-  goto: after_decide
 - text: 北伐——「不主動進取,蜀漢遲早被吞;以攻為守,才是唯一活路。」
   set: { 北伐之由: "理念" }
-  goto: after_decide
 - text: 北伐——「我何嘗不知渺茫。但我這代人不去做,後人連試的機會都沒有。」
   set: { 北伐之由: "悲觀" }
-  goto: after_decide
 - text: 不北伐——譙周說得對。守住蜀漢,休養生息,徐圖將來
   set: { 北伐之由: "偏安" }
   goto: scene_e_pianan
 ??
 
-:: label after_decide
 @hide 譙周 fade=400
 
 :: if 北伐之由 == "報恩"

@@ -25,15 +25,11 @@ next: scene_10
 ?? choice
 - text: 接過白璧，置之坐上——「罷了，他既已臣服」
   set: { 白璧: "受" }
-  goto: after_bi
 - text: 「好一個『已至軍矣』！點兵——追！」
   goto: scene_e_chase
 - text: 把白璧擲在案上，拂袖起身
   set: { 白璧: "摔" }
-  goto: after_bi
 ??
-
-:: label after_bi
 
 :: if 白璧 == "受"
 你接過白璧，看了看，放在了座上。

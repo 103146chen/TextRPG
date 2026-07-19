@@ -56,19 +56,13 @@ next: scene_10
 ?? choice
 - text: 去找臨時的零工——除夕這天，還有沒有人需要人手？
   set: { 籌款方式: "零工" }
-  goto: after_bail
 - text: 央求廟口老頭或岳家，看能不能再借
   set: { 籌款方式: "再借" }
-  goto: after_bail
 - text: 找出家裡還剩什麼，能變賣的就變賣
   set: { 籌款方式: "變賣" }
-  goto: after_bail
 - text: 不想了，讓它去。回家先陪孩子過年
   set: { 籌款方式: "放棄" }
-  goto: after_bail
 ??
-
-:: label after_bail
 
 :: if 籌款方式 == "零工"
 除夕這天確實有人還需要人手——搬年貨、打掃院子。

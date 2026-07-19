@@ -38,16 +38,11 @@ next: scene_02
 ?? choice
 - text: 那一刻，你心裡燒著的是仇——秦滅了楚，殺了大父
   set: { 少年志向: "復楚" }
-  goto: after_ambition
 - text: 那一刻，你燃起夢想——那個位子，我坐得
   set: { 少年志向: "取而代之" }
-  goto: after_ambition
 - text: 那一刻，你只想讓天下人都記住「項籍」這個名字
   set: { 少年志向: "名震天下" }
-  goto: after_ambition
 ??
-
-:: label after_ambition
 
 :: if 少年志向 == "復楚"
 @set 舉玦回應 = true

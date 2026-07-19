@@ -30,16 +30,11 @@ next: scene_05
 ?? choice
 - text: 叩首誓言:「臣必竭股肱之力,效忠貞之節,繼之以死!」
   set: { 託孤之諾: "死而後已" }
-  goto: after_baidi
 - text: 哽咽難言,只是不停地叩首
   set: { 託孤之諾: "泣" }
-  goto: after_baidi
 - text: 惶恐伏地:「陛下何出此言!臣安敢有異心!」
   set: { 託孤之諾: "惶恐" }
-  goto: after_baidi
 ??
-
-:: label after_baidi
 
 :: if 託孤之諾 == "死而後已"
 諸葛亮: 「臣必竭股肱之力,效忠貞之節,繼之以死!」

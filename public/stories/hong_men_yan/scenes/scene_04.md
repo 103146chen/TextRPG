@@ -29,16 +29,11 @@ next: scene_05
 ?? choice
 - text: 「亞父說得對。劉邦此人，是心腹大患」
   set: { 亞父之言: "深信" }
-  goto: after_fanzeng
 - text: 「一個亭長出身的老兵痞，能有什麼大志？」
   set: { 亞父之言: "輕蔑" }
-  goto: after_fanzeng
 - text: 「管他志在哪裡，明日一戰，都成灰燼」
   set: { 亞父之言: "不屑一顧" }
-  goto: after_fanzeng
 ??
-
-:: label after_fanzeng
 
 :: if 亞父之言 == "深信"
 @set 范增信任 += 2
