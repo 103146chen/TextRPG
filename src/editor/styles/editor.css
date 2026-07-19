@@ -319,6 +319,86 @@ input, textarea, select {
   align-items: stretch;
   gap: 6px;
 }
+/* ---- 編輯器分頁（場景主線 ＋ 開啟中的內容區塊）---- */
+.editor-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 2px;
+  padding: 6px 12px 0;
+  border-bottom: 1px solid var(--e-border);
+  background: var(--e-bg-2);
+  overflow-x: auto;
+}
+.editor-tab {
+  display: flex; align-items: center;
+  border: 1px solid var(--e-border);
+  border-bottom: none;
+  border-radius: 6px 6px 0 0;
+  background: var(--e-bg-3);
+  max-width: 240px;
+}
+.editor-tab.active { background: var(--e-bg-1); border-color: var(--e-accent); }
+.editor-tab-label {
+  padding: 6px 10px;
+  border: none; background: none;
+  color: var(--e-text-faded);
+  font-size: 13px;
+  cursor: pointer;
+  white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+}
+.editor-tab.active .editor-tab-label { color: var(--e-text); font-weight: 600; }
+.editor-tab-close {
+  border: none; background: none;
+  color: var(--e-text-faded);
+  padding: 0 8px 0 2px;
+  font-size: 15px; line-height: 1;
+  cursor: pointer;
+}
+.editor-tab-close:hover { color: var(--e-danger, #e66); }
+
+/* 區塊分頁的標題列 */
+.block-header .block-refs {
+  display: inline-block;
+  padding: 2px 8px;
+  border-radius: 10px;
+  background: var(--e-bg-4);
+  color: var(--e-text-faded);
+  font-size: 12px;
+}
+.block-header .block-refs.orphan { background: #6b3a1a; color: #ffd9a8; }
+.block-header .block-crumb {
+  color: var(--e-text-faded);
+  font-size: 12px;
+  margin: 4px 0 8px;
+}
+
+/* 主線上的區塊摘要卡 */
+.instr-row[data-type="block"] .instr-content { align-items: center; gap: 8px; }
+.block-card-name { font-weight: 600; color: var(--e-text); }
+.block-open-btn {
+  margin-left: auto;
+  padding: 3px 10px;
+  border: 1px solid var(--e-border);
+  border-radius: 4px;
+  background: var(--e-bg-3);
+  color: var(--e-text);
+  font-size: 12px;
+  cursor: pointer;
+}
+.block-open-btn:hover { border-color: var(--e-accent); color: var(--e-accent); }
+
+/* 選項上的區塊跳轉鈕 */
+.choice-do {
+  padding: 2px 8px;
+  border: 1px solid var(--e-border);
+  border-radius: 4px;
+  background: var(--e-bg-3);
+  color: var(--e-text-faded);
+  font-size: 12px;
+  cursor: pointer;
+}
+.choice-do:hover { border-color: var(--e-accent); color: var(--e-accent); }
+
 /* ---- 圖片資產：縮圖按鈕 + 圖庫選取器 ---- */
 .asset-pick { display: flex; align-items: center; gap: 6px; min-width: 0; }
 .asset-thumb {

@@ -21,7 +21,7 @@ export class InstructionRow {
    * @param {Function} params.onChange - (patch) => void
    * @param {Function} params.onDelete
    */
-  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete, onPlayFrom, onManage, selected = false, onSelect = null, onEnterContinue = null, continuation = false }) {
+  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete, onPlayFrom, onManage, selected = false, onSelect = null, onEnterContinue = null, continuation = false, onOpenBlock = null }) {
     this.ins = instruction;
     this.index = index;
     this.indent = indent;
@@ -35,6 +35,7 @@ export class InstructionRow {
     this.selected = selected;
     this.onSelect = onSelect;       // 可選：() => void，點列選取（靜態預覽跟隨）
     this.onEnterContinue = onEnterContinue;  // 可選：(index, speaker) => void，Enter 接下一句
+    this.onOpenBlock = onOpenBlock;          // 可選：(name) => void，開啟具名區塊的分頁
     this.el = null;
   }
 
@@ -682,29 +683,40 @@ export class InstructionRow {
   }
 
   // ---------- 具名內容區塊 ----------
-  // Phase A 只給最低限度的可讀卡片，讓手寫的區塊不會顯示成「未知指令」。
-  // 正式的編輯介面（分頁）在 Phase B/C。
+  // 主線上只佔一張摘要卡；內容在它自己的分頁裡編輯。
   #renderBlock(container) {
     container.appendChild(this.#badge("↳ 內容區塊"));
-    const input = document.createElement("input");
-    input.className = "instr-field label";
-    input.value = this.ins.name || "";
-    input.placeholder = "區塊名稱";
-    input.addEventListener("change", () => this.onChange({ name: input.value }));
-    container.appendChild(input);
+
+    const name = document.createElement("span");
+    name.className = "block-card-name";
+    name.textContent = this.ins.name || "（未命名）";
+    container.appendChild(name);
 
     const note = document.createElement("span");
     note.className = "instr-readonly";
     // 講清楚它為什麼在主線上卻不會被播到，否則看起來像 bug
-    note.textContent = "只有選項指定 do: 時才會執行，主線會跳過";
+    note.textContent = "只有選項指定它時才會執行，主線會跳過";
     container.appendChild(note);
+
+    if (this.onOpenBlock) {
+      const open = document.createElement("button");
+      open.className = "block-open-btn";
+      open.textContent = "開啟編輯 →";
+      open.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.onOpenBlock(this.ins.name);
+      });
+      container.appendChild(open);
+    }
   }
 
+  // endblock 在主線上被摘要卡蓋掉、在區塊分頁裡不顯示，
+  // 只有畸形劇本（孤兒 endblock）才會走到這裡。
   #renderEndblock(container) {
     container.appendChild(this.#badge("ENDBLOCK"));
     const readonly = document.createElement("span");
     readonly.className = "instr-readonly";
-    readonly.textContent = "區塊結束，回到呼叫它的選項後面";
+    readonly.textContent = "沒有對應的區塊開頭（多餘的結束標記）";
     container.appendChild(readonly);
   }
 
@@ -779,12 +791,17 @@ export class InstructionRow {
     });
     meta.appendChild(gotoInput);
 
-    // Phase A：do: 先只讀顯示，讓手寫的區塊指定看得見（正式編輯介面在 Phase C）
+    // 內容區塊：點了開它自己的分頁編輯（選項在主畫面只留摘要）
     if (opt.do) {
-      const doTag = document.createElement("span");
-      doTag.className = "instr-readonly choice-do";
-      doTag.textContent = `↳ 內容區塊：${opt.do}`;
-      meta.appendChild(doTag);
+      const doBtn = document.createElement("button");
+      doBtn.className = "choice-do";
+      doBtn.textContent = `↳ ${opt.do}`;
+      doBtn.title = "開啟這個選項的內容區塊";
+      doBtn.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.onOpenBlock?.(opt.do);
+      });
+      meta.appendChild(doBtn);
     }
 
     main.appendChild(meta);

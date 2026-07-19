@@ -16,6 +16,11 @@ export class SceneEditor {
     this.onSelect = onSelect;       // (sceneId, index) => void，選取指令（靜態預覽跟隨）
     this.selectedIndex = null;
     this.currentSceneId = null;
+    // 分頁：第一個永遠是場景主線，其餘是開啟中的具名內容區塊。
+    // 分頁只是「看同一個指令陣列的哪一段」，列上的 index 一律是真實索引，
+    // 所以增刪／拖曳／從這裡試玩全部沿用原本的邏輯，不需要換算。
+    this.tabs = [{ kind: "scene" }];
+    this.activeTab = 0;
     this.openMenu = null;
     this._pendingScrollTo = null;
     this._pendingFocus = null;
@@ -31,11 +36,208 @@ export class SceneEditor {
   }
 
   openScene(sceneId) {
-    if (sceneId !== this.currentSceneId) this.selectedIndex = null;
+    if (sceneId !== this.currentSceneId) {
+      this.selectedIndex = null;
+      // 區塊分頁屬於某個場景，換場景就不該留著
+      this.tabs = [{ kind: "scene" }];
+      this.activeTab = 0;
+    }
     this.currentSceneId = sceneId;
     this.render();
     // 開場景時預覽跳到開頭（靜態）
     if (this.onSelect && sceneId) this.onSelect(sceneId, this.selectedIndex ?? 0);
+  }
+
+  // ============ 分頁 ============
+
+  /** 開啟（或切換到）某個具名區塊的分頁 */
+  openBlockTab(name) {
+    const existing = this.tabs.findIndex((t) => t.kind === "block" && t.name === name);
+    if (existing >= 0) this.activeTab = existing;
+    else {
+      this.tabs.push({ kind: "block", name });
+      this.activeTab = this.tabs.length - 1;
+    }
+    this.selectedIndex = null;
+    this.render();
+  }
+
+  closeTab(i) {
+    if (i === 0) return;                       // 場景主線分頁關不掉
+    this.tabs.splice(i, 1);
+    if (this.activeTab >= this.tabs.length) this.activeTab = this.tabs.length - 1;
+    else if (this.activeTab > i) this.activeTab--;
+    else if (this.activeTab === i) this.activeTab = 0;
+    this.render();
+  }
+
+  /** 找出具名區塊的範圍：start=:: block 那列，end=:: endblock 那列 */
+  #findBlock(scene, name) {
+    const list = scene.instructions;
+    const start = list.findIndex((x) => x.type === "block" && x.name === name);
+    if (start < 0) return null;
+    const end = list[start].endIndex ?? list.length;
+    return { start, end };
+  }
+
+  /** 這個區塊被幾個選項用到（顯示在分頁標題列，方便判斷能不能改） */
+  #blockRefCount(scene, name) {
+    let n = 0;
+    for (const ins of scene.instructions) {
+      if (ins.type !== "choice") continue;
+      n += (ins.options || []).filter((o) => o.do === name).length;
+    }
+    return n;
+  }
+
+  /**
+   * 目前分頁要顯示哪些指令。
+   * 回傳 { items, headInsertAt, tailInsertAt }；items 的 idx 是真實索引，
+   * insertAfter 是「這一列後面的插入點該插到哪個真實索引」——主線分頁上
+   * 區塊卡後面要插在 endblock 之後，不能插進區塊裡面。
+   */
+  #visibleItems(scene) {
+    const list = scene.instructions;
+    const tab = this.tabs[this.activeTab] || { kind: "scene" };
+
+    if (tab.kind === "block") {
+      const r = this.#findBlock(scene, tab.name);
+      if (!r) return null;                     // 區塊被刪或改名 → 呼叫端退回主線
+      const items = [];
+      for (let i = r.start + 1; i < r.end; i++) items.push({ idx: i, insertAfter: i + 1 });
+      return { items, headInsertAt: r.start + 1, tailInsertAt: r.end, range: r };
+    }
+
+    const items = [];
+    for (let i = 0; i < list.length; i++) {
+      if (list[i].type === "block") {
+        // 區塊在主線上只佔一張摘要卡，內容留給它自己的分頁
+        const end = list[i].endIndex ?? list.length;
+        items.push({ idx: i, insertAfter: end + 1 });
+        i = end;
+        continue;
+      }
+      items.push({ idx: i, insertAfter: i + 1 });
+    }
+    return { items, headInsertAt: 0, tailInsertAt: list.length };
+  }
+
+  #renderTabBar(scene) {
+    // 只有一個分頁時不佔畫面
+    if (this.tabs.length <= 1) return;
+
+    const bar = document.createElement("div");
+    bar.className = "editor-tabs";
+
+    this.tabs.forEach((t, i) => {
+      const tab = document.createElement("div");
+      tab.className = "editor-tab" + (i === this.activeTab ? " active" : "");
+
+      const label = document.createElement("button");
+      label.className = "editor-tab-label";
+      label.textContent = t.kind === "scene"
+        ? (scene.meta.title || scene.meta.id)
+        : `↳ ${t.name}`;
+      label.addEventListener("click", () => {
+        this.activeTab = i;
+        this.selectedIndex = null;
+        this.render();
+      });
+      tab.appendChild(label);
+
+      if (i > 0) {
+        const close = document.createElement("button");
+        close.className = "editor-tab-close";
+        close.textContent = "×";
+        close.title = "關閉分頁";
+        close.addEventListener("click", (e) => { e.stopPropagation(); this.closeTab(i); });
+        tab.appendChild(close);
+      }
+      bar.appendChild(tab);
+    });
+
+    this.containerEl.appendChild(bar);
+  }
+
+  /** 區塊分頁的標題列：麵包屑 ＋ 被引用次數 ＋ 改名 */
+  #renderBlockHeader(scene, name) {
+    const header = document.createElement("div");
+    header.className = "scene-header block-header";
+
+    const h1 = document.createElement("h1");
+    h1.textContent = `↳ ${name}`;
+    header.appendChild(h1);
+
+    const refs = this.#blockRefCount(scene, name);
+    const badge = document.createElement("span");
+    badge.className = "block-refs" + (refs === 0 ? " orphan" : "");
+    // 0 次代表沒有任何選項會走到這裡——通常是改名或刪選項留下的孤兒
+    badge.textContent = refs === 0 ? "沒有選項使用這個區塊" : `被 ${refs} 個選項使用`;
+    header.appendChild(badge);
+
+    const crumb = document.createElement("div");
+    crumb.className = "block-crumb";
+    crumb.textContent = `${scene.meta.title || scene.meta.id} ／ 內容區塊`;
+    header.appendChild(crumb);
+
+    header.appendChild(this.#field("區塊名稱", this.#input({
+      value: name,
+      onChange: (v) => {
+        const next = v.trim();
+        if (!next || next === name) return;
+        this.#renameBlock(scene, name, next);
+      },
+    })));
+
+    this.containerEl.appendChild(header);
+  }
+
+  /** 刪整個區塊（含內容與 endblock），並清掉指向它的 do: */
+  async #deleteBlock(scene, blockIdx) {
+    const ins = scene.instructions[blockIdx];
+    const name = ins.name;
+    const end = ins.endIndex ?? scene.instructions.length;
+    const count = end - blockIdx + 1;
+    const refs = this.#blockRefCount(scene, name);
+
+    if (!(await confirmDialog({
+      title: `刪除內容區塊「${name}」？`,
+      message: refs > 0
+        ? `這會連同區塊內的 ${count - 2} 條指令一起刪除，並清掉 ${refs} 個選項對它的指定（那些選項會變成直接接主線）。`
+        : `這會連同區塊內的 ${count - 2} 條指令一起刪除。`,
+      confirmText: "刪除",
+    }))) return;
+
+    // 先清 do:（用的是名稱，不受索引位移影響），再由後往前刪指令
+    scene.instructions.forEach((x, i) => {
+      if (x.type !== "choice") return;
+      if (!(x.options || []).some((o) => o.do === name)) return;
+      const options = x.options.map((o) => (o.do === name ? { ...o, do: undefined } : o));
+      this.project.updateInstruction(this.currentSceneId, i, { options });
+    });
+    for (let i = end; i >= blockIdx; i--) {
+      this.project.deleteInstruction(this.currentSceneId, i);
+    }
+
+    this.tabs = this.tabs.filter((t) => !(t.kind === "block" && t.name === name));
+    this.activeTab = 0;
+    this.render();
+  }
+
+  /** 改區塊名稱：連同所有 do: 一起改，否則選項會指到不存在的區塊 */
+  #renameBlock(scene, oldName, newName) {
+    const r = this.#findBlock(scene, oldName);
+    if (!r) return;
+    this.project.updateInstruction(this.currentSceneId, r.start, { name: newName });
+    scene.instructions.forEach((ins, idx) => {
+      if (ins.type !== "choice") return;
+      if (!(ins.options || []).some((o) => o.do === oldName)) return;
+      const options = ins.options.map((o) => (o.do === oldName ? { ...o, do: newName } : o));
+      this.project.updateInstruction(this.currentSceneId, idx, { options });
+    });
+    const t = this.tabs[this.activeTab];
+    if (t && t.kind === "block") t.name = newName;
+    this.render();
   }
 
   /** 選取指令：更新樣式並通知宿主（帶動靜態預覽與檢查器） */
@@ -69,8 +271,18 @@ export class SceneEditor {
       return;
     }
 
+    // 分頁指向的區塊可能已被刪除／改名（例如在主線把整段刪掉）→ 退回主線
+    let tab = this.tabs[this.activeTab] || { kind: "scene" };
+    if (tab.kind === "block" && !this.#findBlock(scene, tab.name)) {
+      this.tabs = this.tabs.filter((t) => t.kind === "scene" || this.#findBlock(scene, t.name));
+      this.activeTab = 0;
+      tab = this.tabs[0];
+    }
+
     this.containerEl.innerHTML = "";
-    this.#renderHeader(scene);
+    this.#renderTabBar(scene);
+    if (tab.kind === "block") this.#renderBlockHeader(scene, tab.name);
+    else this.#renderHeader(scene);
     this.#renderBody(scene);
 
     const newBody = this.containerEl.querySelector('.scene-body');
@@ -230,8 +442,13 @@ export class SceneEditor {
     label.textContent = "快速插入";
     bar.appendChild(label);
 
-    // 接在選取列之後；未選取則放到最後
-    const at = () => (this.selectedIndex == null ? scene.instructions.length : this.selectedIndex + 1);
+    // 接在選取列之後；未選取則放到目前分頁的最後一列之後。
+    // 用分頁的 tailInsertAt 而非整個場景的長度——在區塊分頁裡插入必須落在
+    // endblock 前面，否則新指令會掉到區塊外面變成主線的一部分。
+    const at = () => {
+      if (this.selectedIndex != null) return this.selectedIndex + 1;
+      return this.#visibleItems(scene)?.tailInsertAt ?? scene.instructions.length;
+    };
     // 對話沿用「插入點之前最近一句對話」的說話者，接話不用重打名字
     const prevSpeaker = () => {
       for (let i = at() - 1; i >= 0; i--) {
@@ -267,19 +484,26 @@ export class SceneEditor {
     const list = document.createElement("div");
     list.className = "instr-list";
 
+    const view = this.#visibleItems(scene);
+    if (!view) return;
+
     // 頂部插入點
-    list.appendChild(this.#makeInsertPoint(0));
+    list.appendChild(this.#makeInsertPoint(view.headInsertAt));
 
     // 計算縮排
     let indent = 0;
-    scene.instructions.forEach((ins, idx) => {
+    view.items.forEach(({ idx, insertAfter }, pos) => {
+      const ins = scene.instructions[idx];
       // else/elif/endif 先降排縮
       if (ins.type === "elif" || ins.type === "else" || ins.type === "endif") {
         indent = Math.max(0, indent - 1);
       }
 
-      // 與上一句同一個說話者（含連續旁白）→ 收合重複的說話者列
-      const prev = scene.instructions[idx - 1];
+      // 與上一句同一個說話者（含連續旁白）→ 收合重複的說話者列。
+      // 比對的是「畫面上的前一列」，不是陣列的前一格——區塊分頁的第一列
+      // 前面是 :: block，不該被當成接續。
+      const prevIdx = view.items[pos - 1]?.idx;
+      const prev = prevIdx != null ? scene.instructions[prevIdx] : null;
       const continuation = ins.type === "text" && prev?.type === "text"
         && (prev.speaker || "") === (ins.speaker || "");
 
@@ -293,12 +517,17 @@ export class SceneEditor {
         selected: this.selectedIndex === idx,
         onSelect: () => this.selectInstruction(idx),
         onChange: (patch) => this.project.updateInstruction(this.currentSceneId, idx, patch),
-        onDelete: () => this.project.deleteInstruction(this.currentSceneId, idx),
+        // 區塊要整段刪：只刪 :: block 那行會把內容和 endblock 留在主線上，
+        // 那些指令就會變成主線的一部分被播出來。
+        onDelete: ins.type === "block"
+          ? () => this.#deleteBlock(scene, idx)
+          : () => this.project.deleteInstruction(this.currentSceneId, idx),
         onPlayFrom: this.onPlayFrom ? (index) => this.onPlayFrom(this.currentSceneId, index) : null,
         onManage: this.onManage,
         // 對話框按 Enter：在下一行接一句同說話者的台詞並聚焦
         onEnterContinue: (i, speaker) =>
           this.insertTemplate(i + 1, { type: "text", speaker, text: "" }),
+        onOpenBlock: (name) => this.openBlockTab(name),
       });
       list.appendChild(row.render());
 
@@ -307,17 +536,19 @@ export class SceneEditor {
         indent++;
       }
 
-      // 每條指令後的插入點
-      list.appendChild(this.#makeInsertPoint(idx + 1));
+      // 每條指令後的插入點（區塊卡後面要插在 endblock 之後，不能插進區塊裡）
+      list.appendChild(this.#makeInsertPoint(insertAfter));
     });
 
-    // 空場景提示
-    if (scene.instructions.length === 0) {
+    // 空白提示
+    if (view.items.length === 0) {
       const hint = document.createElement("div");
       hint.style.textAlign = "center";
       hint.style.padding = "40px";
       hint.style.color = "var(--e-text-faded)";
-      hint.innerHTML = "這個場景還沒有內容。<br>點擊上方的 <strong>＋</strong> 圖示開始加入指令。";
+      hint.innerHTML = this.tabs[this.activeTab]?.kind === "block"
+        ? "這個區塊還沒有內容。<br>點擊上方的 <strong>＋</strong> 圖示加入這個選項專屬的劇情。"
+        : "這個場景還沒有內容。<br>點擊上方的 <strong>＋</strong> 圖示開始加入指令。";
       list.appendChild(hint);
     }
 
@@ -333,6 +564,7 @@ export class SceneEditor {
   #makeInsertPoint(index) {
     const point = document.createElement("div");
     point.className = "insert-point";
+    point.dataset.index = index;      // 插入落點，供除錯／測試檢查
     const btn = document.createElement("button");
     btn.className = "insert-point-btn";
     btn.textContent = "+";
@@ -530,6 +762,9 @@ export class SceneEditor {
     rows.forEach(row => {
       const handle = row.querySelector(".instr-handle");
       if (!handle) return;
+      // 區塊在主線上只是一張摘要卡，拖它只會搬到 :: block 那一行，
+      // 內容和 endblock 會被留在原地拆散。區塊之間也沒有順序意義，直接禁止拖曳。
+      if (row.dataset.type === "block") { handle.remove(); return; }
       handle.draggable = true;
       handle.addEventListener("dragstart", (e) => {
         row.classList.add("dragging");
