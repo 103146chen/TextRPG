@@ -76,6 +76,8 @@ export class MarkdownWriter {
     if (cur.type === "choice" || prev?.type === "choice") return true;
     // label 前空行
     if (cur.type === "label") return true;
+    // 區塊自成一段，前後都留空行才看得出邊界
+    if (cur.type === "block" || prev?.type === "endblock") return true;
     // @goto 前空行
     if (cur.type === "goto") return true;
     // if 之前空行
@@ -125,6 +127,12 @@ export class MarkdownWriter {
       case "label":
         return `${indent}:: label ${ins.name}`;
 
+      case "block":
+        return `${indent}:: block ${ins.name}`;
+
+      case "endblock":
+        return `${indent}:: endblock`;
+
       case "choice":
         return this.#writeChoice(ins, indent);
 
@@ -171,6 +179,9 @@ export class MarkdownWriter {
       }
       if (opt.if) {
         lines.push(`${indent}  if: ${opt.if}`);
+      }
+      if (opt.do) {
+        lines.push(`${indent}  do: ${opt.do}`);
       }
       if (opt.goto) {
         lines.push(`${indent}  goto: ${opt.goto}`);

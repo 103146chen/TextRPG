@@ -104,6 +104,12 @@ export class SceneParser {
           instructions.push({ type: "endif" });
         } else if (ctrl.startsWith("label ")) {
           instructions.push({ type: "label", name: ctrl.slice(6).trim() });
+        } else if (ctrl.startsWith("block ")) {
+          // 具名內容區塊：選項用 do: 進來，跑到 endblock 再回到呼叫點的下一句。
+          // 平常線性執行到這裡會整段跳過（區塊只有被呼叫時才執行）。
+          instructions.push({ type: "block", name: ctrl.slice(6).trim() });
+        } else if (ctrl === "endblock") {
+          instructions.push({ type: "endblock" });
         }
         i++;
         continue;
@@ -253,6 +259,13 @@ export class SceneParser {
           i++;
           continue;
         }
+        // 內容區塊：選了這個選項就先跑該區塊，跑完回到選項節點的下一句
+        const doMatch = trimmed.match(/^do\s*:\s*(.+)$/);
+        if (doMatch) {
+          current.do = doMatch[1].trim();
+          i++;
+          continue;
+        }
       }
 
       i++;
@@ -373,6 +386,32 @@ export class SceneParser {
             instructions[b.index].branches = ctx.branches;
           }
           ins.openerIndex = ctx.start;
+        }
+      }
+    }
+
+    this.#linkBlocks(instructions);
+  }
+
+  /**
+   * 建立 block/endblock 的配對索引。
+   * 區塊不巢狀（一個區塊裡要再分支就自己再開一個具名區塊），所以用單一游標
+   * 掃過去即可；沒有配對的 endblock 就忽略，缺 endblock 的區塊算到陣列尾端。
+   */
+  static #linkBlocks(instructions) {
+    let openIdx = -1;
+    for (let i = 0; i < instructions.length; i++) {
+      const ins = instructions[i];
+      if (ins.type === "block") {
+        // 前一個區塊沒收尾就直接開下一個：讓它結束在這裡，不要吃掉後面的區塊
+        if (openIdx >= 0) instructions[openIdx].endIndex = i - 1;
+        openIdx = i;
+        ins.endIndex = instructions.length;   // 預設值，遇到 endblock 會覆蓋
+      } else if (ins.type === "endblock") {
+        if (openIdx >= 0) {
+          instructions[openIdx].endIndex = i;
+          ins.openerIndex = openIdx;
+          openIdx = -1;
         }
       }
     }

@@ -95,6 +95,8 @@ export class InstructionRow {
       case "else": return this.#renderElse(container);
       case "endif": return this.#renderEndif(container);
       case "label": return this.#renderLabel(container);
+      case "block": return this.#renderBlock(container);
+      case "endblock": return this.#renderEndblock(container);
       case "choice": return this.#renderChoice(container);
       case "comment": return this.#renderComment(container);
       default: return this.#renderUnknown(container);
@@ -679,6 +681,33 @@ export class InstructionRow {
     container.appendChild(input);
   }
 
+  // ---------- 具名內容區塊 ----------
+  // Phase A 只給最低限度的可讀卡片，讓手寫的區塊不會顯示成「未知指令」。
+  // 正式的編輯介面（分頁）在 Phase B/C。
+  #renderBlock(container) {
+    container.appendChild(this.#badge("↳ 內容區塊"));
+    const input = document.createElement("input");
+    input.className = "instr-field label";
+    input.value = this.ins.name || "";
+    input.placeholder = "區塊名稱";
+    input.addEventListener("change", () => this.onChange({ name: input.value }));
+    container.appendChild(input);
+
+    const note = document.createElement("span");
+    note.className = "instr-readonly";
+    // 講清楚它為什麼在主線上卻不會被播到，否則看起來像 bug
+    note.textContent = "只有選項指定 do: 時才會執行，主線會跳過";
+    container.appendChild(note);
+  }
+
+  #renderEndblock(container) {
+    container.appendChild(this.#badge("ENDBLOCK"));
+    const readonly = document.createElement("span");
+    readonly.className = "instr-readonly";
+    readonly.textContent = "區塊結束，回到呼叫它的選項後面";
+    container.appendChild(readonly);
+  }
+
   // ---------- Choice ----------
   #renderChoice(container) {
     const header = document.createElement("div");
@@ -749,6 +778,14 @@ export class InstructionRow {
       this.onChange({ options });
     });
     meta.appendChild(gotoInput);
+
+    // Phase A：do: 先只讀顯示，讓手寫的區塊指定看得見（正式編輯介面在 Phase C）
+    if (opt.do) {
+      const doTag = document.createElement("span");
+      doTag.className = "instr-readonly choice-do";
+      doTag.textContent = `↳ 內容區塊：${opt.do}`;
+      meta.appendChild(doTag);
+    }
 
     main.appendChild(meta);
     main.appendChild(this.#renderChoiceSet(opt, idx));

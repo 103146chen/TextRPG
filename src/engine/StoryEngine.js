@@ -33,6 +33,7 @@ export class StoryEngine {
       waitingForChoice: false,
       finished: false,
       _branchStack: [],          // 追蹤巢狀 if/elif/else 狀態
+      _callStack: [],            // 選項 do: 進入具名區塊時的返回位址
     };
   }
 
@@ -163,6 +164,7 @@ export class StoryEngine {
     this.state.sceneId = sceneId;
     this.state.pc = 0;
     this.state.waitingForChoice = false;
+    this.state._callStack = [];   // 換場景後，本場景的區塊返回位址已無意義
 
     // 應用場景 front matter 的畫面指令
     if (this.onSceneChange) {
@@ -303,6 +305,34 @@ export class StoryEngine {
         return "continue";
       }
 
+      case "block": {
+        // 具名區塊只有被選項的 do: 呼叫時才執行。線性跑到這裡代表是「主線
+        // 走完後撞到檔尾的區塊定義區」，整段跳過，不然玩家會看到所有分支
+        // 的內容全部依序播一遍。
+        this.state.pc = (ins.endIndex ?? scene.instructions.length) + 1;
+        return "jumped";
+      }
+
+      case "endblock": {
+        const frame = (this.state._callStack || []).pop();
+        // 沒有返回位址：不是被呼叫進來的（例如 goto 直接跳進區塊中間），
+        // 當成普通標記往下走，不要亂跳。
+        if (!frame) return "continue";
+
+        // 區塊裡的 goto 會清空呼叫堆疊，所以正常情況下 frame 一定是本場景。
+        // 真的對不上就放棄這個返回位址，繼續往下，避免跳到別的場景的錯誤位置。
+        if (frame.sceneId !== this.state.sceneId) return "continue";
+
+        // 選項同時寫了 do: 和 goto:：先跑完區塊，再照 goto 跳走（不返回）
+        if (frame.goto) {
+          await this.#handleGoto(frame.goto, scene);
+          return this.state.sceneId === scene.meta.id ? "jumped" : "scene-changed";
+        }
+
+        this.state.pc = frame.pc;
+        return "jumped";
+      }
+
       case "goto": {
         await this.#handleGoto(ins.target, scene);
         return this.state.sceneId === scene.meta.id ? "jumped" : "scene-changed";
@@ -366,6 +396,10 @@ export class StoryEngine {
    * goto 可以是「同場景的 label」或「別的場景 id」
    */
   async #handleGoto(target, scene) {
+    // goto 是「跳走，不回來」：清掉待返回的區塊位址。否則區塊裡 goto 出去之後，
+    // 之後任何一個 endblock 都會把玩家拉回一個早就不相干的位置。
+    this.state._callStack = [];
+
     // 先找場景內的 label
     const labelIdx = scene.instructions.findIndex(
       x => x.type === "label" && x.name === target
@@ -411,10 +445,24 @@ export class StoryEngine {
       this.#applyOpValue(key, val);
     }
 
-    // goto 選項目標
     this.state.waitingForChoice = false;
     this.state.pc++; // 跳過 choice 指令本身
-    if (opt.goto) {
+
+    // do:：先跑選項自己的內容區塊，跑完回到這裡（也就是選項節點的下一句）。
+    // 同時有 goto: 時把它記在返回位址裡，等區塊跑完再跳走。
+    const blockIdx = opt.do
+      ? scene.instructions.findIndex((x) => x.type === "block" && x.name === opt.do)
+      : -1;
+    if (blockIdx >= 0) {
+      if (!this.state._callStack) this.state._callStack = [];
+      this.state._callStack.push({
+        sceneId: this.state.sceneId,
+        pc: this.state.pc,
+        goto: opt.goto || null,
+      });
+      this.state.pc = blockIdx + 1;
+    } else if (opt.goto) {
+      // 沒有區塊（或找不到同名區塊）就維持原本的行為：直接跳
       await this.#handleGoto(opt.goto, scene);
     }
     await this.step();
@@ -442,6 +490,7 @@ export class StoryEngine {
       pc: this.state.pc,
       flags: { ...this.state.flags },
       branchStack: JSON.parse(JSON.stringify(this.state._branchStack || [])),
+      callStack: JSON.parse(JSON.stringify(this.state._callStack || [])),
     });
     if (this.history.length > this.maxHistory) {
       this.history.shift();
@@ -471,6 +520,7 @@ export class StoryEngine {
     this.state.pc = prev.pc;
     this.state.flags = { ...prev.flags };
     this.state._branchStack = JSON.parse(JSON.stringify(prev.branchStack || []));
+    this.state._callStack = JSON.parse(JSON.stringify(prev.callStack || []));
     this.state.waitingForChoice = false;
 
     await this.step();
@@ -487,6 +537,7 @@ export class StoryEngine {
       pc: this.state.pc,
       flags: { ...this.state.flags },
       branchStack: JSON.parse(JSON.stringify(this.state._branchStack || [])),
+      callStack: JSON.parse(JSON.stringify(this.state._callStack || [])),
       sceneHash: scene?.raw != null ? StoryEngine.#hashString(scene.raw) : null,
       timestamp: Date.now(),
     };
@@ -504,6 +555,10 @@ export class StoryEngine {
     let branchStack = Array.isArray(saveData.branchStack)
       ? JSON.parse(JSON.stringify(saveData.branchStack))
       : [];
+    // 舊存檔沒有 callStack（存檔當下還沒有區塊功能）→ 空陣列，行為與以前一致
+    let callStack = Array.isArray(saveData.callStack)
+      ? JSON.parse(JSON.stringify(saveData.callStack))
+      : [];
     let stale = false;
 
     // 存檔含場景雜湊且與目前劇本不符 → 場景被改過，索引可能錯位
@@ -514,11 +569,14 @@ export class StoryEngine {
         // 保守復原：夾在有效範圍內並清空分支堆疊，避免落在無效指令或分支不一致
         pc = Math.max(0, Math.min(pc, scene.instructions.length));
         branchStack = [];
+        // 返回位址是指令索引，劇本改過後會指到別的地方，寧可不返回也不要跳錯
+        callStack = [];
       }
     }
 
     this.state.pc = pc;
     this.state._branchStack = branchStack;
+    this.state._callStack = callStack;
 
     if (this.onSceneChange) {
       await this.onSceneChange(scene.meta);
