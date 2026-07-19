@@ -7,9 +7,6 @@ next: scene_02
 ---
 
 @bg wuzhong_river.png fade=800
-@curtain close color=#000000 duration=0 full=true
-@chapter title=第一章 subtitle= duration=2500
-@curtain open color=#000000 duration=600 full=true
 @wait 1000
 你是項籍，字羽，下相人。
 你的祖父項燕，是楚國最後的大將——王翦破楚那年，他兵敗自殺。楚國亡了，項家四散，你跟著叔父項梁，流落到吳中。
