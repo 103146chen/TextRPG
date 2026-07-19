@@ -7,6 +7,7 @@ import { createSelectField } from "./selectField.js";
 import { renderDirectiveForm, DIRECTIVE_SCHEMAS } from "./directiveFields.js";
 import { speakerColor } from "../core/speakerColor.js";
 import { escapeHtml } from "./formFields.js";
+import { renderConditionBuilder } from "./conditionBuilder.js";
 
 export class InstructionRow {
   /**
@@ -577,14 +578,33 @@ export class InstructionRow {
 
   // ---------- If/Elif ----------
   #renderIfElif(container) {
+    container.classList.add("is-cond");
     container.appendChild(this.#badge(this.ins.type === "if" ? "IF" : "ELIF"));
+
+    // 圖形化條件產生器（主要操作方式）；下方文字框保留為進階模式
+    const builder = document.createElement("div");
+    builder.className = "cond-builder-host";
+    renderConditionBuilder(builder, {
+      expr: this.ins.condition || "",
+      flags: this.project.getKnownFlagNames(),
+      onManage: () => this.onManage?.("flags"),
+      onChange: (expr) => this.onChange({ condition: expr }),
+    });
+    container.appendChild(builder);
+
+    const adv = document.createElement("details");
+    adv.className = "cond-adv";
+    const sum = document.createElement("summary");
+    sum.textContent = "進階：直接編輯條件式";
+    adv.appendChild(sum);
 
     const condInput = document.createElement("input");
     condInput.className = "instr-field condition";
     condInput.value = this.ins.condition || "";
     condInput.placeholder = "條件表達式，例: met_alice && charm > 2";
     condInput.addEventListener("change", () => this.onChange({ condition: condInput.value }));
-    container.appendChild(condInput);
+    adv.appendChild(condInput);
+    container.appendChild(adv);
 
     // 運算式無法純下拉，提供「插入旗標」輔助（含跳新增）
     const insertSel = document.createElement("select");
@@ -611,7 +631,7 @@ export class InstructionRow {
       condInput.value = cur ? `${cur} ${v}` : v;
       this.onChange({ condition: condInput.value });
     });
-    container.appendChild(insertSel);
+    adv.appendChild(insertSel);   // 屬於進階模式（直接改運算式）
   }
 
   // ---------- Else ----------
@@ -697,22 +717,6 @@ export class InstructionRow {
     const meta = document.createElement("div");
     meta.className = "choice-option-meta";
 
-    // Set 預覽與編輯
-    const setLabel = document.createElement("label");
-    setLabel.textContent = "set:";
-    meta.appendChild(setLabel);
-    const setInput = document.createElement("input");
-    setInput.className = "instr-field";
-    setInput.style.minWidth = "140px";
-    setInput.value = this.#formatSet(opt.set || {});
-    setInput.placeholder = "flag: true, x: 1";
-    setInput.addEventListener("change", () => {
-      const options = [...this.ins.options];
-      options[idx] = { ...options[idx], set: this.#parseSet(setInput.value) };
-      this.onChange({ options });
-    });
-    meta.appendChild(setInput);
-
     // Goto
     const gotoLabel = document.createElement("label");
     gotoLabel.textContent = "goto:";
@@ -731,7 +735,30 @@ export class InstructionRow {
     meta.appendChild(gotoInput);
 
     main.appendChild(meta);
+    main.appendChild(this.#renderChoiceSet(opt, idx));
     el.appendChild(main);
+
+    // 排序（▲▼）：改順序不必再刪掉重建
+    const order = document.createElement("div");
+    order.className = "choice-option-order";
+    const mk = (txt, dir, disabled) => {
+      const b = document.createElement("button");
+      b.className = "choice-order-btn";
+      b.textContent = txt;
+      b.title = dir < 0 ? "上移" : "下移";
+      b.disabled = disabled;
+      b.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const options = [...this.ins.options];
+        const j = idx + dir;
+        if (j < 0 || j >= options.length) return;
+        [options[idx], options[j]] = [options[j], options[idx]];
+        this.onChange({ options });
+      });
+      return b;
+    };
+    order.append(mk("▲", -1, idx === 0), mk("▼", +1, idx === this.ins.options.length - 1));
+    el.appendChild(order);
 
     const delBtn = document.createElement("button");
     delBtn.className = "choice-option-delete";
@@ -747,24 +774,109 @@ export class InstructionRow {
     return el;
   }
 
-  #formatSet(obj) {
-    return Object.entries(obj)
-      .map(([k, v]) => {
-        if (v && typeof v === "object" && "op" in v) return `${k}: ${v.op} ${v.value}`;
-        return `${k}: ${typeof v === "string" ? `"${v}"` : v}`;
-      })
-      .join(", ");
-  }
+  /**
+   * 選項的旗標設定：圖形化的「旗標 ／ 運算子 ／ 值」列，取代原本要手打
+   * `flag: true, x: 1` 的純文字框（與 @set 指令同一套操作邏輯）。
+   */
+  #renderChoiceSet(opt, idx) {
+    const wrap = document.createElement("div");
+    wrap.className = "choice-set";
 
-  #parseSet(str) {
-    const result = {};
-    if (!str.trim()) return result;
-    const parts = str.split(",");
-    for (const part of parts) {
-      const m = part.match(/^\s*([a-zA-Z_\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff][\w\u4e00-\u9fff\u3400-\u4dbf\uf900-\ufaff]*)\s*:\s*(.+)\s*$/);
-      if (m) result[m[1]] = this.#parseOpValue(m[2].trim());
+    const setObj = opt.set || {};
+    const entries = Object.entries(setObj);
+
+    const commit = (nextSet) => {
+      const options = [...this.ins.options];
+      options[idx] = { ...options[idx], set: nextSet };
+      this.onChange({ options });
+    };
+
+    const head = document.createElement("span");
+    head.className = "choice-set-label";
+    head.textContent = "選了之後：";
+    wrap.appendChild(head);
+
+    for (const [flag, raw] of entries) {
+      const isOp = raw && typeof raw === "object" && "op" in raw;
+      const op = isOp ? raw.op : "=";
+      const val = isOp ? raw.value : raw;
+
+      const row = document.createElement("span");
+      row.className = "choice-set-row";
+
+      const flagSel = createSelectField({
+        value: flag,
+        options: this.project.getKnownFlagNames(),
+        placeholder: "選旗標",
+        addLabel: "新增旗標…", onAdd: () => this.onManage?.("flags"),
+        onChange: (v) => {
+          if (!v || v === flag) return;
+          const next = {}; // 保留原順序地換掉 key
+          for (const [k, vv] of entries) next[k === flag ? v : k] = vv;
+          commit(next);
+        },
+      });
+      flagSel.classList.add("choice-set-flag");
+      row.appendChild(flagSel);
+
+      const opSel = document.createElement("select");
+      opSel.className = "instr-field choice-set-op";
+      for (const o of ["=", "+=", "-="]) {
+        const el2 = document.createElement("option");
+        el2.value = o; el2.textContent = o;
+        if (op === o) el2.selected = true;
+        opSel.appendChild(el2);
+      }
+      opSel.addEventListener("change", () => {
+        const next = { ...setObj };
+        next[flag] = opSel.value === "="
+          ? val
+          : { op: opSel.value, value: typeof val === "number" ? val : 1 };
+        commit(next);
+      });
+      row.appendChild(opSel);
+
+      const valIn = document.createElement("input");
+      valIn.className = "instr-field choice-set-val";
+      valIn.value = String(val);
+      valIn.placeholder = "true / 1";
+      valIn.addEventListener("change", () => {
+        const parsed = this.#parseValue(valIn.value);
+        const next = { ...setObj };
+        next[flag] = op === "="
+          ? parsed
+          : { op, value: typeof parsed === "number" ? parsed : 1 };
+        commit(next);
+      });
+      row.appendChild(valIn);
+
+      const rm = document.createElement("button");
+      rm.className = "choice-set-del";
+      rm.textContent = "×";
+      rm.title = "移除這項設定";
+      rm.addEventListener("click", (e) => {
+        e.stopPropagation();
+        const next = { ...setObj };
+        delete next[flag];
+        commit(next);
+      });
+      row.appendChild(rm);
+
+      wrap.appendChild(row);
     }
-    return result;
+
+    const add = document.createElement("button");
+    add.className = "choice-set-add";
+    add.textContent = "＋ 設定旗標";
+    add.addEventListener("click", (e) => {
+      e.stopPropagation();
+      const known = this.project.getKnownFlagNames();
+      const pick = known.find((f) => !(f in setObj)) || "";
+      commit({ ...setObj, [pick]: true });
+    });
+    wrap.appendChild(add);
+
+    return wrap;
   }
 
   // ---------- 工具方法 ----------

@@ -1609,6 +1609,74 @@ input, textarea, select {
 
 .col-structure .scene-list { flex: 1; min-height: 0; overflow-y: auto; }
 
+/* 條件產生器 */
+.instr-content.is-cond { flex-direction: column; align-items: stretch; gap: 6px; }
+.cond-builder { display: flex; flex-direction: column; gap: 5px; }
+.cond-rows { display: flex; flex-direction: column; gap: 5px; }
+.cond-row { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.cond-join { width: 62px; }
+.cond-join-spacer { width: 62px; font-size: 12px; color: var(--e-text-faded); text-align: center; }
+.cond-flag { min-width: 110px; max-width: 150px; }
+.cond-op { min-width: 92px; }
+.cond-val { width: 90px; font-family: var(--e-font-mono); }
+.cond-del {
+  background: transparent; border: none; cursor: pointer;
+  color: var(--e-text-faded); font-size: 15px; line-height: 1; padding: 0 4px;
+}
+.cond-del:hover { color: var(--e-red); }
+.cond-add {
+  align-self: flex-start;
+  background: transparent; border: 1px dashed var(--e-border-2); border-radius: 4px;
+  color: var(--e-text-dim); font-size: 11px; padding: 3px 10px; cursor: pointer;
+}
+.cond-add:hover { color: var(--e-accent); border-color: var(--e-accent); }
+.cond-explain {
+  font-size: 12px; color: var(--e-accent);
+  background: rgba(212, 160, 96, 0.08);
+  border-left: 2px solid var(--e-accent);
+  padding: 4px 10px; border-radius: 0 4px 4px 0;
+}
+.cond-advanced { font-size: 12px; color: var(--e-text-dim); }
+.cond-adv > summary { font-size: 11.5px; color: var(--e-text-faded); cursor: pointer; padding: 2px 0; }
+.cond-adv[open] { display: flex; flex-direction: column; gap: 6px; }
+.cond-adv .condition { width: 100%; font-family: var(--e-font-mono); }
+
+/* 選項：圖形化旗標設定 + 排序 */
+.choice-set {
+  display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
+  margin-top: 6px;
+}
+.choice-set-label { font-size: 11px; color: var(--e-text-faded); }
+.choice-set-row {
+  display: inline-flex; align-items: center; gap: 4px;
+  padding: 2px 4px 2px 6px;
+  background: var(--e-bg-2);
+  border: 1px solid var(--e-border);
+  border-radius: 12px;
+}
+.choice-set-flag { min-width: 96px; max-width: 130px; }
+.choice-set-op { min-width: 46px; text-align: center; }
+.choice-set-val { width: 74px; font-family: var(--e-font-mono); }
+.choice-set-del {
+  background: transparent; border: none; cursor: pointer;
+  color: var(--e-text-faded); font-size: 14px; line-height: 1; padding: 0 3px;
+}
+.choice-set-del:hover { color: var(--e-red); }
+.choice-set-add {
+  background: transparent; border: 1px dashed var(--e-border-2);
+  border-radius: 12px; color: var(--e-text-dim);
+  font-size: 11px; padding: 3px 10px; cursor: pointer;
+}
+.choice-set-add:hover { color: var(--e-accent); border-color: var(--e-accent); }
+
+.choice-option-order { display: flex; flex-direction: column; line-height: 0.7; margin-right: 2px; }
+.choice-order-btn {
+  background: transparent; border: none; cursor: pointer;
+  color: var(--e-text-faded); font-size: 9px; padding: 1px 3px;
+}
+.choice-order-btn:hover:not(:disabled) { color: var(--e-accent); }
+.choice-order-btn:disabled { opacity: 0.25; cursor: default; }
+
 /* 常用指令快速列 */
 .quick-bar {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
