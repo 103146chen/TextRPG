@@ -6,6 +6,7 @@ bgm: bgm_tension.mp3
 next: scene_05
 ---
 
+@bg hongmen_camp_night.png fade=800
 夜。中軍帳。
 @show 范增 center urgent
 范增又來了。七十歲的老人，平生好奇計，被你尊為「亞父」。

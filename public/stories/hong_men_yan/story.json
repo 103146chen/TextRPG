@@ -356,5 +356,73 @@
       "w": 0.5,
       "h": 0.4
     }
+  },
+  "spriteAdjust": {
+    "xiangyu_angry.png": {
+      "dy": 40.32
+    },
+    "xiangyu_sad.png": {
+      "dy": 41.29
+    },
+    "fanzeng_normal.png": {
+      "dy": 35.76
+    },
+    "fanzeng_urgent.png": {
+      "dy": 35.44
+    },
+    "fanzeng_angry.png": {
+      "dy": 36.09
+    },
+    "liubang_normal.png": {
+      "dy": 36.41
+    },
+    "liubang_humble.png": {
+      "dy": 35.44
+    },
+    "liubang_nervous.png": {
+      "dy": 36.09
+    },
+    "zhangliang_normal.png": {
+      "dy": 34.14
+    },
+    "zhangliang_calm.png": {
+      "dy": 34.46
+    },
+    "xiangyu_normal.png": {
+      "dy": 40.64
+    },
+    "xiangbo_normal.png": {
+      "dy": 35.77
+    },
+    "xiangbo_earnest.png": {
+      "dy": 35.11
+    },
+    "xiangzhuang_normal.png": {
+      "dy": 36.09
+    },
+    "fankuai_fierce.png": {
+      "dy": 35.44
+    },
+    "fankuai_normal.png": {
+      "dy": 35.44
+    },
+    "yuji_sad.png": {
+      "dy": 37.72
+    },
+    "yuji_normal.png": {
+      "dy": 35.77
+    },
+    "tingzhang_normal.png": {
+      "dy": 35.11
+    },
+    "xiangliang_normal.png": {
+      "dy": 36.42
+    },
+    "xiangliang_earnest.png": {
+      "dy": 35.11
+    },
+    "songyi_normal.png": {
+      "dy": 36.42
+    }
   }
 }

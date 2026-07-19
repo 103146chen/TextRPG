@@ -6,6 +6,7 @@ bgm: bgm_tension.mp3
 next: scene_04
 ---
 
+@bg hangu_pass.png fade=800
 函谷關到了。
 關門緊閉。城樓上，守軍的旗——不是秦旗。
 是漢字旗。劉邦的兵。

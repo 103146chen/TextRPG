@@ -6,6 +6,7 @@ bgm: bgm_ambition.mp3
 next: scene_02
 ---
 
+@bg wuzhong_river.png fade=800
 @curtain close color=#000000 duration=0 full=true
 @chapter title=第一章 subtitle= duration=2500
 @curtain open color=#000000 duration=600 full=true
@@ -49,6 +50,7 @@ next: scene_02
 :: label after_ambition
 
 :: if 少年志向 == "復楚"
+@set 舉玦回應 = true
 國仇家恨，是你這一生最早學會的東西。
 往後每一次揮兵，你都告訴自己——這是替楚國討回來的。
 只是很多年後你才發現：
