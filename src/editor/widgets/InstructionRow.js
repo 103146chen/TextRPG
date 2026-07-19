@@ -11,6 +11,9 @@ import { escapeHtml } from "./formFields.js";
 import { renderConditionBuilder, explainCondition } from "./conditionBuilder.js";
 
 export class InstructionRow {
+  // 選項晶片展開哪一格（純 UI 狀態，不進資料）。見 #renderChoiceChips 的說明。
+  static _openPanel = new Map();
+
   /**
    * @param {Object} params
    * @param {Object} params.instruction - 指令資料
@@ -778,60 +781,7 @@ export class InstructionRow {
     });
     main.appendChild(textInput);
 
-    const meta = document.createElement("div");
-    meta.className = "choice-option-meta";
-
-    // ---- 選了之後怎麼走 ----
-    // 內容區塊與 goto 是兩種不同的流程，不是同一件事的兩種寫法：
-    // 區塊跑完會回到選項後面，goto 是跳走不回來。標籤要把這件事講白。
-    const flowLabel = document.createElement("label");
-    flowLabel.textContent = "選了之後：";
-    meta.appendChild(flowLabel);
-
-    if (opt.do) {
-      const doBtn = document.createElement("button");
-      doBtn.className = "choice-do";
-      doBtn.textContent = `↳ ${opt.do}`;
-      doBtn.title = "開啟這個選項的內容區塊";
-      doBtn.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.onOpenBlock?.(opt.do);
-      });
-      meta.appendChild(doBtn);
-    } else if (this.onCreateBlock) {
-      const mk = document.createElement("button");
-      mk.className = "choice-mkblock";
-      mk.textContent = "＋ 專屬內容";
-      mk.title = "建立這個選項專屬的劇情，跑完自動回到主線";
-      mk.addEventListener("click", (e) => {
-        e.stopPropagation();
-        this.onCreateBlock(idx);
-      });
-      meta.appendChild(mk);
-    }
-
-    // 跳轉：跳走不回來（跨場景分歧主要靠這個）
-    const gotoLabel = document.createElement("label");
-    gotoLabel.className = "choice-goto-label";
-    gotoLabel.textContent = "或跳轉到：";
-    meta.appendChild(gotoLabel);
-    const gotoTargets = [
-      ...this.project.getAllSceneIds(),
-      ...this.#getLabelsInCurrentScene(),
-    ];
-    const gotoInput = this.#selectOrInput(opt.goto, gotoTargets, "（不跳轉）");
-    gotoInput.style.minWidth = "140px";
-    gotoInput.title = "跳過去就不回來了；要「跑完回主線」請用專屬內容";
-    gotoInput.addEventListener("change", (e) => {
-      const options = [...this.ins.options];
-      options[idx] = { ...options[idx], goto: e.target.value };
-      this.onChange({ options });
-    });
-    meta.appendChild(gotoInput);
-
-    main.appendChild(meta);
-    main.appendChild(this.#renderChoiceSet(opt, idx));
-    main.appendChild(this.#renderChoiceCondition(opt, idx));
+    main.appendChild(this.#renderChoiceChips(opt, idx));
     el.appendChild(main);
 
     // 排序（▲▼）：改順序不必再刪掉重建
@@ -871,23 +821,128 @@ export class InstructionRow {
   }
 
   /**
+   * 選項的三個設定（跳轉／變數／顯示條件）收成一列摘要晶片，點了才展開編輯。
+   *
+   * 原本三段編輯器一律攤開，就算什麼都沒設也各佔一列——一個選項 108px，
+   * 一張三選項的卡片 441px，等於 2/3 個螢幕。收成晶片後沒設定的選項約 50px。
+   *
+   * 展開狀態放在模組層的 Map：這一列每次變更都整個重建，狀態放實例上會被沖掉，
+   * 使用者改一個值面板就闔起來。索引位移時鍵會失效，最壞情況只是展開錯一格，
+   * 對純 UI 狀態可以接受。
+   */
+  #renderChoiceChips(opt, idx) {
+    const wrap = document.createElement("div");
+    wrap.className = "choice-chips";
+
+    const key = `${this.sceneId}#${this.index}#${idx}`;
+    const openNow = InstructionRow._openPanel.get(key) || null;
+    const toggle = (name) => {
+      if (openNow === name) InstructionRow._openPanel.delete(key);
+      else InstructionRow._openPanel.set(key, name);
+      // 只重畫這個選項的晶片區，不動整列（不然輸入焦點會跑掉）
+      const fresh = this.#renderChoiceChips(opt, idx);
+      wrap.replaceWith(fresh);
+    };
+
+    const bar = document.createElement("div");
+    bar.className = "choice-chip-bar";
+
+    const chip = (name, label, { active = false, title = "", onClick } = {}) => {
+      const b = document.createElement("button");
+      b.className = "choice-chip"
+        + (active ? " is-set" : "")
+        + (openNow === name ? " is-open" : "");
+      b.dataset.panel = name;
+      b.textContent = label;
+      if (title) b.title = title;
+      b.addEventListener("click", (e) => { e.stopPropagation(); (onClick || (() => toggle(name)))(); });
+      return b;
+    };
+
+    // 專屬內容：不是可展開的面板，是直接開分頁／建立，所以自己處理點擊
+    if (opt.do) {
+      bar.appendChild(chip("do", `↳ ${opt.do}`, {
+        active: true, title: "開啟這個選項的內容區塊（跑完回主線）",
+        onClick: () => this.onOpenBlock?.(opt.do),
+      }));
+    } else if (this.onCreateBlock) {
+      bar.appendChild(chip("do", "＋ 專屬內容", {
+        title: "建立這個選項專屬的劇情，跑完自動回到主線",
+        onClick: () => this.onCreateBlock(idx),
+      }));
+    }
+
+    bar.appendChild(chip("goto", opt.goto ? `→ ${opt.goto}` : "＋ 跳轉", {
+      active: !!opt.goto,
+      title: "跳過去就不回來了；要「跑完回主線」請用專屬內容",
+    }));
+
+    const setEntries = Object.entries(opt.set || {});
+    bar.appendChild(chip("set", setEntries.length ? this.#summarizeSet(setEntries) : "＋ 變數", {
+      active: setEntries.length > 0,
+      title: "選了這個選項時要改哪些變數",
+    }));
+
+    bar.appendChild(chip("cond", opt.if ? `僅當 ${this.#summarizeCond(opt.if)}` : "＋ 顯示條件", {
+      active: !!opt.if,
+      title: opt.if ? "這個選項只在條件成立時出現" : "設定後，條件不成立時這個選項不會出現",
+    }));
+
+    wrap.appendChild(bar);
+
+    if (openNow === "goto") wrap.appendChild(this.#renderChoiceGoto(opt, idx));
+    else if (openNow === "set") wrap.appendChild(this.#renderChoiceSet(opt, idx));
+    else if (openNow === "cond") wrap.appendChild(this.#renderChoiceCondition(opt, idx));
+
+    return wrap;
+  }
+
+  /** 變數設定的一行摘要，例：好感度 +=5 · 認錯過 */
+  #summarizeSet(entries) {
+    const parts = entries.slice(0, 2).map(([k, v]) => {
+      if (v && typeof v === "object" && "op" in v) return `${k} ${v.op}${v.value}`;
+      return v === true ? k : `${k}=${v}`;
+    });
+    return parts.join(" · ") + (entries.length > 2 ? ` …+${entries.length - 2}` : "");
+  }
+
+  /** 條件的一行摘要：拿白話解讀去掉頭尾的「當…時執行。」 */
+  #summarizeCond(expr) {
+    const s = explainCondition(expr).replace(/^當\s*/, "").replace(/\s*時執行。$/, "");
+    return s.length > 24 ? s.slice(0, 24) + "…" : s;
+  }
+
+  /** 跳轉目標（展開後才渲染） */
+  #renderChoiceGoto(opt, idx) {
+    const host = document.createElement("div");
+    host.className = "choice-panel";
+
+    const label = document.createElement("label");
+    label.textContent = "跳轉到（跳走不回來）：";
+    host.appendChild(label);
+
+    const targets = [
+      ...this.project.getAllSceneIds(),
+      ...this.#getLabelsInCurrentScene(),
+    ];
+    const input = this.#selectOrInput(opt.goto, targets, "（不跳轉）");
+    input.style.minWidth = "160px";
+    input.addEventListener("change", (e) => {
+      const options = [...this.ins.options];
+      options[idx] = { ...options[idx], goto: e.target.value };
+      this.onChange({ options });
+    });
+    host.appendChild(input);
+    return host;
+  }
+
+  /**
    * 選項的顯示條件：不符合時該選項整個不出現在遊戲裡。
-   * 預設收合（多數選項沒有條件），展開後直接複用條件產生器。
+   * 收合與摘要由晶片列負責，這裡只畫展開後的內容。
    */
   #renderChoiceCondition(opt, idx) {
-    const wrap = document.createElement("details");
-    wrap.className = "choice-cond";
-    if (opt.if) wrap.open = true;      // 已有條件就攤開，避免藏起來看不見
-
-    // 摘要要能一眼看出「有沒有條件、條件是什麼」。原本兩種狀態都是同一行
-    // 灰字，看起來像裝飾，使用者根本沒發現這裡可以點。
-    const sum = document.createElement("summary");
-    sum.className = "choice-cond-summary" + (opt.if ? " has-cond" : "");
-    sum.textContent = opt.if
-      ? `僅當：${explainCondition(opt.if).replace(/^當\s*/, "").replace(/\s*時執行。$/, "")}`
-      : "＋ 顯示條件";
-    sum.title = opt.if ? "這個選項只在條件成立時出現" : "設定後，條件不成立時這個選項不會出現";
-    wrap.appendChild(sum);
+    const wrap = document.createElement("div");
+    wrap.className = "choice-panel choice-cond";
 
     const host = document.createElement("div");
     renderConditionBuilder(host, {
@@ -930,7 +985,7 @@ export class InstructionRow {
    */
   #renderChoiceSet(opt, idx) {
     const wrap = document.createElement("div");
-    wrap.className = "choice-set";
+    wrap.className = "choice-panel choice-set";
 
     const setObj = opt.set || {};
     const entries = Object.entries(setObj);
@@ -943,7 +998,7 @@ export class InstructionRow {
 
     const head = document.createElement("span");
     head.className = "choice-set-label";
-    head.textContent = "選了之後：";
+    head.textContent = "選了之後改變數：";
     wrap.appendChild(head);
 
     for (const [flag, raw] of entries) {
