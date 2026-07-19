@@ -817,6 +817,26 @@ export class InstructionRow {
       },
     });
     wrap.appendChild(host);
+
+    // 進階：含括號或「且/或」混用的式子，產生器不敢硬拆（怕改壞），
+    // 只會叫人「直接編輯下方文字」——所以下方一定要真的有這個文字框。
+    const adv = document.createElement("details");
+    adv.className = "cond-adv";
+    const advSum = document.createElement("summary");
+    advSum.textContent = "進階：直接編輯條件式";
+    adv.appendChild(advSum);
+    const advInput = document.createElement("input");
+    advInput.className = "instr-field condition";
+    advInput.value = opt.if || "";
+    advInput.placeholder = "條件表達式，例: 對項伯起疑 && 怒氣 > 2";
+    advInput.addEventListener("change", () => {
+      const options = [...this.ins.options];
+      options[idx] = { ...options[idx], if: advInput.value.trim() || undefined };
+      this.onChange({ options });
+    });
+    adv.appendChild(advInput);
+    wrap.appendChild(adv);
+
     return wrap;
   }
 
