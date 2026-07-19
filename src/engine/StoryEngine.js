@@ -37,7 +37,7 @@ export class StoryEngine {
     };
   }
 
-  // 依 story.json 的 flags 宣告產生開場預設旗標值（未宣告則為空，向後相容）
+  // 依 story.json 的 flags 宣告產生開場預設變數值（未宣告則為空，向後相容）
   #initialFlags() {
     const flags = {};
     const decls = this.storyMeta?.flags || {};
@@ -367,7 +367,7 @@ export class StoryEngine {
     this.#writeFlag(ins.key, ins.op, ins.value);
   }
 
-  // 統一的旗標寫入：op 為 "=" / "+=" / "-="
+  // 統一的變數寫入：op 為 "=" / "+=" / "-="
   #writeFlag(key, op, value) {
     const cur = this.state.flags[key];
     switch (op) {
@@ -436,7 +436,7 @@ export class StoryEngine {
 
     // 傳進來的是「畫面上第幾個」，條件選項過濾後與原陣列索引不一致，
     // 必須用同一份可見清單取回選項，否則會套用到別的選項。
-    // 這裡重算而非記錄狀態：重算不受存讀檔影響，且等待輸入期間旗標不會變。
+    // 這裡重算而非記錄狀態：重算不受存讀檔影響，且等待輸入期間變數不會變。
     const opt = this.#visibleOptions(choiceIns)[optionIndex];
     if (!opt) return;
 

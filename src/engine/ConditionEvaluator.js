@@ -8,7 +8,7 @@
 export class ConditionEvaluator {
   /**
    * @param {string} expr - 條件表達式
-   * @param {Object} flags - 當前所有旗標
+   * @param {Object} flags - 當前所有變數
    * @returns {boolean}
    */
   static eval(expr, flags) {
@@ -144,7 +144,7 @@ export class ConditionEvaluator {
       return { value: tok.value, pos: pos + 1 };
     }
     if (tok.type === "ident") {
-      // 從旗標查詢；未定義視為 undefined -> falsy
+      // 從變數查詢；未定義視為 undefined -> falsy
       const v = flags[tok.value];
       return { value: v === undefined ? false : v, pos: pos + 1 };
     }

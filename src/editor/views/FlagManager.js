@@ -1,7 +1,7 @@
 // ============================================
 // FlagManager.js
-// 變量（旗標）管理：登記 CRUD ＋ 搜尋 ＋ 用途/型別篩選（S5）。
-// 常駐於「敘事地圖」頁的變量管理欄，與 FlagInspector（使用情況）同欄。
+// 變數（變數）管理：登記 CRUD ＋ 搜尋 ＋ 用途/型別篩選（S5）。
+// 常駐於「敘事地圖」頁的變數管理欄，與 FlagInspector（使用情況）同欄。
 //
 // 搜尋與篩選只重繪清單區（#renderList），不動搜尋框本身——
 // 否則每敲一個字輸入框就被重建、焦點消失。
@@ -13,7 +13,7 @@ import { usagesOf } from "../core/flagUsage.js";
 
 const EVENTS = new Set([
   "loaded", "flags-updated", "undo", "redo",
-  // 這些會改變「未登記旗標」警告的內容
+  // 這些會改變「未登記變數」警告的內容
   "instructions-replaced", "instruction-updated", "instruction-inserted",
   "instruction-deleted", "scene-created", "scene-deleted",
 ]);
@@ -28,7 +28,7 @@ export class FlagManager {
     this._writing = false;
     this.search = "";          // 搜尋字串（名稱/說明）
     this.usageFilter = "all";  // all | counter | switch | mark | other
-    this._selected = null;     // 主從式：選中的旗標名
+    this._selected = null;     // 主從式：選中的變數名
     this._unsub = project.subscribe((t) => {
       if (this._writing) return;
       if (EVENTS.has(t)) this.render();
@@ -57,16 +57,16 @@ export class FlagManager {
 
     const head = document.createElement("div");
     head.className = "panel-header";
-    head.innerHTML = `<span>旗標登記</span>`;
+    head.innerHTML = `<span>變數登記</span>`;
     this.containerEl.appendChild(head);
 
     if (!this.project.storyMeta) {
-      this.containerEl.innerHTML += `<div class="panel-empty">開啟專案後可在此登記變量</div>`;
+      this.containerEl.innerHTML += `<div class="panel-empty">開啟專案後可在此登記變數</div>`;
       return;
     }
 
     const total = Object.keys(this.project.getDeclaredFlags()).length;
-    head.innerHTML = `<span>旗標登記</span><span class="panel-count">${total}</span>`;
+    head.innerHTML = `<span>變數登記</span><span class="panel-count">${total}</span>`;
 
     const body = document.createElement("div");
     body.className = "mgr-panel mgr-wide flag-mgr-body";
@@ -110,15 +110,15 @@ export class FlagManager {
 
     const addBtn = document.createElement("button");
     addBtn.className = "tb-btn mgr-md-add";
-    addBtn.textContent = "+ 新增旗標";
+    addBtn.textContent = "+ 新增變數";
     addBtn.addEventListener("click", async () => {
       const name = await promptDialog({
-        title: "新增旗標",
-        label: "旗標名稱",
+        title: "新增變數",
+        label: "變數名稱",
         placeholder: "例：charm、met_alice",
         validate: (v) => {
-          if (!v.trim()) return "請輸入旗標名稱";
-          if (this.project.getDeclaredFlags()[v.trim()]) return "旗標已存在";
+          if (!v.trim()) return "請輸入變數名稱";
+          if (this.project.getDeclaredFlags()[v.trim()]) return "變數已存在";
           return null;
         },
       });
@@ -138,14 +138,14 @@ export class FlagManager {
     this.#renderList();
     this.#renderDetail();
 
-    // 劇本用到但未登記的旗標 → 一鍵補登（不受搜尋/篩選影響）
+    // 劇本用到但未登記的變數 → 一鍵補登（不受搜尋/篩選影響）
     const declared = new Set(Object.keys(this.project.getDeclaredFlags()));
     const missing = [...this.project.collectUsedFlagNames()].filter((n) => !declared.has(n));
     if (missing.length > 0) {
       const warn = document.createElement("div");
       warn.className = "ending-warn";
       warn.innerHTML = `
-        <strong>⚠ 劇本用到 ${missing.length} 個未登記旗標：</strong><br>
+        <strong>⚠ 劇本用到 ${missing.length} 個未登記變數：</strong><br>
         ${missing.map((n) => `<code>${escapeHtml(n)}</code>`).join(", ")}
         <br><button class="tb-btn" style="margin-top:8px">一鍵登記</button>
       `;
@@ -189,7 +189,7 @@ export class FlagManager {
     if (names.length === 0) {
       const empty = document.createElement("div");
       empty.className = "panel-empty";
-      empty.textContent = total === 0 ? "還沒登記任何旗標。" : "沒有符合搜尋/篩選的旗標。";
+      empty.textContent = total === 0 ? "還沒登記任何變數。" : "沒有符合搜尋/篩選的變數。";
       list.appendChild(empty);
     }
     for (const name of names) list.appendChild(this.#renderListItem(name, flags[name]));
@@ -214,12 +214,12 @@ export class FlagManager {
 
     const del = document.createElement("button");
     del.className = "char-delete";
-    del.title = "刪除旗標登記";
+    del.title = "刪除變數登記";
     del.textContent = "×";
     del.addEventListener("click", async (e) => {
       e.stopPropagation();
       if (!(await confirmDialog({
-        title: `刪除旗標登記「${name}」？`,
+        title: `刪除變數登記「${name}」？`,
         message: "不會刪除劇本中的引用。",
         confirmText: "刪除", danger: true,
       }))) return;
@@ -244,7 +244,7 @@ export class FlagManager {
     const flags = this.project.getDeclaredFlags();
     const name = this._selected;
     if (!name || !flags[name]) {
-      this.detailHost.innerHTML = `<div class="mgr-md-empty">從左側選擇一個旗標以編輯，或新增一個。</div>`;
+      this.detailHost.innerHTML = `<div class="mgr-md-empty">從左側選擇一個變數以編輯，或新增一個。</div>`;
       return;
     }
     let def = flags[name];
@@ -322,7 +322,7 @@ export class FlagManager {
     });
     this.detailHost.appendChild(field("說明", labelInput));
 
-    // ---- 下方：此變量在劇本中的使用處 ----
+    // ---- 下方：此變數在劇本中的使用處 ----
     this.detailHost.appendChild(this.#renderUsages(name));
     return this.detailHost;
   }
@@ -341,7 +341,7 @@ export class FlagManager {
     if (sets.length === 0 && reads.length === 0) {
       const empty = document.createElement("div");
       empty.className = "panel-empty";
-      empty.textContent = "劇本中還沒有用到這個變量。";
+      empty.textContent = "劇本中還沒有用到這個變數。";
       wrap.appendChild(empty);
       return wrap;
     }

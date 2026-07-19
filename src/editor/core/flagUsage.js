@@ -1,12 +1,12 @@
 // ============================================
 // flagUsage.js
-// 蒐集「變量（flag）在劇本中的使用位置」——寫入(sets) 與 讀取(reads)。
-// 由 FlagInspector（全部變量一覽）與 FlagManager（選中變量的使用處）共用，
+// 蒐集「變數（flag）在劇本中的使用位置」——寫入(sets) 與 讀取(reads)。
+// 由 FlagInspector（全部變數一覽）與 FlagManager（選中變數的使用處）共用，
 // 避免兩份實作各自漂移。
 // ============================================
 
 const RESERVED = new Set(["true", "false", "null"]);
-// 變量名：字母/底線/中日韓字起頭
+// 變數名：字母/底線/中日韓字起頭
 const NAME_RE = /([a-zA-Z_一-鿿㐀-䶿豈-﫿][\w一-鿿㐀-䶿豈-﫿]*)/g;
 
 function formatValue(v) {
@@ -14,7 +14,7 @@ function formatValue(v) {
   return String(v);
 }
 
-/** 從條件式取出被讀取的變量名（先剝掉字串字面值避免誤判） */
+/** 從條件式取出被讀取的變數名（先剝掉字串字面值避免誤判） */
 export function extractFlags(expr) {
   if (!expr) return [];
   const withoutStrings = String(expr)
@@ -30,7 +30,7 @@ export function extractFlags(expr) {
 }
 
 /**
- * 掃過所有場景，回傳 { 變量名: { sets: [...], reads: [...] } }。
+ * 掃過所有場景，回傳 { 變數名: { sets: [...], reads: [...] } }。
  * 每筆位置為 { sceneId, index, detail }，可直接跳轉。
  */
 export function collectFlagUsages(project) {
@@ -74,7 +74,7 @@ export function collectFlagUsages(project) {
   return result;
 }
 
-/** 單一變量的使用處（找不到回傳空結構） */
+/** 單一變數的使用處（找不到回傳空結構） */
 export function usagesOf(project, name) {
   return collectFlagUsages(project)[name] || { sets: [], reads: [] };
 }

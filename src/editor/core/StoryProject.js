@@ -21,7 +21,7 @@ export class StoryProject {
       video: [],
     };
     this.listeners = new Set();      // 變更訂閱者（給 UI 重繪用）
-    this.metaDirty = false;          // story.json 類變更（角色/旗標/章節/位置/基本資訊）
+    this.metaDirty = false;          // story.json 類變更（角色/變數/章節/位置/基本資訊）
     this.undoStack = [];
     this.redoStack = [];
     this.maxUndo = 50;
@@ -78,7 +78,7 @@ export class StoryProject {
     // 儲存被改過的場景。
     // 重要：dirty 要在 await 寫檔「之前」清掉——寫入期間使用者若繼續編輯，
     // markDirty 會重新標髒、留給下一輪儲存；若寫完才清，會把新編輯的
-    // 髒旗標一併蓋掉，該段編輯就永遠不會被存（自動存檔下機率性觸發）。
+    // 髒變數一併蓋掉，該段編輯就永遠不會被存（自動存檔下機率性觸發）。
     for (const [sceneId, sc] of this.scenes) {
       if (!sc.dirty) continue;
       const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions });
@@ -87,7 +87,7 @@ export class StoryProject {
         await this.fs.writeScene(sc.fileName, md);
         sc.raw = md;
       } catch (err) {
-        sc.dirty = true;   // 寫失敗要保住旗標，否則變更被標成已存
+        sc.dirty = true;   // 寫失敗要保住變數，否則變更被標成已存
         throw err;
       }
     }
@@ -399,7 +399,7 @@ export class StoryProject {
   }
 
   /**
-   * 全域搜尋（S7）：跨場景找台詞/角色/選項/變量/條件/資產檔名/標籤/結局。
+   * 全域搜尋（S7）：跨場景找台詞/角色/選項/變數/條件/資產檔名/標籤/結局。
    * 回傳 { sceneId, index, kind, snippet }；index 為 null 代表命中場景本身。
    */
   searchAll(query, { limit = 200 } = {}) {
@@ -430,7 +430,7 @@ export class StoryProject {
             }
             break;
           case "set":
-            if (m(ins.key) || m(ins.value)) push(sceneId, idx, "變量", `@set ${ins.key} ${ins.op} ${ins.value}`);
+            if (m(ins.key) || m(ins.value)) push(sceneId, idx, "變數", `@set ${ins.key} ${ins.op} ${ins.value}`);
             break;
           case "if":
           case "elif":
@@ -579,7 +579,7 @@ export class StoryProject {
     this.notify("chapters-updated", { chapterId, moved: dir });
   }
 
-  // ==================== 旗標登記 ====================
+  // ==================== 變數登記 ====================
 
   getDeclaredFlags() {
     return this.storyMeta?.flags || {};
@@ -600,7 +600,7 @@ export class StoryProject {
     this.notify("flags-updated", { name, removed: true });
   }
 
-  // 從條件式抽出旗標名（與 FlagInspector 規則一致）
+  // 從條件式抽出變數名（與 FlagInspector 規則一致）
   #extractConditionFlags(expr) {
     if (!expr) return [];
     const noStr = expr.replace(/"([^"\\]|\\.)*"/g, "").replace(/'([^'\\]|\\.)*'/g, "");
@@ -612,7 +612,7 @@ export class StoryProject {
     return out;
   }
 
-  // 劇本中實際用到的旗標名（@set / 選項 set / 條件式）
+  // 劇本中實際用到的變數名（@set / 選項 set / 條件式）
   collectUsedFlagNames() {
     const used = new Set();
     for (const sc of this.scenes.values()) {

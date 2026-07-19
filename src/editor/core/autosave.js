@@ -4,7 +4,7 @@
 //
 // 獨立成模組而非塞進 main.js：可用 MemoryBackend 直接測試存檔時序。
 // 自己追蹤 dirty——hasUnsavedChanges() 只看場景，
-// story.json 類變更（meta/角色/旗標/章節/位置）不會標 dirty，
+// story.json 類變更（meta/角色/變數/章節/位置）不會標 dirty，
 // 但 saveAll() 一律會把 story.json 寫回，所以這裡只要知道「有動過」。
 // ============================================
 

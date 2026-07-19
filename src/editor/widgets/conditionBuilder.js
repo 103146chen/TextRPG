@@ -3,7 +3,7 @@
 // 條件式的圖形化產生器 ＋ 白話解讀。
 //
 // 動機：條件欄位原本是自由輸入框，作者得自己想出
-// `met_alice && charm > 2` 這種語法。這裡提供一排「旗標／運算子／值」的
+// `met_alice && charm > 2` 這種語法。這裡提供一排「變數／運算子／值」的
 // 條件塊，自動組出運算式；文字框保留為進階模式，兩邊雙向同步。
 //
 // 刻意的限制：只解析「以單一邏輯運算子串起來的比較式」。含括號或 && ||
@@ -14,7 +14,7 @@
 import { createSelectField } from "./selectField.js";
 
 const COMPARE_OPS = [
-  ["", "為真"],          // 只有旗標名，例：met_alice
+  ["", "為真"],          // 只有變數名，例：met_alice
   ["!", "為假"],         // !met_alice
   ["==", "等於"],
   ["!=", "不等於"],
@@ -98,9 +98,9 @@ export function explainCondition(expr) {
  * @param {HTMLElement} host
  * @param {object} o
  * @param {string} o.expr            目前的運算式
- * @param {string[]} o.flags         可選旗標
+ * @param {string[]} o.flags         可選變數
  * @param {(expr:string)=>void} o.onChange
- * @param {()=>void} [o.onManage]    「新增旗標…」的跳轉
+ * @param {()=>void} [o.onManage]    「新增變數…」的跳轉
  */
 export function renderConditionBuilder(host, { expr, flags = [], onChange, onManage }) {
   const initial = String(expr || "");
@@ -156,8 +156,8 @@ export function renderConditionBuilder(host, { expr, flags = [], onChange, onMan
         }
 
         const flagSel = createSelectField({
-          value: part.flag, options: flags, placeholder: "選旗標",
-          addLabel: "新增旗標…", onAdd: () => onManage?.(),
+          value: part.flag, options: flags, placeholder: "選變數",
+          addLabel: "新增變數…", onAdd: () => onManage?.(),
           onChange: (v) => { part.flag = v; commit(); },
         });
         flagSel.classList.add("cond-flag");

@@ -76,7 +76,7 @@ const lintPanel = new LintPanel($("#lint-panel"), project, (sceneId, index) => {
 const flagInspector = new FlagInspector($("#flag-panel"), project, jumpToInstruction);
 
 // 原「資料庫 Hub」拆分後的常駐視圖（S4.5）：
-// 角色→資產頁、旗標/結局→敘事地圖、基本資訊→設定頁
+// 角色→資產頁、變數/結局→敘事地圖、基本資訊→設定頁
 const characterManager = new CharacterManager($("#character-manager"), project);
 new FlagManager($("#var-manage"), project, jumpToInstruction);
 const endingManager = new EndingManager($("#ending-manage"), project);
@@ -417,7 +417,7 @@ document.querySelectorAll(".asset-nav-btn").forEach((btn) => {
   btn.addEventListener("click", () => setAssetView(btn.dataset.assetView));
 });
 
-// 敘事地圖左欄分頁（地圖 / 變量管理 / 結局）
+// 敘事地圖左欄分頁（地圖 / 變數管理 / 結局）
 const MAP_VIEWS = {
   graph: "#map-graph-view",
   chapters: "#map-chapters-view",

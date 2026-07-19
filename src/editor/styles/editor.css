@@ -493,8 +493,8 @@ input, textarea, select {
 
 .dlg-head { display: flex; align-items: center; gap: 8px; }
 
-/* 連續同一說話者：收起重複的說話者列，改用左側續行線標示是誰在說。
-   滑鼠移入或游標進到這列時再展開，仍然可以直接改說話者／表情。 */
+/* 收起說話者列（旁白，或連續同一人）。滑鼠移入或游標進到這列時再展開，
+   仍然可以直接改說話者／表情——旁白要改成某個角色說的話也走這裡。 */
 .instr-content.is-dialogue.is-cont { position: relative; gap: 0; }
 .instr-content.is-dialogue.is-cont > .dlg-head {
   height: 0;
@@ -510,7 +510,8 @@ input, textarea, select {
   opacity: 1;
   margin-bottom: 6px;
 }
-.instr-content.is-dialogue.is-cont::before {
+/* 續行線只給「同一人接著說」，旁白不畫（見 InstructionRow 的說明） */
+.instr-content.is-dialogue.is-cont-line::before {
   content: "";
   position: absolute;
   left: -9px; top: 2px; bottom: 2px;
@@ -1338,7 +1339,7 @@ input, textarea, select {
 }
 
 /* ============================================
-   管理面板共用（原資料庫 Hub 拆分：角色/旗標/結局/專案設定）
+   管理面板共用（原資料庫 Hub 拆分：角色/變數/結局/專案設定）
    ============================================ */
 
 .sm-field {
@@ -1704,7 +1705,7 @@ input, textarea, select {
   border-left-color: var(--e-accent);
   background: var(--e-bg);
 }
-/* 右側主區：地圖填滿高度；變量／結局可捲動 */
+/* 右側主區：地圖填滿高度；變數／結局可捲動 */
 .map-view-host { flex: 1; min-height: 0; }
 #map-graph-view { display: flex; flex-direction: column; }
 #map-flags-view, #map-endings-view { overflow-y: auto; padding: 16px 20px; background: var(--e-bg); }
@@ -1840,7 +1841,7 @@ input, textarea, select {
 .cond-adv[open] { display: flex; flex-direction: column; gap: 6px; }
 .cond-adv .condition { width: 100%; font-family: var(--e-font-mono); }
 
-/* 選項：圖形化旗標設定 + 排序 */
+/* 選項：圖形化變數設定 + 排序 */
 .choice-set {
   display: flex; align-items: center; gap: 6px; flex-wrap: wrap;
   margin-top: 6px;
@@ -2249,7 +2250,7 @@ input, textarea, select {
 
 /* 角色管理：主從式（左清單 ｜ 右表情差分） */
 .mgr-panel.char-mgr { max-width: none; }
-/* 通用主從式（結局／變量）：左一覽 ｜ 右細節 */
+/* 通用主從式（結局／變數）：左一覽 ｜ 右細節 */
 .mgr-md { display: grid; grid-template-columns: minmax(200px, 260px) minmax(0, 1fr); gap: 20px; align-items: start; margin-top: 10px; }
 .mgr-md-list { display: flex; flex-direction: column; gap: 3px; }
 .mgr-md-item {
@@ -2274,7 +2275,7 @@ input, textarea, select {
 .mgr-md-add { margin-top: 10px; align-self: flex-start; }
 .mgr-md-list-col { display: flex; flex-direction: column; min-width: 0; }
 
-/* 變量細節下方：此變量在劇本中的使用處 */
+/* 變數細節下方：此變數在劇本中的使用處 */
 .flag-usages { margin-top: 14px; border-top: 1px solid var(--e-border); padding-top: 12px; }
 .flag-usages-head { display: flex; align-items: baseline; gap: 10px; margin-bottom: 8px; }
 .flag-usages-count { font-size: 11.5px; color: var(--e-text-faded); font-family: var(--e-font-mono); }
@@ -2528,7 +2529,7 @@ input, textarea, select {
 .emotion-card-name .emotion-delete:hover { color: var(--e-red); }
 
 .mgr-panel { max-width: 680px; }
-/* 主從式面板（結局／變量／角色）要用滿整個右側區域 */
+/* 主從式面板（結局／變數／角色）要用滿整個右側區域 */
 .mgr-panel.mgr-wide { max-width: none; }
 .flag-mgr-body { padding: 10px 12px; }
 #var-manage { border-bottom: 1px solid var(--e-border); }
@@ -2542,7 +2543,7 @@ input, textarea, select {
 }
 .settings-sub { margin-top: 36px; }
 
-/* S5：敘事地圖工具列 / 圖例浮層 / 變量搜尋篩選 */
+/* S5：敘事地圖工具列 / 圖例浮層 / 變數搜尋篩選 */
 .graph-toolbar {
   position: absolute;
   top: 12px;

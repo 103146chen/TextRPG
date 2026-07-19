@@ -7,7 +7,7 @@
  * 指令類型：
  *   text      - 顯示文字 { speaker, text }
  *   directive - 引擎指令 { name, args }
- *   set       - 設定旗標 { key, op, value }
+ *   set       - 設定變數 { key, op, value }
  *   if        - 條件開始 { condition, endIndex, elifs[], elseIndex }
  *   endif     - 條件結束
  *   label     - 標籤錨點 { name }

@@ -113,11 +113,17 @@ export class InstructionRow {
     const speaker = this.ins.speaker || "";
     const charNames = Object.keys(this.project.storyMeta?.characters || {});
 
-    // 連續同一人：說話者列收起（hover／編輯時再展開），左側留一條該角色顏色的
-    // 續行線，讓人仍看得出是誰在說話。
+    // 說話者列在兩種情況下收起（hover／聚焦時再展開，仍然改得動）：
+    //   旁白      —— 沒有說話者可顯示，那一列整條是空的
+    //   連續同一人 —— 名字重複寫一次沒有意義
+    // 這句自己有設表情就不收，否則表情設定會被藏住看不到。
     container.style.setProperty("--dlg-color", speaker ? speakerColor(this.project, speaker) : "#8b8b8b");
-    // 這句自己有設表情就不收起，否則表情設定會被藏住看不到
-    if (this.continuation && !this.ins.emotion) container.classList.add("is-cont");
+    if ((!speaker || this.continuation) && !this.ins.emotion) {
+      container.classList.add("is-cont");
+      // 續行線只給「同一個角色接著說」用——它的意思是「還是他在講」。
+      // 旁白沒有說話者，連續旁白也不該畫線，否則看起來像在指涉某個角色。
+      if (this.continuation && speaker) container.classList.add("is-cont-line");
+    }
 
     // ---- 上排：說話者 ----
     const head = document.createElement("div");
@@ -471,8 +477,8 @@ export class InstructionRow {
     const keyInput = createSelectField({
       value: this.ins.key || "",
       options: this.project.getKnownFlagNames(),
-      placeholder: "選旗標",
-      addLabel: "新增旗標…", onAdd: () => this.onManage?.("flags"),
+      placeholder: "選變數",
+      addLabel: "新增變數…", onAdd: () => this.onManage?.("flags"),
       onChange: (v) => this.onChange({ key: v }),
     });
     keyInput.style.minWidth = "120px";
@@ -626,13 +632,13 @@ export class InstructionRow {
     adv.appendChild(condInput);
     container.appendChild(adv);
 
-    // 運算式無法純下拉，提供「插入旗標」輔助（含跳新增）
+    // 運算式無法純下拉，提供「插入變數」輔助（含跳新增）
     const insertSel = document.createElement("select");
     insertSel.className = "instr-field";
-    insertSel.title = "插入旗標名到條件式";
+    insertSel.title = "插入變數名到條件式";
     insertSel.style.maxWidth = "110px";
     const ph = document.createElement("option");
-    ph.value = ""; ph.textContent = "＋旗標";
+    ph.value = ""; ph.textContent = "＋變數";
     insertSel.appendChild(ph);
     for (const f of this.project.getKnownFlagNames()) {
       const o = document.createElement("option");
@@ -640,7 +646,7 @@ export class InstructionRow {
       insertSel.appendChild(o);
     }
     const addOpt = document.createElement("option");
-    addOpt.value = "\u0000add"; addOpt.textContent = "＋ 新增旗標…";
+    addOpt.value = "\u0000add"; addOpt.textContent = "＋ 新增變數…";
     insertSel.appendChild(addOpt);
     insertSel.addEventListener("change", () => {
       const v = insertSel.value;
@@ -919,7 +925,7 @@ export class InstructionRow {
   }
 
   /**
-   * 選項的旗標設定：圖形化的「旗標 ／ 運算子 ／ 值」列，取代原本要手打
+   * 選項的變數設定：圖形化的「變數 ／ 運算子 ／ 值」列，取代原本要手打
    * `flag: true, x: 1` 的純文字框（與 @set 指令同一套操作邏輯）。
    */
   #renderChoiceSet(opt, idx) {
@@ -951,8 +957,8 @@ export class InstructionRow {
       const flagSel = createSelectField({
         value: flag,
         options: this.project.getKnownFlagNames(),
-        placeholder: "選旗標",
-        addLabel: "新增旗標…", onAdd: () => this.onManage?.("flags"),
+        placeholder: "選變數",
+        addLabel: "新增變數…", onAdd: () => this.onManage?.("flags"),
         onChange: (v) => {
           if (!v || v === flag) return;
           const next = {}; // 保留原順序地換掉 key
@@ -1011,7 +1017,7 @@ export class InstructionRow {
 
     const add = document.createElement("button");
     add.className = "choice-set-add";
-    add.textContent = "＋ 設定旗標";
+    add.textContent = "＋ 設定變數";
     add.addEventListener("click", (e) => {
       e.stopPropagation();
       const known = this.project.getKnownFlagNames();
