@@ -1669,6 +1669,16 @@ input, textarea, select {
 }
 .choice-set-add:hover { color: var(--e-accent); border-color: var(--e-accent); }
 
+.choice-cond { margin-top: 6px; }
+.choice-cond-summary {
+  font-size: 11px; color: var(--e-text-faded); cursor: pointer;
+  padding: 2px 0; list-style: none;
+}
+.choice-cond-summary::before { content: "▸ "; }
+.choice-cond[open] > .choice-cond-summary::before { content: "▾ "; }
+.choice-cond-summary:hover { color: var(--e-accent); }
+.choice-cond > div { padding: 4px 0 0 12px; }
+
 .choice-option-order { display: flex; flex-direction: column; line-height: 0.7; margin-right: 2px; }
 .choice-order-btn {
   background: transparent; border: none; cursor: pointer;

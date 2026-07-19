@@ -736,6 +736,7 @@ export class InstructionRow {
 
     main.appendChild(meta);
     main.appendChild(this.#renderChoiceSet(opt, idx));
+    main.appendChild(this.#renderChoiceCondition(opt, idx));
     el.appendChild(main);
 
     // 排序（▲▼）：改順序不必再刪掉重建
@@ -772,6 +773,35 @@ export class InstructionRow {
     el.appendChild(delBtn);
 
     return el;
+  }
+
+  /**
+   * 選項的顯示條件：不符合時該選項整個不出現在遊戲裡。
+   * 預設收合（多數選項沒有條件），展開後直接複用條件產生器。
+   */
+  #renderChoiceCondition(opt, idx) {
+    const wrap = document.createElement("details");
+    wrap.className = "choice-cond";
+    if (opt.if) wrap.open = true;      // 已有條件就攤開，避免藏起來看不見
+
+    const sum = document.createElement("summary");
+    sum.className = "choice-cond-summary";
+    sum.textContent = opt.if ? "顯示條件（已設定）" : "顯示條件：一律顯示";
+    wrap.appendChild(sum);
+
+    const host = document.createElement("div");
+    renderConditionBuilder(host, {
+      expr: opt.if || "",
+      flags: this.project.getKnownFlagNames(),
+      onManage: () => this.onManage?.("flags"),
+      onChange: (expr) => {
+        const options = [...this.ins.options];
+        options[idx] = { ...options[idx], if: expr || undefined };
+        this.onChange({ options });
+      },
+    });
+    wrap.appendChild(host);
+    return wrap;
   }
 
   /**

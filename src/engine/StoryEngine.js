@@ -309,8 +309,12 @@ export class StoryEngine {
       }
 
       case "choice": {
+        // 條件選項：只顯示符合條件者。全部都不符合時直接略過整個選項節點，
+        // 否則畫面會停在一個沒有任何按鈕的選單上，玩家卡死。
+        const visible = this.#visibleOptions(ins);
+        if (visible.length === 0) break;
         this.state.waitingForChoice = true;
-        await this.onChoice(ins.options);
+        await this.onChoice(visible);
         return "wait-choice";
       }
 
@@ -377,6 +381,16 @@ export class StoryEngine {
   // ============ 玩家互動 ============
 
   /**
+   * 目前條件下實際會顯示的選項。沒寫 if 的選項一律顯示（既有劇本行為不變）。
+   * 顯示與選取都必須走這支，兩邊的索引才會一致。
+   */
+  #visibleOptions(choiceIns) {
+    return (choiceIns.options || []).filter(
+      (o) => !o.if || ConditionEvaluator.eval(o.if, this.state.flags)
+    );
+  }
+
+  /**
    * 玩家選擇選項後呼叫
    */
   async selectChoice(optionIndex) {
@@ -386,7 +400,10 @@ export class StoryEngine {
 
     this.#pushHistory(); // 選擇也入歷史
 
-    const opt = choiceIns.options[optionIndex];
+    // 傳進來的是「畫面上第幾個」，條件選項過濾後與原陣列索引不一致，
+    // 必須用同一份可見清單取回選項，否則會套用到別的選項。
+    // 這裡重算而非記錄狀態：重算不受存讀檔影響，且等待輸入期間旗標不會變。
+    const opt = this.#visibleOptions(choiceIns)[optionIndex];
     if (!opt) return;
 
     // 套用選項的 set：{ flag: true } 為賦值，{ charm: += 1 } 為增量

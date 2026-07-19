@@ -246,6 +246,13 @@ export class SceneParser {
           i++;
           continue;
         }
+        // 條件選項：不符合條件時整個選項不顯示（沒寫就一律顯示）
+        const ifMatch = trimmed.match(/^if\s*:\s*(.+)$/);
+        if (ifMatch) {
+          current.if = ifMatch[1].trim();
+          i++;
+          continue;
+        }
       }
 
       i++;

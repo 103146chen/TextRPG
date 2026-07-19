@@ -169,6 +169,9 @@ export class MarkdownWriter {
           .join(", ");
         lines.push(`${indent}  set: { ${entries} }`);
       }
+      if (opt.if) {
+        lines.push(`${indent}  if: ${opt.if}`);
+      }
       if (opt.goto) {
         lines.push(`${indent}  goto: ${opt.goto}`);
       }
