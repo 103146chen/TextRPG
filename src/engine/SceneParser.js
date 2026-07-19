@@ -26,6 +26,10 @@ export class SceneParser {
     if (typeof rawText === "string" && rawText.charCodeAt(0) === 0xfeff) {
       rawText = rawText.slice(1);
     }
+    // 換行正規化：CRLF 檔的 front matter 會整份失效——外層的 ---...--- 抓得到，
+    // 但裡面每一行的 /^key:\s*(.*)$/ 都比不中，因為 JS 的 . 不吃 \r、$ 也不停在 \r 前。
+    // 結果是 background／bgm／next／id 全部靜默消失（Windows 上 git 簽出即 CRLF）。
+    if (typeof rawText === "string") rawText = rawText.replace(/\r\n?/g, "\n");
     const { meta, body } = this.#extractFrontMatter(rawText);
     const instructions = this.#parseBody(body);
     this.#linkControlFlow(instructions);
