@@ -26,6 +26,7 @@ import { MarkdownWriter } from "./core/MarkdownWriter.js";
 import { SceneJson } from "./core/SceneJson.js";
 import { createAutosave } from "./core/autosave.js";
 import { initUiPrefs } from "./core/uiPrefs.js";
+import { clearAssetUrls } from "./core/assetUrl.js";
 import { promptDialog, confirmDialog } from "./widgets/dialog.js";
 import { toast } from "./widgets/toast.js";
 import { renderDirectiveForm, DIRECTIVE_SCHEMAS } from "./widgets/directiveFields.js";
@@ -194,6 +195,8 @@ function applySource() {
 $("#btn-open").addEventListener("click", async () => {
   try {
     const name = await fs.openProject();
+    // 縮圖快取以檔名為鍵，換專案後同名檔會拿到舊圖，必須先清掉
+    clearAssetUrls();
     await project.loadAll();
     toast(`已開啟專案：${name}`, "success");
     renderAll();

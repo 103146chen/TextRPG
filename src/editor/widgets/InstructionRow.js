@@ -6,6 +6,7 @@
 import { createSelectField } from "./selectField.js";
 import { renderDirectiveForm, DIRECTIVE_SCHEMAS } from "./directiveFields.js";
 import { speakerColor } from "../core/speakerColor.js";
+import { assetUrl } from "../core/assetUrl.js";
 import { escapeHtml } from "./formFields.js";
 import { renderConditionBuilder } from "./conditionBuilder.js";
 
@@ -20,10 +21,11 @@ export class InstructionRow {
    * @param {Function} params.onChange - (patch) => void
    * @param {Function} params.onDelete
    */
-  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete, onPlayFrom, onManage, selected = false, onSelect = null, onEnterContinue = null }) {
+  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete, onPlayFrom, onManage, selected = false, onSelect = null, onEnterContinue = null, continuation = false }) {
     this.ins = instruction;
     this.index = index;
     this.indent = indent;
+    this.continuation = continuation;  // 與上一句同說話者：收起重複的說話者列
     this.project = project;
     this.sceneId = sceneId;
     this.onChange = onChange;
@@ -106,6 +108,12 @@ export class InstructionRow {
 
     const speaker = this.ins.speaker || "";
     const charNames = Object.keys(this.project.storyMeta?.characters || {});
+
+    // 連續同一人：說話者列收起（hover／編輯時再展開），左側留一條該角色顏色的
+    // 續行線，讓人仍看得出是誰在說話。
+    container.style.setProperty("--dlg-color", speaker ? speakerColor(this.project, speaker) : "#8b8b8b");
+    // 這句自己有設表情就不收起，否則表情設定會被藏住看不到
+    if (this.continuation && !this.ins.emotion) container.classList.add("is-cont");
 
     // ---- 上排：說話者 ----
     const head = document.createElement("div");
@@ -269,6 +277,14 @@ export class InstructionRow {
       renderDirectiveForm(container, this.ins, DIRECTIVE_SCHEMAS[name],
         (newArgs) => this.onChange({ args: newArgs }),
         { compact: true, context: { project: this.project, onManage: this.onManage } });
+
+      // 背景指令：整張卡片鋪上該張背景（壓暗），一眼掃過就知道換到哪個場景
+      if (name === "bg" && pos[0]) {
+        container.classList.add("has-bgimage");
+        assetUrl(this.project, "backgrounds", pos[0]).then((url) => {
+          if (url && container.isConnected) container.style.setProperty("--bg-thumb", `url("${url}")`);
+        });
+      }
       return;
     }
 

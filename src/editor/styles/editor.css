@@ -319,7 +319,99 @@ input, textarea, select {
   align-items: stretch;
   gap: 6px;
 }
+/* ---- 圖片資產：縮圖按鈕 + 圖庫選取器 ---- */
+.asset-pick { display: flex; align-items: center; gap: 6px; min-width: 0; }
+.asset-thumb {
+  flex: 0 0 auto;
+  width: 48px; height: 27px;          /* 16:9，和背景圖同比例 */
+  padding: 0;
+  border: 1px solid var(--e-border);
+  border-radius: 4px;
+  background: var(--e-bg-4) center/cover no-repeat;
+  color: var(--e-text-faded);
+  font-size: 12px; line-height: 1;
+  cursor: pointer;
+}
+.asset-thumb:hover { border-color: var(--e-accent); }
+
+.asset-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+  max-height: 56vh;
+  overflow-y: auto;
+  padding: 4px 2px;
+}
+.asset-cell {
+  display: flex; flex-direction: column; gap: 4px;
+  padding: 4px;
+  border: 1px solid var(--e-border);
+  border-radius: 6px;
+  background: var(--e-bg-3);
+  cursor: pointer;
+  text-align: left;
+}
+.asset-cell:hover { border-color: var(--e-accent); }
+.asset-cell.is-current { border-color: var(--e-accent); box-shadow: 0 0 0 1px var(--e-accent); }
+.asset-cell-img {
+  width: 100%; aspect-ratio: 16 / 9;
+  border-radius: 4px;
+  background: var(--e-bg-4) center/cover no-repeat;
+}
+.asset-cell-name {
+  font-size: 11px;
+  color: var(--e-text-faded);
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+/* 背景指令卡：鋪上該張背景，壓暗到足以讀清上面的欄位 */
+.instr-content.has-bgimage {
+  position: relative;
+  border-radius: 6px;
+  padding: 4px 6px;
+  isolation: isolate;
+}
+.instr-content.has-bgimage::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  border-radius: 6px;
+  background-image: var(--bg-thumb, none);
+  background-size: cover;
+  background-position: center;
+  opacity: .22;
+}
+
 .dlg-head { display: flex; align-items: center; gap: 8px; }
+
+/* 連續同一說話者：收起重複的說話者列，改用左側續行線標示是誰在說。
+   滑鼠移入或游標進到這列時再展開，仍然可以直接改說話者／表情。 */
+.instr-content.is-dialogue.is-cont { position: relative; gap: 0; }
+.instr-content.is-dialogue.is-cont > .dlg-head {
+  height: 0;
+  overflow: hidden;
+  opacity: 0;
+  transition: height .12s ease, opacity .12s ease;
+}
+/* 注意：兩條都要帶滿 .is-dialogue.is-cont，否則權重輸給上面的收合規則 */
+.instr-row:hover .instr-content.is-dialogue.is-cont > .dlg-head,
+.instr-content.is-dialogue.is-cont:focus-within > .dlg-head {
+  height: 24px;
+  overflow: visible;
+  opacity: 1;
+  margin-bottom: 6px;
+}
+.instr-content.is-dialogue.is-cont::before {
+  content: "";
+  position: absolute;
+  left: -9px; top: 2px; bottom: 2px;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--dlg-color, #8b8b8b);
+  opacity: .45;
+}
 .dlg-avatar {
   flex: 0 0 auto;
   width: 22px; height: 22px;

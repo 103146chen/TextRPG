@@ -278,10 +278,16 @@ export class SceneEditor {
         indent = Math.max(0, indent - 1);
       }
 
+      // 與上一句同一個說話者（含連續旁白）→ 收合重複的說話者列
+      const prev = scene.instructions[idx - 1];
+      const continuation = ins.type === "text" && prev?.type === "text"
+        && (prev.speaker || "") === (ins.speaker || "");
+
       const row = new InstructionRow({
         instruction: ins,
         index: idx,
         indent,
+        continuation,
         project: this.project,
         sceneId: this.currentSceneId,
         selected: this.selectedIndex === idx,

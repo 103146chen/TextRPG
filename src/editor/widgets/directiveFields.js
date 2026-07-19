@@ -12,6 +12,8 @@
 // ============================================
 
 import { createSelectField } from "./selectField.js";
+import { assetUrl } from "../core/assetUrl.js";
+import { openModal } from "./dialog.js";
 
 // ---- 值的讀寫（具名 vs 位置參數）----
 // fallbackPositional：具名值空缺時，改讀某個位置參數（相容舊檔，例如
@@ -212,13 +214,98 @@ function colorControl(f, value, commit) {
 // 尾端可「＋ 匯入…」跳到資產頁對應分類。需 context.project / context.onManage。
 function assetControl(f, value, commit, compact, ctx) {
   const options = ctx?.project?.resources?.[f.assetKind] || [];
-  return createSelectField({
+  const select = createSelectField({
     value: value || "", options,
     placeholder: f.placeholder || "（未選）",
     addLabel: f.addLabel, onAdd: f.manageTarget ? () => ctx?.onManage?.(f.manageTarget) : undefined,
     onChange: (v) => commit(v),
     className: compact ? "instr-field" : "",
   });
+
+  // 非圖片資產（BGM／音效／語音）沒有縮圖可看，維持單純下拉
+  if (!f.thumb) return select;
+
+  // 圖片資產：下拉前面放一格縮圖，點它開圖庫用看的挑。
+  // 檔名往往是 bg_night_02 這種，只有文字實在認不出是哪張。
+  const wrap = document.createElement("div");
+  wrap.className = "asset-pick";
+
+  const thumb = document.createElement("button");
+  thumb.type = "button";
+  thumb.className = "asset-thumb";
+  thumb.title = "從圖庫選擇";
+  paintThumb(thumb, ctx?.project, f.assetKind, value);
+  thumb.addEventListener("click", async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    const picked = await pickAssetVisually(ctx?.project, f.assetKind, value, f.label || "選擇圖片");
+    if (picked != null) commit(picked);
+  });
+
+  wrap.append(thumb, select);
+  return wrap;
+}
+
+// 把縮圖畫進按鈕；沒選或讀不到就顯示佔位符號
+function paintThumb(el, project, kind, file) {
+  el.style.backgroundImage = "";
+  el.textContent = file ? "…" : "🖼";
+  if (!file) return;
+  assetUrl(project, kind, file).then((url) => {
+    if (!url) { el.textContent = "?"; return; }
+    el.textContent = "";
+    el.style.backgroundImage = `url("${url}")`;
+  });
+}
+
+// 圖庫選取器：縮圖網格，點一張就回傳檔名（取消回傳 null）
+function pickAssetVisually(project, kind, current, title) {
+  const files = project?.resources?.[kind] || [];
+  return openModal(title, (close) => {
+    const box = document.createElement("div");
+
+    if (files.length === 0) {
+      const empty = document.createElement("div");
+      empty.className = "e-dialog-note";
+      empty.textContent = "這個分類還沒有任何圖片，請先到資產管理匯入。";
+      box.appendChild(empty);
+    }
+
+    const grid = document.createElement("div");
+    grid.className = "asset-grid";
+    for (const file of files) {
+      const cell = document.createElement("button");
+      cell.type = "button";
+      cell.className = "asset-cell" + (file === current ? " is-current" : "");
+      cell.title = file;
+
+      const img = document.createElement("div");
+      img.className = "asset-cell-img";
+      assetUrl(project, kind, file).then((url) => {
+        if (url) img.style.backgroundImage = `url("${url}")`;
+      });
+
+      const name = document.createElement("div");
+      name.className = "asset-cell-name";
+      name.textContent = file;
+
+      cell.append(img, name);
+      cell.addEventListener("click", () => close(file));
+      grid.appendChild(cell);
+    }
+    box.appendChild(grid);
+
+    const foot = document.createElement("div");
+    foot.className = "e-dialog-actions";
+    const cancel = document.createElement("button");
+    cancel.className = "e-btn";
+    cancel.textContent = "取消";
+    cancel.addEventListener("click", () => close(null));
+    foot.appendChild(cancel);
+    box.appendChild(foot);
+
+    return box;
+  }, { wide: true });
 }
 
 // 角色下拉：選項為已定義角色（可含 all），尾端「＋ 新增角色…」。
@@ -496,7 +583,7 @@ export const DIRECTIVE_SCHEMAS = {
   bg: {
     title: "bg · 切換背景",
     fields: [
-      { positional: 0, label: "背景", type: "asset", assetKind: "backgrounds",
+      { positional: 0, label: "背景", type: "asset", assetKind: "backgrounds", thumb: true,
         addLabel: "匯入背景…", manageTarget: "asset-backgrounds", placeholder: "選背景" },
       { key: "fade", label: "淡入", clabel: "fade", type: "number", min: 0, step: 50, suffix: "ms", hint: "預設 800" },
     ],
