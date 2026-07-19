@@ -18,6 +18,7 @@ export class SceneEditor {
     this.currentSceneId = null;
     this.openMenu = null;
     this._pendingScrollTo = null;
+    this._pendingFocus = null;
 
     // 關閉插入選單（點到選單外）
     document.addEventListener("click", (e) => {
@@ -109,6 +110,26 @@ export class SceneEditor {
           () => targetRow.classList.remove('drop-highlight'), { once: true });
       });
     }
+
+    // 插入後把焦點落到新列，作者可以直接打字（不必再點一次）。
+    // 這裡不用 rAF：重繪後 DOM 已就緒，可直接聚焦；而且 rAF 在背景分頁會被
+    // 節流不觸發。preventScroll 交由上面的捲動邏輯決定視野，避免兩邊打架。
+    if (this._pendingFocus !== null && this._pendingFocus !== undefined) {
+      const fidx = this._pendingFocus;
+      this._pendingFocus = null;
+      this.focusRow(fidx);
+    }
+  }
+
+  /** 把焦點放到某列的第一個可編輯欄位；對話列優先聚焦文字（最常要打的東西） */
+  focusRow(index) {
+    const row = this.containerEl.querySelector(`.instr-row[data-index="${index}"]`);
+    if (!row) return;
+    const el = row.querySelector(".dlg-text")
+      || row.querySelector('.instr-content textarea, .instr-content input:not([type="checkbox"]):not([type="color"]):not([type="range"]), .instr-content select');
+    if (!el) return;
+    el.focus({ preventScroll: true });
+    if (typeof el.select === "function") { try { el.select(); } catch { /* select 不適用 */ } }
   }
 
   #renderHeader(scene) {
@@ -193,6 +214,50 @@ export class SceneEditor {
     }
 
     this.containerEl.appendChild(header);
+    this.containerEl.appendChild(this.#renderQuickBar(scene));
+  }
+
+  /**
+   * 常用指令快速列：一鍵插入，省掉「＋ → 類別 → 項目」三次點擊。
+   * 插入點是「選取列的下一列」，沒選取就接在場景末尾——與作者的視線一致。
+   */
+  #renderQuickBar(scene) {
+    const bar = document.createElement("div");
+    bar.className = "quick-bar";
+
+    const label = document.createElement("span");
+    label.className = "quick-bar-label";
+    label.textContent = "快速插入";
+    bar.appendChild(label);
+
+    // 接在選取列之後；未選取則放到最後
+    const at = () => (this.selectedIndex == null ? scene.instructions.length : this.selectedIndex + 1);
+    // 對話沿用「插入點之前最近一句對話」的說話者，接話不用重打名字
+    const prevSpeaker = () => {
+      for (let i = at() - 1; i >= 0; i--) {
+        const ins = scene.instructions[i];
+        if (ins?.type === "text" && ins.speaker) return ins.speaker;
+      }
+      return "";
+    };
+
+    const items = [
+      ["對話", () => ({ type: "text", speaker: prevSpeaker(), text: "" })],
+      ["旁白", () => ({ type: "text", speaker: "", text: "" })],
+      ["立繪", () => ({ type: "directive", name: "show", args: { positional: ["", "center", ""] } })],
+      ["隱藏", () => ({ type: "directive", name: "hide", args: { positional: ["all"] } })],
+      ["背景", () => ({ type: "directive", name: "bg", args: { positional: [""], fade: 800 } })],
+      ["選項", () => ({ type: "choice", options: [{ text: "", set: {}, goto: "" }, { text: "", set: {}, goto: "" }] })],
+    ];
+    for (const [text, tpl] of items) {
+      const b = document.createElement("button");
+      b.className = "quick-btn";
+      b.textContent = text;
+      b.title = `插入「${text}」到選取列的下一列`;
+      b.addEventListener("click", () => this.insertTemplate(at(), tpl()));
+      bar.appendChild(b);
+    }
+    return bar;
   }
 
   #renderBody(scene) {
@@ -225,6 +290,9 @@ export class SceneEditor {
         onDelete: () => this.project.deleteInstruction(this.currentSceneId, idx),
         onPlayFrom: this.onPlayFrom ? (index) => this.onPlayFrom(this.currentSceneId, index) : null,
         onManage: this.onManage,
+        // 對話框按 Enter：在下一行接一句同說話者的台詞並聚焦
+        onEnterContinue: (i, speaker) =>
+          this.insertTemplate(i + 1, { type: "text", speaker, text: "" }),
       });
       list.appendChild(row.render());
 
@@ -343,17 +411,7 @@ export class SceneEditor {
     menu.appendChild(catCol);
 
     const insertItem = (item) => {
-      const tpl = item.template();
-      this.selectedIndex = index;   // 新列自動選取：預覽與檢查器跟著跳過去
-      if (Array.isArray(tpl)) {
-        tpl.forEach((t, i) => {
-          this._pendingScrollTo = index;
-          this.project.insertInstruction(this.currentSceneId, index + i, t);
-        });
-      } else {
-        this._pendingScrollTo = index;
-        this.project.insertInstruction(this.currentSceneId, index, tpl);
-      }
+      this.insertTemplate(index, item.template());
       this.closeInsertMenu();
     };
 
@@ -419,6 +477,23 @@ export class SceneEditor {
     }
 
     this.openMenu = menu;
+  }
+
+  /**
+   * 在 index 位置插入指令（單筆或多筆），並讓新列自動選取、捲入視野、
+   * 把輸入焦點落到第一個可編輯欄位——插入後可以直接開始打字。
+   * 插入選單、快速工具列、對話 Enter 續行都走這裡。
+   */
+  insertTemplate(index, tpl) {
+    if (!this.currentSceneId || !tpl) return;
+    this.selectedIndex = index;    // 新列自動選取：預覽與檢查器跟著跳過去
+    this._pendingScrollTo = index;
+    this._pendingFocus = index;
+    if (Array.isArray(tpl)) {
+      tpl.forEach((t, i) => this.project.insertInstruction(this.currentSceneId, index + i, t));
+    } else {
+      this.project.insertInstruction(this.currentSceneId, index, tpl);
+    }
   }
 
   closeInsertMenu() {

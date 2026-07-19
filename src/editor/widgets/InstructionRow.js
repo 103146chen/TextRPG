@@ -19,7 +19,7 @@ export class InstructionRow {
    * @param {Function} params.onChange - (patch) => void
    * @param {Function} params.onDelete
    */
-  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete, onPlayFrom, onManage, selected = false, onSelect = null }) {
+  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete, onPlayFrom, onManage, selected = false, onSelect = null, onEnterContinue = null }) {
     this.ins = instruction;
     this.index = index;
     this.indent = indent;
@@ -31,6 +31,7 @@ export class InstructionRow {
     this.onManage = onManage;       // 可選：(tab) => void，跳到對應的管理分頁
     this.selected = selected;
     this.onSelect = onSelect;       // 可選：() => void，點列選取（靜態預覽跟隨）
+    this.onEnterContinue = onEnterContinue;  // 可選：(index, speaker) => void，Enter 接下一句
     this.el = null;
   }
 
@@ -174,9 +175,15 @@ export class InstructionRow {
     textInput.addEventListener("change", () => {
       this.onChange({ text: textInput.value });
     });
-    // Enter 送出（維持單行語意）；Shift+Enter 才換行
+    // Enter：接一句同說話者的台詞（對話占劇本大宗，這是最短路徑）；
+    // Shift+Enter 才是換行。沒接 onEnterContinue 時退回原本的送出行為。
     textInput.addEventListener("keydown", (e) => {
-      if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); textInput.blur(); }
+      if (e.key !== "Enter" || e.shiftKey) return;
+      e.preventDefault();
+      // 先把剛打的字寫回，否則插入造成重繪時這一行會遺失
+      if (textInput.value !== (this.ins.text || "")) this.onChange({ text: textInput.value });
+      if (this.onEnterContinue) this.onEnterContinue(this.index, this.ins.speaker || "");
+      else textInput.blur();
     });
     container.appendChild(textInput);
     // 初次依內容長高：要等接上版面才量得到。rAF 在背景／隱藏分頁會被節流而
