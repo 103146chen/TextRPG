@@ -559,6 +559,16 @@ document.addEventListener("keydown", (e) => {
   }
 });
 
+// Ctrl/Cmd+G：場景大綱（跳到選項／區塊／條件／背景切換）。
+// 這裡刻意不排除輸入框——寫台詞寫到一半想跳去別處是常態。
+document.addEventListener("keydown", (e) => {
+  if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "g") {
+    if (currentPage !== "script" || !currentSceneId) return;
+    e.preventDefault();
+    sceneEditor.openOutline();
+  }
+});
+
 // ==================== 自動存檔（S7）====================
 
 const autosave = createAutosave({

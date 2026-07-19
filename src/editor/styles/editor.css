@@ -319,6 +319,53 @@ input, textarea, select {
   align-items: stretch;
   gap: 6px;
 }
+/* ---- 場景大綱面板（Ctrl+G）---- */
+.outline-palette { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.outline-search { width: 100%; }
+.outline-list {
+  display: flex; flex-direction: column; gap: 2px;
+  max-height: 56vh; overflow-y: auto;
+}
+.outline-empty { padding: 20px; text-align: center; color: var(--e-text-faded); font-size: 13px; }
+.outline-item {
+  display: grid;
+  grid-template-columns: 36px 20px 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: none;
+  color: var(--e-text);
+  text-align: left;
+  cursor: pointer;
+  min-width: 0;
+}
+.outline-item:hover { background: var(--e-bg-3); }
+.outline-item.active { background: var(--e-bg-3); border-color: var(--e-accent); }
+.outline-num {
+  font-family: var(--e-font-mono); font-size: 11px;
+  color: var(--e-text-faded); text-align: right;
+}
+.outline-icon { text-align: center; }
+.outline-body { display: flex; flex-direction: column; min-width: 0; }
+.outline-title {
+  font-size: 13px;
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.outline-detail {
+  font-size: 11px; color: var(--e-text-faded);
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.outline-tag {
+  font-size: 11px; color: var(--e-text-faded);
+  padding: 1px 7px; border-radius: 9px; background: var(--e-bg-4);
+  white-space: nowrap;
+}
+.outline-item[data-kind="choice"] .outline-icon { color: var(--e-accent); }
+.outline-item[data-kind="block"] .outline-icon { color: var(--e-green, #6c9); }
+.outline-item[data-kind="ending"] .outline-icon { color: var(--e-red, #e66); }
+
 /* ---- 編輯器分頁（場景主線 ＋ 開啟中的內容區塊）---- */
 .editor-tabs {
   display: flex;

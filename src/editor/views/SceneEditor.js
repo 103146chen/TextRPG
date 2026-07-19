@@ -6,6 +6,7 @@
 import { InstructionRow } from "../widgets/InstructionRow.js";
 import { createSelectField } from "../widgets/selectField.js";
 import { confirmDialog, promptDialog } from "../widgets/dialog.js";
+import { collectLandmarks, openOutlinePalette } from "../widgets/outlinePalette.js";
 
 export class SceneEditor {
   constructor(containerEl, project, onPlayFrom = null, onManage = null, onSelect = null) {
@@ -46,6 +47,29 @@ export class SceneEditor {
     this.render();
     // 開場景時預覽跳到開頭（靜態）
     if (this.onSelect && sceneId) this.onSelect(sceneId, this.selectedIndex ?? 0);
+  }
+
+  /**
+   * 開啟場景大綱並跳到選中的地標。
+   * 目標若在某個內容區塊裡，先切到該區塊的分頁——否則主線分頁上根本沒有那一列，
+   * 跳過去會像什麼都沒發生。
+   */
+  async openOutline() {
+    const scene = this.currentSceneId && this.project.getScene(this.currentSceneId);
+    if (!scene) return;
+
+    const picked = await openOutlinePalette(collectLandmarks(scene.instructions), {
+      currentIndex: this.selectedIndex,
+    });
+    if (!picked) return;
+
+    if (picked.inBlock) this.openBlockTab(picked.inBlock);
+    else if (this.activeTab !== 0) { this.activeTab = 0; this.render(); }
+
+    this.selectedIndex = picked.index;
+    this._pendingScrollTo = picked.index;
+    this.render();
+    this.onSelect?.(this.currentSceneId, picked.index);
   }
 
   // ============ 分頁 ============
@@ -527,6 +551,15 @@ export class SceneEditor {
       b.addEventListener("click", () => this.insertTemplate(at(), tpl()));
       bar.appendChild(b);
     }
+
+    // 大綱：純快捷鍵沒人找得到，這裡放一個看得見的入口
+    const outline = document.createElement("button");
+    outline.className = "quick-btn quick-outline";
+    outline.textContent = "☰ 大綱";
+    outline.title = "跳到選項／內容區塊／條件／背景切換（Ctrl+G）";
+    outline.addEventListener("click", () => this.openOutline());
+    bar.appendChild(outline);
+
     return bar;
   }
 
