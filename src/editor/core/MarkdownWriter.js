@@ -4,12 +4,16 @@
 // 目標：從 SceneParser.parse(md).結果 能往返轉換為乾淨的 md
 // ============================================
 
+import { SceneParser } from "../../engine/SceneParser.js";
+
 export class MarkdownWriter {
   /**
    * @param {{meta: Object, instructions: Array}} sceneData
+   * @param {object} [opts]
+   * @param {Set|Array|object} [opts.characters] - 已登記角色；供旁白冒號轉義判斷
    * @returns {string} Markdown 文字
    */
-  static write(sceneData) {
+  static write(sceneData, { characters = null } = {}) {
     const { meta, instructions } = sceneData;
     const parts = [];
 
@@ -18,7 +22,7 @@ export class MarkdownWriter {
     parts.push("");
 
     // 2. 本文
-    parts.push(this.#writeInstructions(instructions));
+    parts.push(this.#writeInstructions(instructions, characters));
 
     return parts.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd() + "\n";
   }
@@ -55,7 +59,7 @@ export class MarkdownWriter {
     return s;
   }
 
-  static #writeInstructions(instructions) {
+  static #writeInstructions(instructions, characters = null) {
     const lines = [];
     for (let i = 0; i < instructions.length; i++) {
       const ins = instructions[i];
@@ -65,9 +69,28 @@ export class MarkdownWriter {
         lines.push("");
       }
 
-      lines.push(this.#writeInstruction(ins, ""));
+      lines.push(this.#writeInstruction(ins, "", characters));
     }
     return lines.join("\n");
+  }
+
+  /** 旁白轉義：只在「寫出去會被讀成對話」時，把第一個冒號轉義掉 */
+  static #escapeNarration(text, characters) {
+    const str = String(text ?? "");
+    for (let i = 0; i < str.length; i++) {
+      const ch = str[i];
+      if (ch === "\\") { i++; continue; }
+      if (ch === "：" || ch === ":") {
+        const before = str.slice(0, i);
+        const after = str.slice(i + 1);
+        if (!before.trim() || !after.trim()) return str;
+        if (SceneParser.isDialogueSpeaker(before, characters)) {
+          return `${before}\\${ch}${after}`;
+        }
+        return str;
+      }
+    }
+    return str;
   }
 
   static #needsBlankLineBefore(cur, prev) {
@@ -85,7 +108,7 @@ export class MarkdownWriter {
     return false;
   }
 
-  static #writeInstruction(ins, indent) {
+  static #writeInstruction(ins, indent, characters = null) {
     switch (ins.type) {
       case "text":
         if (ins.speaker) {
@@ -93,7 +116,9 @@ export class MarkdownWriter {
           const who = ins.emotion ? `${ins.speaker}[${ins.emotion}]` : ins.speaker;
           return `${indent}${who}: ${ins.text}`;
         }
-        return `${indent}${ins.text}`;
+        // 旁白若含冒號、且冒號前那截會被讀成說話者，寫出去就會變對話。
+        // 轉義成 `\:` 讓 parser 知道那是普通冒號（往返才閉環）。
+        return `${indent}${this.#escapeNarration(ins.text, characters)}`;
 
       case "directive":
         return `${indent}${this.#writeDirective(ins)}`;

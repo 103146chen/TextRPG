@@ -152,7 +152,9 @@ function serializeCurrent() {
   const sc = currentSceneId && project.getScene(currentSceneId);
   if (!sc) return "";
   const data = { meta: sc.meta, instructions: sc.instructions };
-  return viewMode === "json" ? SceneJson.stringify(data) : MarkdownWriter.write(data);
+  return viewMode === "json"
+    ? SceneJson.stringify(data)
+    : MarkdownWriter.write(data, { characters: project.storyMeta?.characters || null });
 }
 
 function fillSource() {
@@ -179,7 +181,9 @@ function applySource() {
   const text = $("#source-text").value;
   let data;
   try {
-    data = viewMode === "json" ? SceneJson.parse(text) : SceneParser.parse(text);
+    data = viewMode === "json"
+      ? SceneJson.parse(text)
+      : SceneParser.parse(text, { characters: project.storyMeta?.characters || null });
   } catch (err) {
     setSourceStatus(`解析失敗：${err.message}`, "err");
     return;

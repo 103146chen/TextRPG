@@ -48,7 +48,7 @@ export class StoryProject {
     const sceneFiles = await this.fs.listScenes();
     for (const fileName of sceneFiles) {
       const raw = await this.fs.readScene(fileName);
-      const parsed = SceneParser.parse(raw);
+      const parsed = SceneParser.parse(raw, { characters: this.storyMeta?.characters || null });
       const sceneId = parsed.meta.id || fileName.replace(/\.md$/, "");
       this.scenes.set(sceneId, {
         fileName,
@@ -81,7 +81,7 @@ export class StoryProject {
     // 髒變數一併蓋掉，該段編輯就永遠不會被存（自動存檔下機率性觸發）。
     for (const [sceneId, sc] of this.scenes) {
       if (!sc.dirty) continue;
-      const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions });
+      const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions }, { characters: this.storyMeta?.characters || null });
       sc.dirty = false;
       try {
         await this.fs.writeScene(sc.fileName, md);
@@ -104,7 +104,7 @@ export class StoryProject {
   async saveScene(sceneId) {
     const sc = this.scenes.get(sceneId);
     if (!sc) return;
-    const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions });
+    const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions }, { characters: this.storyMeta?.characters || null });
     sc.dirty = false;   // 先清（同 saveAll 的競態說明）
     try {
       await this.fs.writeScene(sc.fileName, md);
@@ -114,6 +114,11 @@ export class StoryProject {
       throw err;
     }
     this.notify("scene-saved", { sceneId });
+  }
+
+  /** 已登記角色名（解析／寫回冒號判定用） */
+  getCharacterNames() {
+    return Object.keys(this.storyMeta?.characters || {});
   }
 
   hasUnsavedChanges() {
@@ -742,7 +747,7 @@ export class StoryProject {
     for (const [id, sc] of this.scenes) {
       if (diskRaw.has(id)) {
         sc.raw = diskRaw.get(id);
-        const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions });
+        const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions }, { characters: this.storyMeta?.characters || null });
         sc.dirty = sc.raw == null || md !== sc.raw;
       } else {
         // 磁碟上目前不存在（例如剛刪除又 undo 回來）→ 必須重寫

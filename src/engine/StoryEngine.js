@@ -74,7 +74,7 @@ export class StoryEngine {
       if (!res.ok) throw new Error(`無法載入場景 ${sceneId}: ${res.status}`);
       raw = await res.text();
     }
-    const parsed = SceneParser.parse(raw);
+    const parsed = SceneParser.parse(raw, { characters: this.storyMeta?.characters || null });
     parsed.raw = raw;                    // 保留原文供存檔雜湊比對
     this.sceneCache.set(sceneId, parsed);
     return parsed;

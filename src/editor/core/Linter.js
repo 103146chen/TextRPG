@@ -3,6 +3,8 @@
 // 靜態分析劇本，找出錯誤與警告
 // ============================================
 
+import { SceneParser } from "../../engine/SceneParser.js";
+
 export class Linter {
   /**
    * @param {StoryProject} project
@@ -144,6 +146,22 @@ export class Linter {
         message: `背景檔案不存在: ${scene.meta.background}`,
       });
     }
+
+    // 說話者存檔後會走鏽：未登記，且不符「短名無標點」的保守規則 ——
+    // 寫回 .md 再讀進來會變成旁白（說話者整段併進台詞）。登記角色即可解除。
+    // 注意：一般的「未登記」提示由下方 case "text" 負責，這裡只抓會壞資料的。
+    scene.instructions.forEach((ins, idx) => {
+      if (ins.type !== "text" || !ins.speaker) return;
+      const base = ins.speaker.replace(/\s*[（(\[][^）)\]]*[）)\]]\s*$/, "").trim();
+      if (characters.has(ins.speaker) || characters.has(base)) return;
+      if (SceneParser.isDialogueSpeaker(ins.speaker, characters)) return;
+      issues.push({
+        level: "error",
+        sceneId,
+        index: idx,
+        message: `說話者「${ins.speaker}」未登記且不符命名慣例，存檔後會被讀成旁白——請把它登記為角色`,
+      });
+    });
 
     // 收集場景內所有 label
     const labels = new Set();

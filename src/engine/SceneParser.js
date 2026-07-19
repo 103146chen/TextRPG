@@ -16,12 +16,77 @@
  *   ending    - 結局標記 { id, title }
  */
 
+// 句讀標點：出現在冒號前就不可能是人名（括號不算——「得參(心聲)」是合法名字）
+const SENTENCE_PUNCT = /[。，、！？；：…—─《》〈〉「」『』,.!?;]/;
+// 未登記角色的保守上限：真實人名幾乎都在 2~4 字，6 留了餘裕
+const MAX_UNREGISTERED_NAME = 6;
+
 export class SceneParser {
   /**
+   * 判斷冒號前的字串是不是「說話者」。
+   *
+   * 舊版把任何冒號都當分隔符，導致含冒號的旁白被腰斬
+   * （「你解決了一個劉邦，卻教會了所有人：項王的宴席」→ 前半變成人名）。
+   * 現在改成宣告優先：
+   *   ① 已登記角色（含 `名字(心聲)`、`名字[表情]` 的基底名）→ 一律對話
+   *   ② 未登記 → 需「不含句讀標點」且「基底名 ≤6 字」才算對話
+   * 其餘一律旁白。想強制寫出冒號旁白可用 `\:` 轉義。
+   *
+   * @param {string} raw - 冒號前的原始字串
+   * @param {Set<string>|Array<string>|null} characters - 已登記角色名
+   */
+  static isDialogueSpeaker(raw, characters = null) {
+    const sp = String(raw ?? "").trim();
+    if (!sp) return false;
+    if (/^\s/.test(raw)) return false;               // 行首縮排的不算對話
+    const base = sp.replace(/\s*[（(\[][^）)\]]*[）)\]]\s*$/, "").trim();
+    if (!base) return false;
+
+    const set = this.#charSet(characters);
+    if (set && (set.has(sp) || set.has(base))) return true;   // ① 宣告優先
+
+    if (SENTENCE_PUNCT.test(sp)) return false;                // ② 保守啟發式
+    return [...base].length <= MAX_UNREGISTERED_NAME;
+  }
+
+  static #charSet(characters) {
+    if (!characters) return null;
+    if (characters instanceof Set) return characters.size ? characters : null;
+    if (Array.isArray(characters)) return characters.length ? new Set(characters) : null;
+    if (typeof characters === "object") {
+      const keys = Object.keys(characters);
+      return keys.length ? new Set(keys) : null;
+    }
+    return null;
+  }
+
+  /** 找出第一個「未被 \ 轉義」的冒號；找不到回傳 null */
+  static #splitAtColon(line) {
+    for (let i = 0; i < line.length; i++) {
+      const ch = line[i];
+      if (ch === "\\") { i++; continue; }              // 跳過被轉義的下一個字元
+      if (ch === "：" || ch === ":") {
+        const before = line.slice(0, i);
+        const after = line.slice(i + 1);
+        if (!before.trim() || !after.trim()) return null;
+        return { before, after };
+      }
+    }
+    return null;
+  }
+
+  /** `\:` / `\：` → 普通冒號（作者用來寫「不想被當成對話」的旁白） */
+  static #unescapeColon(text) {
+    return text.replace(/\\([：:])/g, "$1");
+  }
+
+  /**
    * @param {string} rawText - Markdown 檔案原始內容
+   * @param {object} [opts]
+   * @param {Set|Array|object} [opts.characters] - 已登記角色（story.json 的 characters）
    * @returns {{meta: Object, instructions: Array}}
    */
-  static parse(rawText) {
+  static parse(rawText, { characters = null } = {}) {
     // 去除開頭 BOM：fetch/File.text() 會自動去除，但直接餵字串（如即時預覽）不會
     if (typeof rawText === "string" && rawText.charCodeAt(0) === 0xfeff) {
       rawText = rawText.slice(1);
@@ -31,7 +96,7 @@ export class SceneParser {
     // 結果是 background／bgm／next／id 全部靜默消失（Windows 上 git 簽出即 CRLF）。
     if (typeof rawText === "string") rawText = rawText.replace(/\r\n?/g, "\n");
     const { meta, body } = this.#extractFrontMatter(rawText);
-    const instructions = this.#parseBody(body);
+    const instructions = this.#parseBody(body, characters);
     this.#linkControlFlow(instructions);
     return { meta, instructions };
   }
@@ -65,7 +130,7 @@ export class SceneParser {
   /**
    * 把本文逐行轉成指令陣列
    */
-  static #parseBody(body) {
+  static #parseBody(body, characters = null) {
     const instructions = [];
     const lines = body.split("\n");
     let i = 0;
@@ -131,27 +196,29 @@ export class SceneParser {
       //
       // 表情用方括號而非小括號：既有劇本大量把小括號當成名字的一部分
       // （例如「得參(心聲):」），若改判成表情會讓顯示名稱憑空少一截。
-      const dialogMatch = line.match(/^([^\s：:][^：:]*?)[：:]\s*(.+)$/);
-      if (dialogMatch) {
-        let speaker = dialogMatch[1].trim();
+      //
+      // 只有 isDialogueSpeaker 認可的才算對話，其餘（含冒號的旁白）落到下面。
+      const split = this.#splitAtColon(line);
+      if (split && this.isDialogueSpeaker(split.before, characters)) {
+        let speaker = split.before.trim();
         let emotion = null;
         const emoMatch = speaker.match(/^(.*?)\s*\[([^\][]+)\]$/);
         if (emoMatch) {
           speaker = emoMatch[1].trim();
           emotion = emoMatch[2].trim();
         }
-        const ins = { type: "text", speaker, text: dialogMatch[2].trim() };
+        const ins = { type: "text", speaker, text: this.#unescapeColon(split.after.trim()) };
         if (emotion) ins.emotion = emotion;   // 當句切換該角色立繪的表情
         instructions.push(ins);
         i++;
         continue;
       }
 
-      // 純旁白
+      // 純旁白（含「有冒號但不是對話」的句子）
       instructions.push({
         type: "text",
         speaker: "",
-        text: trimmed,
+        text: this.#unescapeColon(trimmed),
       });
       i++;
     }
