@@ -8,7 +8,7 @@ import { renderDirectiveForm, DIRECTIVE_SCHEMAS } from "./directiveFields.js";
 import { speakerColor } from "../core/speakerColor.js";
 import { assetUrl } from "../core/assetUrl.js";
 import { escapeHtml } from "./formFields.js";
-import { renderConditionBuilder } from "./conditionBuilder.js";
+import { renderConditionBuilder, explainCondition } from "./conditionBuilder.js";
 
 export class InstructionRow {
   /**
@@ -21,7 +21,7 @@ export class InstructionRow {
    * @param {Function} params.onChange - (patch) => void
    * @param {Function} params.onDelete
    */
-  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete, onPlayFrom, onManage, selected = false, onSelect = null, onEnterContinue = null, continuation = false, onOpenBlock = null }) {
+  constructor({ instruction, index, indent, project, sceneId, onChange, onDelete, onPlayFrom, onManage, selected = false, onSelect = null, onEnterContinue = null, continuation = false, onOpenBlock = null, onCreateBlock = null }) {
     this.ins = instruction;
     this.index = index;
     this.indent = indent;
@@ -36,6 +36,7 @@ export class InstructionRow {
     this.onSelect = onSelect;       // 可選：() => void，點列選取（靜態預覽跟隨）
     this.onEnterContinue = onEnterContinue;  // 可選：(index, speaker) => void，Enter 接下一句
     this.onOpenBlock = onOpenBlock;          // 可選：(name) => void，開啟具名區塊的分頁
+    this.onCreateBlock = onCreateBlock;      // 可選：(optionIndex) => void，替選項建立內容區塊
     this.el = null;
   }
 
@@ -774,24 +775,13 @@ export class InstructionRow {
     const meta = document.createElement("div");
     meta.className = "choice-option-meta";
 
-    // Goto
-    const gotoLabel = document.createElement("label");
-    gotoLabel.textContent = "goto:";
-    meta.appendChild(gotoLabel);
-    const gotoTargets = [
-      ...this.project.getAllSceneIds(),
-      ...this.#getLabelsInCurrentScene(),
-    ];
-    const gotoInput = this.#selectOrInput(opt.goto, gotoTargets, "目標");
-    gotoInput.style.minWidth = "140px";
-    gotoInput.addEventListener("change", (e) => {
-      const options = [...this.ins.options];
-      options[idx] = { ...options[idx], goto: e.target.value };
-      this.onChange({ options });
-    });
-    meta.appendChild(gotoInput);
+    // ---- 選了之後怎麼走 ----
+    // 內容區塊與 goto 是兩種不同的流程，不是同一件事的兩種寫法：
+    // 區塊跑完會回到選項後面，goto 是跳走不回來。標籤要把這件事講白。
+    const flowLabel = document.createElement("label");
+    flowLabel.textContent = "選了之後：";
+    meta.appendChild(flowLabel);
 
-    // 內容區塊：點了開它自己的分頁編輯（選項在主畫面只留摘要）
     if (opt.do) {
       const doBtn = document.createElement("button");
       doBtn.className = "choice-do";
@@ -802,7 +792,36 @@ export class InstructionRow {
         this.onOpenBlock?.(opt.do);
       });
       meta.appendChild(doBtn);
+    } else if (this.onCreateBlock) {
+      const mk = document.createElement("button");
+      mk.className = "choice-mkblock";
+      mk.textContent = "＋ 專屬內容";
+      mk.title = "建立這個選項專屬的劇情，跑完自動回到主線";
+      mk.addEventListener("click", (e) => {
+        e.stopPropagation();
+        this.onCreateBlock(idx);
+      });
+      meta.appendChild(mk);
     }
+
+    // 跳轉：跳走不回來（跨場景分歧主要靠這個）
+    const gotoLabel = document.createElement("label");
+    gotoLabel.className = "choice-goto-label";
+    gotoLabel.textContent = "或跳轉到：";
+    meta.appendChild(gotoLabel);
+    const gotoTargets = [
+      ...this.project.getAllSceneIds(),
+      ...this.#getLabelsInCurrentScene(),
+    ];
+    const gotoInput = this.#selectOrInput(opt.goto, gotoTargets, "（不跳轉）");
+    gotoInput.style.minWidth = "140px";
+    gotoInput.title = "跳過去就不回來了；要「跑完回主線」請用專屬內容";
+    gotoInput.addEventListener("change", (e) => {
+      const options = [...this.ins.options];
+      options[idx] = { ...options[idx], goto: e.target.value };
+      this.onChange({ options });
+    });
+    meta.appendChild(gotoInput);
 
     main.appendChild(meta);
     main.appendChild(this.#renderChoiceSet(opt, idx));
@@ -854,9 +873,14 @@ export class InstructionRow {
     wrap.className = "choice-cond";
     if (opt.if) wrap.open = true;      // 已有條件就攤開，避免藏起來看不見
 
+    // 摘要要能一眼看出「有沒有條件、條件是什麼」。原本兩種狀態都是同一行
+    // 灰字，看起來像裝飾，使用者根本沒發現這裡可以點。
     const sum = document.createElement("summary");
-    sum.className = "choice-cond-summary";
-    sum.textContent = opt.if ? "顯示條件（已設定）" : "顯示條件：一律顯示";
+    sum.className = "choice-cond-summary" + (opt.if ? " has-cond" : "");
+    sum.textContent = opt.if
+      ? `僅當：${explainCondition(opt.if).replace(/^當\s*/, "").replace(/\s*時執行。$/, "")}`
+      : "＋ 顯示條件";
+    sum.title = opt.if ? "這個選項只在條件成立時出現" : "設定後，條件不成立時這個選項不會出現";
     wrap.appendChild(sum);
 
     const host = document.createElement("div");

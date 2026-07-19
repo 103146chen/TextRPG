@@ -387,6 +387,33 @@ input, textarea, select {
 }
 .block-open-btn:hover { border-color: var(--e-accent); color: var(--e-accent); }
 
+/* 顯示條件：有設就直接把條件寫在摘要上，沒設就是一顆看得出可以點的按鈕。
+   原本兩種狀態都是同一行灰字，使用者完全沒發現這裡能點。 */
+.choice-cond-summary.has-cond {
+  color: var(--e-accent);
+  font-weight: 600;
+}
+.choice-cond-summary:not(.has-cond) {
+  display: inline-block;
+  padding: 1px 8px;
+  border: 1px dashed var(--e-border);
+  border-radius: 10px;
+}
+.choice-cond-summary:not(.has-cond)::before { content: ""; }
+
+/* 建立內容區塊 */
+.choice-mkblock {
+  padding: 2px 8px;
+  border: 1px dashed var(--e-border);
+  border-radius: 4px;
+  background: none;
+  color: var(--e-text-faded);
+  font-size: 12px;
+  cursor: pointer;
+}
+.choice-mkblock:hover { border-color: var(--e-accent); color: var(--e-accent); border-style: solid; }
+.choice-goto-label { color: var(--e-text-faded); }
+
 /* 選項上的區塊跳轉鈕 */
 .choice-do {
   padding: 2px 8px;

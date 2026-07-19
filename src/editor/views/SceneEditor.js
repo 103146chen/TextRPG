@@ -5,7 +5,7 @@
 
 import { InstructionRow } from "../widgets/InstructionRow.js";
 import { createSelectField } from "../widgets/selectField.js";
-import { confirmDialog } from "../widgets/dialog.js";
+import { confirmDialog, promptDialog } from "../widgets/dialog.js";
 
 export class SceneEditor {
   constructor(containerEl, project, onPlayFrom = null, onManage = null, onSelect = null) {
@@ -190,6 +190,59 @@ export class SceneEditor {
     })));
 
     this.containerEl.appendChild(header);
+  }
+
+  /**
+   * 替某個選項建立專屬內容區塊：在場景尾端新增 :: block / :: endblock，
+   * 把選項的 set: 一併搬進去變成 @set（執行順序等價：原本也是 set 先於區塊），
+   * 然後開啟它的分頁。
+   */
+  async #createBlockForOption(scene, choiceIdx, optIdx) {
+    const choice = scene.instructions[choiceIdx];
+    const opt = choice.options[optIdx];
+
+    const name = await promptDialog({
+      title: "建立內容區塊",
+      label: "區塊名稱",
+      value: this.#suggestBlockName(scene, opt.text),
+      placeholder: "例：真誠認錯",
+      validate: (v) => {
+        const t = v.trim();
+        if (!t) return "請輸入名稱";
+        if (this.#findBlock(scene, t)) return "這個名稱已經有區塊了";
+        return null;
+      },
+    });
+    if (!name) return;
+    const blockName = name.trim();
+
+    // 選項的 set: 搬進區塊當開頭的 @set
+    const setIns = Object.entries(opt.set || {}).map(([key, v]) => (
+      v && typeof v === "object" && "op" in v
+        ? { type: "set", key, op: v.op, value: v.value }
+        : { type: "set", key, op: "=", value: v }
+    ));
+
+    const at = scene.instructions.length;
+    this.project.insertInstruction(this.currentSceneId, at, { type: "block", name: blockName });
+    setIns.forEach((s, i) =>
+      this.project.insertInstruction(this.currentSceneId, at + 1 + i, s));
+    this.project.insertInstruction(this.currentSceneId, at + 1 + setIns.length, { type: "endblock" });
+
+    const options = [...choice.options];
+    options[optIdx] = { ...options[optIdx], do: blockName, set: {} };
+    this.project.updateInstruction(this.currentSceneId, choiceIdx, { options });
+
+    this.openBlockTab(blockName);
+  }
+
+  /** 用選項文字當區塊名的預設值（去掉標點、太長就截斷、避開重複） */
+  #suggestBlockName(scene, text) {
+    let base = String(text || "").replace(/[「」『』（）()！？。，、,.!?\s]/g, "").slice(0, 12);
+    if (!base) base = "內容區塊";
+    let name = base, n = 2;
+    while (this.#findBlock(scene, name)) name = `${base}${n++}`;
+    return name;
   }
 
   /** 刪整個區塊（含內容與 endblock），並清掉指向它的 do: */
@@ -528,6 +581,7 @@ export class SceneEditor {
         onEnterContinue: (i, speaker) =>
           this.insertTemplate(i + 1, { type: "text", speaker, text: "" }),
         onOpenBlock: (name) => this.openBlockTab(name),
+        onCreateBlock: (optIdx) => this.#createBlockForOption(scene, idx, optIdx),
       });
       list.appendChild(row.render());
 
