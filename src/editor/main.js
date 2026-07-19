@@ -611,8 +611,17 @@ project.subscribe((type, payload) => {
   }
   renderSidebar();
   updateToolbar();
-  // 部分變更要重繪主區
-  if (type === "instruction-inserted" || type === "instruction-deleted" ||
+  // 部分變更要重繪主區。
+  //
+  // instruction-updated 也必須在內：改一條指令的內容常常會改變它的「形狀」——
+  // 新增／刪除／排序選項、增減選項的變數，都是走 updateInstruction。少了它，
+  // 資料改了但畫面不動，使用者以為沒生效就再點一次；刪除尤其危險，那一列還在
+  // 畫面上，再按一次就刪掉了下一個。
+  //
+  // 不會干擾打字：所有輸入框都是綁 change（失焦或 Enter 才觸發），沒有任何
+  // input 事件會呼叫 onChange（textarea 的 input 只用來自動長高）。
+  if (type === "instruction-updated" ||
+      type === "instruction-inserted" || type === "instruction-deleted" ||
       type === "instruction-moved" || type === "instructions-replaced" ||
       type === "undo" || type === "redo" || type === "resources-updated" ||
       type === "characters-updated" || type === "flags-updated" || type === "story-meta-updated" ||

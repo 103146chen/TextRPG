@@ -95,6 +95,48 @@ export class SceneEditor {
     this.render();
   }
 
+  /**
+   * 重繪會整個換掉 DOM，游標所在的欄位會連同焦點與選取範圍一起消失。
+   * 改一句台詞後直接點下一句是最常見的操作，沒有這個還原就會「點了沒反應」。
+   * 用「第幾列 + 欄位 class + 同 class 的第幾個」定位，不依賴物件identity。
+   */
+  #captureFocus() {
+    const el = document.activeElement;
+    if (!el || !this.containerEl.contains(el)) return null;
+    if (typeof el.className !== "string" || !el.className.trim()) return null;
+
+    const row = el.closest(".instr-row");
+    const scope = row || this.containerEl;
+    const sel = "." + el.className.trim().split(/\s+/).join(".");
+    let nth = -1;
+    try { nth = [...scope.querySelectorAll(sel)].indexOf(el); } catch { return null; }
+    if (nth < 0) return null;
+
+    return {
+      rowIndex: row ? row.dataset.index : null,
+      sel, nth,
+      start: el.selectionStart ?? null,
+      end: el.selectionEnd ?? null,
+    };
+  }
+
+  #restoreFocus(f) {
+    if (!f) return;
+    const scope = f.rowIndex != null
+      ? this.containerEl.querySelector(`.instr-row[data-index="${f.rowIndex}"]`)
+      : this.containerEl;
+    if (!scope) return;
+
+    let el;
+    try { el = scope.querySelectorAll(f.sel)[f.nth]; } catch { return; }
+    if (!el) return;
+
+    el.focus({ preventScroll: true });
+    if (f.start != null && typeof el.setSelectionRange === "function") {
+      try { el.setSelectionRange(f.start, f.end); } catch { /* 型別不支援選取範圍 */ }
+    }
+  }
+
   /** 找出具名區塊的範圍：start=:: block 那列，end=:: endblock 那列 */
   #findBlock(scene, name) {
     const list = scene.instructions;
@@ -356,11 +398,16 @@ export class SceneEditor {
       tab = this.tabs[0];
     }
 
+    const savedFocus = this.#captureFocus();
+
     this.containerEl.innerHTML = "";
     this.#renderTabBar(scene);
     if (tab.kind === "block") this.#renderBlockHeader(scene, tab.name);
     else this.#renderHeader(scene);
     this.#renderBody(scene);
+
+    // 插入新列時有專屬的聚焦流程（_pendingFocus），別跟它搶
+    if (this._pendingFocus === null) this.#restoreFocus(savedFocus);
 
     const newBody = this.containerEl.querySelector('.scene-body');
     if (!newBody) return;
