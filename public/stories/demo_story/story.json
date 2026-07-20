@@ -21,6 +21,10 @@
         "normal": "owner_normal.svg",
         "smile": "owner_smile.svg"
       }
+    },
+    "主角": {
+      "default": "",
+      "emotions": {}
     }
   },
   "endings": [

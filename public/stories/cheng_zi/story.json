@@ -55,6 +55,14 @@
       "emotions": {
         "normal": "crowd_normal.png"
       }
+    },
+    "法官": {
+      "default": "",
+      "emotions": {}
+    },
+    "警察": {
+      "default": "",
+      "emotions": {}
     }
   },
   "endings": [
