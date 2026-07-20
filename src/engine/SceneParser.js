@@ -24,9 +24,33 @@ const MAX_UNREGISTERED_NAME = 6;
 // 旁白保留前綴：`旁白: 內容` 一律解析為旁白，是顯式且永不誤判的寫法。
 // 不能被登記成角色名（見 isReservedSpeaker）。
 export const NARRATION_PREFIX = "旁白";
-const NARRATION_RE = /^旁白\s*[：:]\s*/;
+
+// 行內屬性：寫在說話者與冒號之間，`項羽[怒] voice=xy_08.wav: 「台詞」`。
+// 屬於「這一行」的性質（不是獨立事件），所以換行時引擎能正確收掉。
+// 之後要加 speed=／volume= 之類，只要往這個陣列補一個鍵。
+export const LINE_ATTR_KEYS = ["voice"];
+const ATTR_TAIL_RE = new RegExp(`\\s+(${LINE_ATTR_KEYS.join("|")})=("[^"]*"|'[^']*'|\\S+)$`);
 
 export class SceneParser {
+  /**
+   * 拆解冒號前那一段：`項羽(心聲)[怒] voice=a.wav` →
+   *   { name: "項羽(心聲)", emotion: "怒", attrs: { voice: "a.wav" } }
+   * 屬性從尾端往前剝，剝完剩下的才拿去比對角色登記。
+   */
+  static #parseSpeakerPart(raw) {
+    let s = String(raw ?? "").trim();
+    const attrs = {};
+    let m;
+    while ((m = s.match(ATTR_TAIL_RE))) {
+      attrs[m[1]] = this.#unquote(m[2]);
+      s = s.slice(0, m.index).trim();
+    }
+    let emotion = null;
+    const emo = s.match(/^(.*?)\s*\[([^\][]+)\]$/);
+    if (emo) { s = emo[1].trim(); emotion = emo[2].trim(); }
+    return { name: s, emotion, attrs };
+  }
+
   /** `旁白` 是保留字，不可登記為角色 */
   static isReservedSpeaker(name) {
     return String(name ?? "").trim() === NARRATION_PREFIX;
@@ -205,38 +229,29 @@ export class SceneParser {
         continue;
       }
 
-      // 顯式旁白：`旁白: 內容`（保留前綴，永不誤判）
-      const narr = trimmed.match(NARRATION_RE);
-      if (narr) {
-        instructions.push({
-          type: "text",
-          speaker: "",
-          text: this.#unescapeColon(trimmed.slice(narr[0].length)),
-        });
-        i++;
-        continue;
-      }
-
-      // 對話：格式 "角色名: 文字"，或帶當句表情的 "角色名[表情]: 文字"
+      // 對話與顯式旁白：`角色[表情] voice=x: 文字` / `旁白 voice=x: 文字`
       //
       // 表情用方括號而非小括號：既有劇本大量把小括號當成名字的一部分
       // （例如「得參(心聲):」），若改判成表情會讓顯示名稱憑空少一截。
       //
-      // 只有 isDialogueSpeaker 認可的才算對話，其餘（含冒號的旁白）落到下面。
-      const split = this.#splitAtColon(line);
-      if (split && this.isDialogueSpeaker(split.before, characters)) {
-        let speaker = split.before.trim();
-        let emotion = null;
-        const emoMatch = speaker.match(/^(.*?)\s*\[([^\][]+)\]$/);
-        if (emoMatch) {
-          speaker = emoMatch[1].trim();
-          emotion = emoMatch[2].trim();
+      // 只有「旁白」保留字或 isDialogueSpeaker 認可的才吃這條路徑，
+      // 其餘（含冒號的一般句子）落到下面當純旁白。
+      const split = this.#splitAtColon(trimmed);
+      if (split) {
+        const { name, emotion, attrs } = this.#parseSpeakerPart(split.before);
+        const isNarration = this.isReservedSpeaker(name);
+        if (isNarration || this.isDialogueSpeaker(name, characters)) {
+          const ins = {
+            type: "text",
+            speaker: isNarration ? "" : name,
+            text: this.#unescapeColon(split.after.trim()),
+          };
+          if (emotion && !isNarration) ins.emotion = emotion;   // 當句切換立繪表情
+          Object.assign(ins, attrs);                            // 行內屬性（voice…）
+          instructions.push(ins);
+          i++;
+          continue;
         }
-        const ins = { type: "text", speaker, text: this.#unescapeColon(split.after.trim()) };
-        if (emotion) ins.emotion = emotion;   // 當句切換該角色立繪的表情
-        instructions.push(ins);
-        i++;
-        continue;
       }
 
       // 純旁白（含「有冒號但不是對話」的句子）

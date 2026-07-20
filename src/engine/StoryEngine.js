@@ -11,7 +11,7 @@ export class StoryEngine {
     this.storyPath = storyPath;         // e.g. "./public/stories/demo_story"
     this.sceneLoader = sceneLoader;     // 可選：(sceneId) => Promise<string raw md>，供即時預覽從記憶體讀取
     this.metaLoader = metaLoader;       // 可選：() => Promise<storyMeta>
-    this.onText = onText;                // (speaker, text, state, emotion) => void
+    this.onText = onText;                // (speaker, text, state, emotion, voice) => void
     this.onChoice = onChoice;            // (options) => void
     this.onDirective = onDirective;      // (directive, state) => Promise
     this.onEnding = onEnding;            // (endingData) => void
@@ -221,7 +221,7 @@ export class StoryEngine {
       case "text": {
         // 保存 snapshot 供回溯
         this.#pushHistory();
-        await this.onText(ins.speaker, ins.text, this.state, ins.emotion || null);
+        await this.onText(ins.speaker, ins.text, this.state, ins.emotion || null, ins.voice || null);
         return "pause";
       }
 

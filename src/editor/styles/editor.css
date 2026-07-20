@@ -3150,3 +3150,23 @@ video.asset-thumb { object-fit: cover; cursor: pointer; }
   padding: 8px 14px; border-radius: 6px; font-size: 14px; cursor: default;
 }
 .theme-sample-hint { margin-top: 10px; font-size: 11px; text-align: center; }
+
+/* 對話卡片的配音欄（行內屬性 voice=） */
+.dlg-voice { max-width: 170px; }
+.dlg-voice select, .dlg-voice input {
+  font-size: 11px;
+  font-family: var(--e-font-mono);
+}
+.dlg-voice-play {
+  flex: 0 0 auto;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  border: 1px solid var(--e-border);
+  background: var(--e-bg-4);
+  color: var(--e-text-dim);
+  font-size: 10px;
+  cursor: pointer;
+  padding: 0;
+}
+.dlg-voice-play:hover { background: var(--e-accent); color: #fff; border-color: var(--e-accent); }

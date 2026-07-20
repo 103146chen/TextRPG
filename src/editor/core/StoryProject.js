@@ -392,6 +392,11 @@ export class StoryProject {
         hits.push({ sceneId, index: null, detail: "場景 front matter 的 BGM" });
       }
       sc.instructions.forEach((ins, index) => {
+        // 行內語音：`角色 voice=檔名: 台詞`
+        if (kind === "voice" && ins.type === "text" && ins.voice === file) {
+          hits.push({ sceneId, index, detail: `${ins.speaker || "旁白"} 的語音` });
+          return;
+        }
         if (ins.type !== "directive") return;
         const p0 = (ins.args?.positional || [])[0];
         if (p0 !== file) return;
@@ -426,6 +431,9 @@ export class StoryProject {
       sc.instructions.forEach((ins, idx) => {
         switch (ins.type) {
           case "text":
+            if (m(ins.voice)) {
+              push(sceneId, idx, "語音", `${ins.speaker || "旁白"} → ${ins.voice}`);
+            }
             if (m(ins.text) || m(ins.speaker)) {
               push(sceneId, idx, ins.speaker ? "台詞" : "旁白",
                    `${ins.speaker ? ins.speaker + ": " : ""}${ins.text}`);

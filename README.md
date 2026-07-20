@@ -170,7 +170,7 @@ next: 02_下一場景       # 沒有選項結尾時會自動跳過去
 | 分類 | 指令 |
 |------|------|
 | 背景/立繪 | `@bg` · `@show`（含 `pos=` `anchor=` `scale=` 自由定位）· `@hide` · `@move` |
-| 音訊 | `@bgm` · `@bgm-stop` · `@se` · `@se-stop` · `@voice`（對話配音） |
+| 音訊 | `@bgm` · `@bgm-stop` · `@se` · `@se-stop` · `@voice`（獨立 VO）<br>單句配音用行內屬性：`角色 voice=檔名: 台詞` |
 | 節奏 | `@wait` · `@auto`（自動播放）· `@textcfg`（打字速度/淡入/等待圖標） |
 | 特效 | `@shake` · `@flash` · `@tint` · `@tint-clear` · `@curtain`（帷幕）· `@ui`（隱藏界面） |
 | 鏡頭 | `@camera`（縮放/位移/暗角）· `@camera-reset` |

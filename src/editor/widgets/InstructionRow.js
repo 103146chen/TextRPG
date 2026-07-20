@@ -181,6 +181,54 @@ export class InstructionRow {
       emoField.title = "這句話播出時，把該角色的立繪切成此表情";
       head.appendChild(emoField);
     }
+
+    // 配音綁在這一行（不是獨立指令）：換到下一句時引擎會自動收掉，
+    // 聲音不會蓋到下一句。沒有語音資產時整個欄位不出現，免得占版面。
+    const voiceFiles = this.project.resources?.voice || [];
+    if (voiceFiles.length || this.ins.voice) {
+      const voiceField = createSelectField({
+        value: this.ins.voice || "",
+        options: voiceFiles,
+        placeholder: "（無配音）",
+        addLabel: "匯入語音…",
+        onAdd: () => this.onManage?.("asset-voice"),
+        onChange: (v) => this.onChange({ voice: v || undefined }),
+      });
+      voiceField.classList.add("dlg-voice");
+      voiceField.title = "這句話的配音；播到下一句會自動停止";
+      head.appendChild(voiceField);
+
+      if (this.ins.voice) {
+        const play = document.createElement("button");
+        play.className = "dlg-voice-play";
+        play.textContent = "▶";
+        play.title = "試聽";
+        play.addEventListener("click", async (e) => {
+          e.stopPropagation();
+          if (this._voiceAudio) {
+            this._voiceAudio.pause();
+            this._voiceAudio = null;
+            play.textContent = "▶";
+            return;
+          }
+          const blob = await this.project.fs?.readResource?.("voice", this.ins.voice);
+          if (!blob) return;
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          this._voiceAudio = audio;
+          play.textContent = "❚❚";
+          const done = () => {
+            URL.revokeObjectURL(url);
+            if (this._voiceAudio === audio) this._voiceAudio = null;
+            play.textContent = "▶";
+          };
+          audio.addEventListener("ended", done);
+          audio.addEventListener("error", done);
+          audio.play().catch(done);
+        });
+        head.appendChild(play);
+      }
+    }
     container.appendChild(head);
 
     // ---- 下排：文字（textarea 自動長高、自動換行）----

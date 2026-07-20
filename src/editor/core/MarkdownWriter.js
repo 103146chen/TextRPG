@@ -4,7 +4,7 @@
 // 目標：從 SceneParser.parse(md).結果 能往返轉換為乾淨的 md
 // ============================================
 
-import { SceneParser, NARRATION_PREFIX } from "../../engine/SceneParser.js";
+import { SceneParser, NARRATION_PREFIX, LINE_ATTR_KEYS } from "../../engine/SceneParser.js";
 
 export class MarkdownWriter {
   /**
@@ -117,13 +117,21 @@ export class MarkdownWriter {
 
   static #writeInstruction(ins, indent, characters = null, narrationPrefix = "always") {
     switch (ins.type) {
-      case "text":
+      case "text": {
+        // 行內屬性（voice…）寫在說話者與冒號之間
+        const attrs = LINE_ATTR_KEYS
+          .filter((k) => ins[k] != null && String(ins[k]).trim() !== "")
+          .map((k) => ` ${k}=${this.#quoteDirectiveToken(String(ins[k]))}`)
+          .join("");
         if (ins.speaker) {
           // 當句表情寫成 "角色名[表情]: 文字"（與 SceneParser 對應）
           const who = ins.emotion ? `${ins.speaker}[${ins.emotion}]` : ins.speaker;
-          return `${indent}${who}: ${ins.text}`;
+          return `${indent}${who}${attrs}: ${ins.text}`;
         }
+        // 旁白帶屬性時一定要用前綴形式，屬性才有地方掛
+        if (attrs) return `${indent}${NARRATION_PREFIX}${attrs}: ${ins.text}`;
         return `${indent}${this.#writeNarration(ins.text, characters, narrationPrefix)}`;
+      }
 
       case "directive":
         return `${indent}${this.#writeDirective(ins)}`;

@@ -57,6 +57,7 @@ export class GameRuntime {
     dom.screen?.querySelectorAll(".float-text").forEach((el) => el.remove());   // 殘留浮動文字
     dom.screen?.querySelectorAll(".fx-video").forEach((el) => el.remove());      // 殘留視頻層
     this._videoEl = null;
+    this._lineVoice = false;   // 目前語音是否來自「行內屬性」（換行要收掉）
     this.particles = dom.screen ? new ParticleLayer(dom.screen) : null;
 
     // 自動播放（@auto）：打字完成後等 autoDelay 毫秒自動前進
@@ -302,6 +303,7 @@ export class GameRuntime {
   /** 停止環境效果（離開遊戲畫面時呼叫） */
   stopAmbient() {
     this.setAuto(false);
+    this._lineVoice = false;
     this.#removeVideo();
     this.particles?.stop();
     this.audio.stopBgm(500);
@@ -311,11 +313,24 @@ export class GameRuntime {
   }
 
   // ---------- 引擎回呼 ----------
-  async #handleText(speaker, text, _state, emotion = null) {
+  async #handleText(speaker, text, _state, emotion = null, voice = null) {
     // 當句表情：只對已在場上的角色生效（靜態求值也套用，作者才看得到）
     if (speaker && emotion) await this.characterLayer.setEmotion(speaker, emotion);
     if (speaker) this.characterLayer.setSpeaking(speaker);
     else this.characterLayer.clearSpeaking();
+
+    // 行內語音屬於「這一行」：下一行沒有語音就收掉，聲音不會蓋到下一句。
+    // 獨立的 @voice 指令（跨行旁白 VO）不受此規則影響 —— 用 _lineVoice 區分來源。
+    if (!this.instant) {
+      if (voice) {
+        this.audio.playVoice(voice);
+        this._lineVoice = true;
+      } else if (this._lineVoice) {
+        this.audio.stopVoice();
+        this._lineVoice = false;
+      }
+    }
+
     if (this.instant) { this.textBox.showInstant(speaker, text); return; }
     await this.textBox.showText(speaker, text);
   }
@@ -381,9 +396,11 @@ export class GameRuntime {
         break;
       }
       case "voice": {
-        // 對話配音：放在對話行前，唸該句時播放；新語音自動停掉前一句
+        // 獨立語音（跨行 VO）：自由播放，不隨換行收掉。
+        // 綁定單句請用行內屬性 `角色 voice=檔名: 台詞`。
         if (this.instant) break;                       // 靜態求值不出聲
         this.audio.playVoice(args.positional[0]);
+        this._lineVoice = false;
         break;
       }
       case "wait": {
