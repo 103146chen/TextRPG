@@ -81,7 +81,8 @@ export class StoryProject {
     // 髒變數一併蓋掉，該段編輯就永遠不會被存（自動存檔下機率性觸發）。
     for (const [sceneId, sc] of this.scenes) {
       if (!sc.dirty) continue;
-      const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions }, { characters: this.storyMeta?.characters || null });
+      const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions },
+        { characters: this.storyMeta?.characters || null, narrationPrefix: this.storyMeta?.narrationPrefix || "always" });
       sc.dirty = false;
       try {
         await this.fs.writeScene(sc.fileName, md);
@@ -104,7 +105,8 @@ export class StoryProject {
   async saveScene(sceneId) {
     const sc = this.scenes.get(sceneId);
     if (!sc) return;
-    const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions }, { characters: this.storyMeta?.characters || null });
+    const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions },
+        { characters: this.storyMeta?.characters || null, narrationPrefix: this.storyMeta?.narrationPrefix || "always" });
     sc.dirty = false;   // 先清（同 saveAll 的競態說明）
     try {
       await this.fs.writeScene(sc.fileName, md);
@@ -694,6 +696,11 @@ export class StoryProject {
   }
 
   upsertCharacter(name, data) {
+    // 「旁白」是劇本語法的保留前綴（`旁白: 內容`），登記成角色會讓那些行
+    // 的解析意義互相打架，直接擋掉比事後除錯便宜。
+    if (SceneParser.isReservedSpeaker(name)) {
+      throw new Error(`「${String(name).trim()}」是保留字（旁白前綴），不能當作角色名`);
+    }
     this.#pushUndo();
     this.metaDirty = true;
     if (!this.storyMeta.characters) this.storyMeta.characters = {};
@@ -747,7 +754,8 @@ export class StoryProject {
     for (const [id, sc] of this.scenes) {
       if (diskRaw.has(id)) {
         sc.raw = diskRaw.get(id);
-        const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions }, { characters: this.storyMeta?.characters || null });
+        const md = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions },
+        { characters: this.storyMeta?.characters || null, narrationPrefix: this.storyMeta?.narrationPrefix || "always" });
         sc.dirty = sc.raw == null || md !== sc.raw;
       } else {
         // 磁碟上目前不存在（例如剛刪除又 undo 回來）→ 必須重寫

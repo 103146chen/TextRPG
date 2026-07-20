@@ -117,7 +117,8 @@ export class PreviewPanel {
       const sc = this.project.getScene(id);
       // 用 MarkdownWriter 從記憶體狀態產生 raw，確保反映未存檔變更
       scenes[id] = MarkdownWriter.write({ meta: sc.meta, instructions: sc.instructions },
-        { characters: this.project.storyMeta?.characters || null });
+        { characters: this.project.storyMeta?.characters || null,
+          narrationPrefix: this.project.storyMeta?.narrationPrefix || "always" });
     }
     return {
       type: "preview:load",

@@ -154,7 +154,8 @@ function serializeCurrent() {
   const data = { meta: sc.meta, instructions: sc.instructions };
   return viewMode === "json"
     ? SceneJson.stringify(data)
-    : MarkdownWriter.write(data, { characters: project.storyMeta?.characters || null });
+    : MarkdownWriter.write(data, { characters: project.storyMeta?.characters || null,
+        narrationPrefix: project.storyMeta?.narrationPrefix || "always" });
 }
 
 function fillSource() {

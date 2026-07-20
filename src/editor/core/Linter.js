@@ -147,19 +147,44 @@ export class Linter {
       });
     }
 
-    // 說話者存檔後會走鏽：未登記，且不符「短名無標點」的保守規則 ——
-    // 寫回 .md 再讀進來會變成旁白（說話者整段併進台詞）。登記角色即可解除。
-    // 注意：一般的「未登記」提示由下方 case "text" 負責，這裡只抓會壞資料的。
+    // ===== 嚴格模式下的兩種說話者風險 =====
+    //
+    // 解析規則是「登記與否是唯一標準」，所以誤判方向只剩下一個：
+    // 忘了登記 → 那行靜默變成旁白（文字完整保留，但說話者欄空了）。
+    // 這兩條規則就是把那個「靜默」變成看得見的提示。
     scene.instructions.forEach((ins, idx) => {
-      if (ins.type !== "text" || !ins.speaker) return;
-      const base = ins.speaker.replace(/\s*[（(\[][^）)\]]*[）)\]]\s*$/, "").trim();
-      if (characters.has(ins.speaker) || characters.has(base)) return;
-      if (SceneParser.isDialogueSpeaker(ins.speaker, characters)) return;
+      if (ins.type !== "text") return;
+      const isReg = (n) => {
+        const b = String(n).replace(/\s*[（(\[][^）)\]]*[）)\]]\s*$/, "").trim();
+        return characters.has(n) || characters.has(b);
+      };
+
+      // ① 卡片檢視打了說話者，但沒登記 → 存檔寫回後會被讀成旁白
+      if (ins.speaker) {
+        if (isReg(ins.speaker)) return;
+        issues.push({
+          level: "error",
+          sceneId,
+          index: idx,
+          message: `說話者「${ins.speaker}」未登記為角色，存檔後這句會被讀成旁白——請先登記`,
+        });
+        return;
+      }
+
+      // ② 旁白開頭長得像「人名: 內容」→ 多半是忘了登記該角色
+      const m = String(ins.text || "").match(/^([^\s：:][^：:]{0,11})[：:]\s*\S/);
+      if (!m) return;
+      const cand = m[1].trim();
+      if (SceneParser.isReservedSpeaker(cand) || isReg(cand)) return;
+      // 用寬鬆規則篩掉明顯是句子的（有句讀、過長）
+      if (/[。，、！？；…—《》「」『』,.!?;]/.test(cand)) return;
+      const candBase = cand.replace(/\s*[（(\[][^）)\]]*[）)\]]\s*$/, "").trim();
+      if ([...candBase].length > 6) return;
       issues.push({
-        level: "error",
+        level: "warning",
         sceneId,
         index: idx,
-        message: `說話者「${ins.speaker}」未登記且不符命名慣例，存檔後會被讀成旁白——請把它登記為角色`,
+        message: `這句旁白開頭像對話：「${cand}」未登記為角色，所以整行被當成旁白。是角色的話請登記；是旁白就不用理會`,
       });
     });
 

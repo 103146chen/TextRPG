@@ -18,34 +18,47 @@
 
 // 句讀標點：出現在冒號前就不可能是人名（括號不算——「得參(心聲)」是合法名字）
 const SENTENCE_PUNCT = /[。，、！？；：…—─《》〈〉「」『』,.!?;]/;
-// 未登記角色的保守上限：真實人名幾乎都在 2~4 字，6 留了餘裕
+// 未登記角色的保守上限：只在「沒有角色名單」時才用（獨立解析單一檔案／工具／測試）
 const MAX_UNREGISTERED_NAME = 6;
 
+// 旁白保留前綴：`旁白: 內容` 一律解析為旁白，是顯式且永不誤判的寫法。
+// 不能被登記成角色名（見 isReservedSpeaker）。
+export const NARRATION_PREFIX = "旁白";
+const NARRATION_RE = /^旁白\s*[：:]\s*/;
+
 export class SceneParser {
+  /** `旁白` 是保留字，不可登記為角色 */
+  static isReservedSpeaker(name) {
+    return String(name ?? "").trim() === NARRATION_PREFIX;
+  }
+
   /**
-   * 判斷冒號前的字串是不是「說話者」。
+   * 判斷冒號前的字串是不是「說話者」——**嚴格模式**。
    *
-   * 舊版把任何冒號都當分隔符，導致含冒號的旁白被腰斬
-   * （「你解決了一個劉邦，卻教會了所有人：項王的宴席」→ 前半變成人名）。
-   * 現在改成宣告優先：
-   *   ① 已登記角色（含 `名字(心聲)`、`名字[表情]` 的基底名）→ 一律對話
-   *   ② 未登記 → 需「不含句讀標點」且「基底名 ≤6 字」才算對話
-   * 其餘一律旁白。想強制寫出冒號旁白可用 `\:` 轉義。
+   * 有角色名單時：只有已登記角色才算對話，沒有任何猜測。
+   * 這是刻意的取捨——誤判方向只剩一個，而且是安全的那個：
+   *   · 旁白被讀成對話 → 不可能（除非旁白開頭剛好是登記角色名，那用 `旁白:` 前綴解決）
+   *   · 對話被讀成旁白 → 只在忘記登記時發生，文字完整保留，Linter 會抓
+   *
+   * 沒有名單時（獨立解析單一 .md、工具、測試）退回保守啟發式，
+   * 以免無 story.json 的情境完全失去對話辨識。
    *
    * @param {string} raw - 冒號前的原始字串
-   * @param {Set<string>|Array<string>|null} characters - 已登記角色名
+   * @param {Set<string>|Array<string>|object|null} characters - 已登記角色名
    */
   static isDialogueSpeaker(raw, characters = null) {
     const sp = String(raw ?? "").trim();
     if (!sp) return false;
     if (/^\s/.test(raw)) return false;               // 行首縮排的不算對話
+    if (this.isReservedSpeaker(sp)) return false;     // 「旁白」永遠不是角色
     const base = sp.replace(/\s*[（(\[][^）)\]]*[）)\]]\s*$/, "").trim();
     if (!base) return false;
 
     const set = this.#charSet(characters);
-    if (set && (set.has(sp) || set.has(base))) return true;   // ① 宣告優先
+    if (set) return set.has(sp) || set.has(base);     // 嚴格：登記與否是唯一標準
 
-    if (SENTENCE_PUNCT.test(sp)) return false;                // ② 保守啟發式
+    // 無名單時的後備規則
+    if (SENTENCE_PUNCT.test(sp)) return false;
     return [...base].length <= MAX_UNREGISTERED_NAME;
   }
 
@@ -189,6 +202,18 @@ export class SceneParser {
         const { choice, consumed } = this.#parseChoice(lines, i);
         instructions.push(choice);
         i += consumed;
+        continue;
+      }
+
+      // 顯式旁白：`旁白: 內容`（保留前綴，永不誤判）
+      const narr = trimmed.match(NARRATION_RE);
+      if (narr) {
+        instructions.push({
+          type: "text",
+          speaker: "",
+          text: this.#unescapeColon(trimmed.slice(narr[0].length)),
+        });
+        i++;
         continue;
       }
 

@@ -4,7 +4,7 @@
 // 目標：從 SceneParser.parse(md).結果 能往返轉換為乾淨的 md
 // ============================================
 
-import { SceneParser } from "../../engine/SceneParser.js";
+import { SceneParser, NARRATION_PREFIX } from "../../engine/SceneParser.js";
 
 export class MarkdownWriter {
   /**
@@ -13,7 +13,7 @@ export class MarkdownWriter {
    * @param {Set|Array|object} [opts.characters] - 已登記角色；供旁白冒號轉義判斷
    * @returns {string} Markdown 文字
    */
-  static write(sceneData, { characters = null } = {}) {
+  static write(sceneData, { characters = null, narrationPrefix = "always" } = {}) {
     const { meta, instructions } = sceneData;
     const parts = [];
 
@@ -22,7 +22,7 @@ export class MarkdownWriter {
     parts.push("");
 
     // 2. 本文
-    parts.push(this.#writeInstructions(instructions, characters));
+    parts.push(this.#writeInstructions(instructions, characters, narrationPrefix));
 
     return parts.join("\n").replace(/\n{3,}/g, "\n\n").trimEnd() + "\n";
   }
@@ -59,7 +59,7 @@ export class MarkdownWriter {
     return s;
   }
 
-  static #writeInstructions(instructions, characters = null) {
+  static #writeInstructions(instructions, characters = null, narrationPrefix = "always") {
     const lines = [];
     for (let i = 0; i < instructions.length; i++) {
       const ins = instructions[i];
@@ -69,28 +69,35 @@ export class MarkdownWriter {
         lines.push("");
       }
 
-      lines.push(this.#writeInstruction(ins, "", characters));
+      lines.push(this.#writeInstruction(ins, "", characters, narrationPrefix));
     }
     return lines.join("\n");
   }
 
-  /** 旁白轉義：只在「寫出去會被讀成對話」時，把第一個冒號轉義掉 */
-  static #escapeNarration(text, characters) {
+  /**
+   * 旁白輸出。
+   *   always（預設）：一律寫成 `旁白: 內容` —— 每一行都有說話者欄位，
+   *                   解析時第一個冒號永遠是分隔符，不存在猜測空間。
+   *   auto         ：只在「不加就會被讀成對話」時才補前綴，保留散文感。
+   */
+  static #writeNarration(text, characters, mode) {
     const str = String(text ?? "");
+    if (mode === "always") return `${NARRATION_PREFIX}: ${str}`;
+
+    // auto：找出第一個未轉義的冒號，判斷前半會不會被當成說話者
     for (let i = 0; i < str.length; i++) {
       const ch = str[i];
       if (ch === "\\") { i++; continue; }
       if (ch === "：" || ch === ":") {
         const before = str.slice(0, i);
-        const after = str.slice(i + 1);
-        if (!before.trim() || !after.trim()) return str;
-        if (SceneParser.isDialogueSpeaker(before, characters)) {
-          return `${before}\\${ch}${after}`;
-        }
-        return str;
+        if (!before.trim() || !str.slice(i + 1).trim()) return str;
+        return SceneParser.isDialogueSpeaker(before, characters)
+          ? `${NARRATION_PREFIX}: ${str}`
+          : str;
       }
     }
-    return str;
+    // 沒有冒號但整行開頭剛好是「旁白」字樣時，也要補前綴避免被吃掉
+    return /^旁白\s*[：:]/.test(str) ? `${NARRATION_PREFIX}: ${str}` : str;
   }
 
   static #needsBlankLineBefore(cur, prev) {
@@ -108,7 +115,7 @@ export class MarkdownWriter {
     return false;
   }
 
-  static #writeInstruction(ins, indent, characters = null) {
+  static #writeInstruction(ins, indent, characters = null, narrationPrefix = "always") {
     switch (ins.type) {
       case "text":
         if (ins.speaker) {
@@ -116,9 +123,7 @@ export class MarkdownWriter {
           const who = ins.emotion ? `${ins.speaker}[${ins.emotion}]` : ins.speaker;
           return `${indent}${who}: ${ins.text}`;
         }
-        // 旁白若含冒號、且冒號前那截會被讀成說話者，寫出去就會變對話。
-        // 轉義成 `\:` 讓 parser 知道那是普通冒號（往返才閉環）。
-        return `${indent}${this.#escapeNarration(ins.text, characters)}`;
+        return `${indent}${this.#writeNarration(ins.text, characters, narrationPrefix)}`;
 
       case "directive":
         return `${indent}${this.#writeDirective(ins)}`;
