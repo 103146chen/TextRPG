@@ -1,8 +1,8 @@
 ---
 id: scene_05
 title: 第五章 · 項伯夜歸
-background: hongmen_camp_night.png
-bgm: bgm_tension.mp3
+background: xiang_yu_tent.png
+bgm: bgm_doubt.mp3
 next: scene_06
 ---
 

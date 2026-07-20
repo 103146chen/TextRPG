@@ -7,6 +7,7 @@ next: scene_09
 ---
 
 @show 樊噲 center fierce
+@bgm bgm_heroic.mp3
 @se se_heavy_thud.mp3
 @shake 8 duration=500
 旁白: 一條大漢，側著盾牌撞翻衛士，直闖入帳。

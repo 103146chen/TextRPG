@@ -1,4 +1,4 @@
----
+﻿---
 id: scene_02
 title: 第二章 · 破釜沉舟
 background: julu_battlefield.png
@@ -13,8 +13,10 @@ next: scene_03
 旁白: 眼見入冬以來，天寒大雨，士卒凍飢，宋義卻無心戰事，大宴賓客，替兒子送行、飲酒尋歡。
 旁白: 而秦軍統帥王離，是王翦之孫——這王翦，正是那位在伐楚之戰中，迫使祖父項燕自殺的將領。
 旁白: 此恨豈曾忘懷？
+@bg song_yi_tent.png fade=1000
+@bgm bgm_planning.mp3
 旁白: 於是，你走入營帳，提出了想法：
-@show 宋義 left
+@show 宋義 left normal
 項羽: 「疾引兵渡河，楚擊其外，趙應其內，破秦軍必矣。」
 旁白: 宋義慢條斯理地看著你，說了一句你一輩子忘不掉的話——
 宋義: 「夫搏牛之虻，不可以破蟣蝨。」
@@ -31,6 +33,8 @@ next: scene_03
 項羽: 「宋義與齊謀反楚，楚王陰令羽誅之！」
 旁白: 諸將懾服，無人敢動。楚懷王只得任命你為上將軍。
 @wait 1200
+@bg julu_battlefield.png fade=1000
+@bgm bgm_war_drums.mp3
 旁白: 渡過漳水，你下了那道此後兩千年兵家都要提起的命令——
 @se se_sword_draw.mp3
 旁白: 皆沉船，破釜甑，燒廬舍，持三日糧。
@@ -80,8 +84,8 @@ next: scene_03
 @set 秦地民心 = "觀望"
 :: endif
 @wait 1200
+@tint-clear
 @bg hangu_pass.png fade=1000
 旁白: 大軍繼續西進。函谷關，已經不遠了。
-@tint-clear
 旁白: 關的另一邊，是咸陽，是天下，是懷王與諸將的那句約定——
 旁白: 「先破秦入咸陽者，王之。」

@@ -1,12 +1,12 @@
 ---
 id: scene_01
 title: 第一章 · 彼可取而代也
-background: wuzhong_river.png
+background: xiang_manor.png
 bgm: bgm_ambition.mp3
 next: scene_02
 ---
 
-@bg wuzhong_river.png fade=800
+@bg xiang_manor.png fade=800
 @wait 1000
 旁白: 你是項籍，字羽，下相人。
 旁白: 你的祖父項燕，是楚國最後的大將——王翦破楚那年，他兵敗自殺。楚國亡了，項家四散，你跟著叔父項梁，流落到吳中。
@@ -19,10 +19,12 @@ next: scene_02
 @wait 1000
 旁白: 你長到八尺有餘，力能扛鼎，才氣過人，吳中子弟沒有不敬懼你的。
 旁白: 那一年，秦始皇帝出巡會稽，渡浙江。
+@bg wuzhong_river.png fade=1000
 旁白: 天子儀仗，旌旗蔽日，車馬千乘。萬人空巷，伏在道旁，大氣都不敢出。
 旁白: 你和叔父，也在人群裡。
 旁白: 你看著那頂天子車蓋，從你面前緩緩駛過。
-@camera zoom=1.8 x=-20 y=0 duration=3000 vignette=0.3 layer=bg
+@camera zoom=1.8 x=-20 y=10 duration=3000 vignette=0.3 layer=bg
+@wait 2000
 項羽: 「彼可取而代也。」
 @show 項梁 center earnest
 旁白: 項梁一把摀住你的嘴，聲音壓得極低。
@@ -59,6 +61,8 @@ next: scene_02
 :: endif
 @wait 1000
 旁白: 數年後，陳勝揭竿而起，天下響應，豪傑蠭起。
+@bg wu_uprising.png fade=1000
+@bgm bgm_heroic.mp3
 旁白: 你和叔父斬了會稽郡守，舉兵起事。吳中子弟八千人，渡江而西。
 @set 江東八千子弟 = true
 旁白: 你二十四歲。從這一天起，你的名字讓天下發抖。

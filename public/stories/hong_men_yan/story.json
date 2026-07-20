@@ -235,7 +235,7 @@
   "positions": {
     "center-big": {
       "x": 50,
-      "y": 100,
+      "y": 86,
       "anchor": "center_bottom",
       "scale": 1.25
     },
@@ -420,9 +420,54 @@
     },
     "xiangliang_earnest.png": {
       "dy": 35.11
-    },
-    "songyi_normal.png": {
-      "dy": 36.42
     }
-  }
+  },
+  "chapters": [
+    {
+      "id": "英雄崛起",
+      "title": "英雄崛起",
+      "scenes": [
+        "scene_01",
+        "scene_02"
+      ]
+    },
+    {
+      "id": "破秦入關",
+      "title": "劉邦入關",
+      "scenes": [
+        "scene_03",
+        "scene_04",
+        "scene_05"
+      ]
+    },
+    {
+      "id": "鴻門之宴",
+      "title": "鴻門之宴",
+      "scenes": [
+        "scene_06",
+        "scene_07",
+        "scene_08",
+        "scene_09"
+      ]
+    },
+    {
+      "id": "天將亡我",
+      "title": "天將亡我",
+      "scenes": [
+        "scene_10",
+        "scene_10a"
+      ]
+    },
+    {
+      "id": "尾聲",
+      "title": "尾聲",
+      "scenes": [
+        "scene_10b",
+        "scene_e_kill",
+        "scene_e_blood",
+        "scene_e_attack",
+        "scene_e_chase"
+      ]
+    }
+  ]
 }

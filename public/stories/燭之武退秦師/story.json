@@ -1,0 +1,273 @@
+﻿{
+  "id": "燭之武退秦師",
+  "title": "燭之武退秦師",
+  "subtitle": "改編自《左傳．僖公三十年》",
+  "author": "教學劇本",
+  "version": "1.0.0",
+  "start": "01_圉人",
+  "narrationPrefix": "auto",
+  "characters": {
+    "燭之武": {
+      "default": "zhuzhiwu_normal.png",
+      "emotions": {
+        "normal": "zhuzhiwu_normal.png",
+        "bitter": "zhuzhiwu_bitter.png",
+        "calm": "zhuzhiwu_calm.png",
+        "sharp": "zhuzhiwu_sharp.png"
+      }
+    },
+    "鄭伯": {
+      "default": "zhengbo_normal.png",
+      "emotions": {
+        "normal": "zhengbo_normal.png",
+        "arrogant": "zhengbo_arrogant.png",
+        "humble": "zhengbo_humble.png",
+        "anxious": "zhengbo_anxious.png"
+      }
+    },
+    "佚之狐": {
+      "default": "yizhihu_normal.png",
+      "emotions": {
+        "normal": "yizhihu_normal.png",
+        "urgent": "yizhihu_urgent.png"
+      }
+    },
+    "秦伯": {
+      "default": "qinbo_normal.png",
+      "emotions": {
+        "normal": "qinbo_normal.png",
+        "wary": "qinbo_wary.png",
+        "thinking": "qinbo_thinking.png",
+        "pleased": "qinbo_pleased.png"
+      }
+    },
+    "晉侯": {
+      "default": "jinhou_normal.png",
+      "emotions": {
+        "normal": "jinhou_normal.png",
+        "weary": "jinhou_weary.png"
+      }
+    },
+    "子犯": {
+      "default": "zifan_normal.png",
+      "emotions": {
+        "normal": "zifan_normal.png",
+        "angry": "zifan_angry.png"
+      }
+    },
+    "杞子": {
+      "default": "qizi_normal.png",
+      "emotions": {
+        "normal": "qizi_normal.png"
+      }
+    },
+    "秦軍哨官": {
+      "default": "qinsentry_normal.png",
+      "emotions": {
+        "normal": "qinsentry_normal.png"
+      }
+    }
+  },
+  "flags": {
+    "懷才不遇": {
+      "type": "number",
+      "default": 0,
+      "label": "三十年不被用的怨氣",
+      "usage": "counter"
+    },
+    "曾諫鄭伯": {
+      "type": "number",
+      "default": 0,
+      "label": "前傳留下的敢言名聲",
+      "usage": "counter"
+    },
+    "鄭伯之信": {
+      "type": "number",
+      "default": 0,
+      "label": "與鄭伯的君臣關係",
+      "usage": "counter"
+    },
+    "秦伯戒心": {
+      "type": "number",
+      "default": 0,
+      "label": "秦伯的防備（越高越糟）",
+      "usage": "counter"
+    },
+    "姿態分寸": {
+      "type": "number",
+      "default": 0,
+      "label": "示弱姿態是否到位",
+      "usage": "counter"
+    },
+    "秦國之利": {
+      "type": "number",
+      "default": 0,
+      "label": "東道主的利益論證力",
+      "usage": "counter"
+    },
+    "秦晉之隙": {
+      "type": "number",
+      "default": 0,
+      "label": "離間秦晉的力道",
+      "usage": "counter"
+    },
+    "說理次序": {
+      "type": "number",
+      "default": 0,
+      "label": "示弱→言利→離間的次序",
+      "usage": "counter"
+    },
+    "留戍杞子": {
+      "type": "number",
+      "default": 0,
+      "label": "是否促成秦將戍鄭",
+      "usage": "counter"
+    },
+    "晉文之量": {
+      "type": "number",
+      "default": 0,
+      "label": "晉文公的自持程度",
+      "usage": "counter"
+    },
+    "說服總分": {
+      "type": "number",
+      "default": 0,
+      "label": "結算用總分",
+      "usage": "counter"
+    },
+    "自報身分": {
+      "type": "string",
+      "default": "",
+      "label": "在秦營自報的身分",
+      "usage": "mark"
+    },
+    "重耳之事": {
+      "type": "string",
+      "default": "",
+      "label": "前傳面對無禮於晉的態度",
+      "usage": "mark"
+    },
+    "切入角度": {
+      "type": "string",
+      "default": "",
+      "label": "論利害的切入點",
+      "usage": "mark"
+    },
+    "離間力道": {
+      "type": "string",
+      "default": "",
+      "label": "論舊怨的力道",
+      "usage": "mark"
+    }
+  },
+  "positions": {
+    "center-big": {
+      "x": 50,
+      "y": 86,
+      "anchor": "center_bottom",
+      "scale": 1.25
+    },
+    "left": {
+      "x": 25,
+      "y": 95,
+      "anchor": "center_bottom"
+    },
+    "right": {
+      "x": 75,
+      "y": 95,
+      "anchor": "center_bottom"
+    },
+    "遠": {
+      "x": 50,
+      "y": 92,
+      "anchor": "center_bottom",
+      "scale": 0.75
+    }
+  },
+  "theme": {
+    "font": "klee"
+  },
+  "chapters": [
+    {
+      "id": "不遇",
+      "title": "第一章 · 不遇",
+      "scenes": [
+        "01_圉人",
+        "02_貳於楚"
+      ]
+    },
+    {
+      "id": "圍城",
+      "title": "第二章 · 圍城",
+      "scenes": [
+        "03_函陵氾南",
+        "04_狐薦",
+        "05_夜辭"
+      ]
+    },
+    {
+      "id": "夜縋",
+      "title": "第三章 · 夜縋",
+      "scenes": [
+        "06_縋城",
+        "07_至秦營"
+      ]
+    },
+    {
+      "id": "說秦",
+      "title": "第四章 · 說秦",
+      "scenes": [
+        "08_開場姿態",
+        "09_論利害",
+        "10_論舊怨",
+        "11_秦伯之決"
+      ]
+    },
+    {
+      "id": "晉退",
+      "title": "第五章 · 晉退",
+      "scenes": [
+        "12_晉營",
+        "13_歸城"
+      ]
+    },
+    {
+      "id": "結局",
+      "title": "結局",
+      "scenes": [
+        "e_退秦師",
+        "e_盟而未固",
+        "e_見拒",
+        "e_不出",
+        "e_名不傳"
+      ]
+    }
+  ],
+  "endings": [
+    {
+      "id": "ending_退秦師",
+      "title": "夜縋而出",
+      "description": "你走完了《左傳》寫下的那條路。\n秦伯說，與鄭人盟，使杞子、逢孫、楊孫戍之，乃還。晉侯亦去之。\n一座城，因為一個七十歲的人在一夜之間說的一段話而活了下來——沒有一支箭離弦。\n只是那三位留下來替鄭國「守城」的秦國將軍，兩年後會替秦國打開另一扇門。你替鄭國爭來的，從來不是永遠，是時間。"
+    },
+    {
+      "id": "ending_盟而未固",
+      "title": "薄薄的一紙盟書",
+      "description": "秦伯退了兵，卻沒有留下一兵一卒替鄭國看門。晉侯在函陵猶疑了兩日，也拔營了。\n鄭國保住了。\n可你走過的那條夜路，城裡沒有人知道有多長；後來的人翻遍竹簡，也只看見「秦師退」三個字——彷彿它自己退的。\n說話的人常常是這樣：事情成了，話就不見了。"
+    },
+    {
+      "id": "ending_見拒",
+      "title": "執事無罪，請回",
+      "description": "秦伯聽完了，很客氣。他讓人替你添了炭火，送你出帳，一路無人為難。\n你這才明白，說客最真實的失敗不是被推出轅門，是被人**有禮貌地請回去**。\n他沒有被你說動，因為你替他算的那筆帳，他早就算過一遍，而且算得比你細。\n天亮之前，你要走回那座城。這一次，繩子要往上拉。"
+    },
+    {
+      "id": "ending_不出",
+      "title": "無能為也已",
+      "description": "「臣之壯也，猶不如人；今老矣，無能為也已。」\n這句話在《左傳》裡是鋪墊——是為了讓國君說出那句「是寡人之過也」。\n可它在你這裡是真心的。三十年不被用的人，終於等到有人來求他，而他選擇了讓那句怨氣站到最後。\n沒有人能說你錯。只是史書上從此不會有你的名字，也不會有這一夜。"
+    },
+    {
+      "id": "ending_名不傳",
+      "title": "左傳上的那一行",
+      "description": "你贏了。秦師退，晉師退，鄭國保全。\n你被繩子拉回城牆的時候，天剛亮。鄭伯站在城樓上，說了兩個字：「有勞。」\n然後就沒有了。沒有封邑，沒有爵位，沒有一句「寡人之過」的後續。\n兩千年後，人們會背誦你那一夜說的每一個字，卻只知道你叫燭之武，是鄭國的一個大夫。\n——你替一座城換來了活路，替自己換來了一行字。"
+    }
+  ]
+}

@@ -1,12 +1,12 @@
 ---
 id: scene_04
 title: 第四章 · 其志不在小
-background: hongmen_camp_night.png
-bgm: bgm_tension.mp3
+background: xiang_yu_tent.png
+bgm: bgm_planning.mp3
 next: scene_05
 ---
 
-@bg hongmen_camp_night.png fade=800
+@bg xiang_yu_tent.png fade=800
 旁白: 夜。中軍帳。
 @show 范增 center urgent
 旁白: 范增又來了。七十歲的老人，平生好奇計，被你尊為「亞父」。

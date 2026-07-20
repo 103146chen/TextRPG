@@ -1,4 +1,4 @@
----
+﻿---
 id: scene_03
 title: 第三章 · 兩次大怒
 background: hangu_pass.png
@@ -20,7 +20,8 @@ next: scene_04
 旁白: 此時，沛公軍霸上，與你相距四十里。
 @bg hongmen_camp.png fade=1000
 @wait 1200
-@bg hongmen_camp_night.png fade=1000
+@bg xiang_yu_tent.png fade=1000
+@bgm bgm_planning.mp3
 @se se_horse_gallop.mp3
 旁白: 當夜，有人求見——沛公麾下左司馬，曹無傷的密使。
 旁白: 使者伏在地上，一字一句：
@@ -40,11 +41,9 @@ next: scene_04
 
 :: if 函谷之怒 == "立擊"
 @set 怒氣 += 2
-@show 項羽 center angry
 @se se_heavy_thud.mp3
 @shake 8 duration=500
 項羽: 豈有此理！
-@hide 項羽
 旁白: 命令當場就下去了。犒賞三軍，天亮開戰。
 旁白: 帳外將士歡聲雷動——跟著霸王，仗從來沒有輸過。
 旁白: 你甚至沒有問那個使者一句——曹無傷此人，為何要賣他的主公？他說的，句句是真？

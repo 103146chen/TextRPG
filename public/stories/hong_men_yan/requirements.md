@@ -29,7 +29,11 @@
 | **xianyang_fire.png** | **咸陽大火**<br>咸陽宮殿在熊熊烈火中燃燒，火光沖天，濃煙滾滾，壯麗又毀滅的場景。 | `realistic Chinese ink-wash painting, muted colors, grand ancient Chinese palace of Xianyang burning in massive flames, fire reaching the sky, thick black smoke, epic destruction, night sky illuminated by inferno, tragic and magnificent, highly detailed, 16:9 aspect ratio, wide landscape, NO text, NO watermarks, NO signatures, pure clean painting` |
 | **pengcheng_battle.png** | **彭城之戰**<br>激烈的古代戰場，楚軍以少勝多，旌旗翻飛，塵土飛揚，河水中倒下的士兵。 | `realistic Chinese ink-wash painting, muted colors, epic ancient Chinese battle at Pengcheng, small elite Chu cavalry charging against a vast army, flying war banners, dust and chaos, soldiers falling into a river, dramatic and violent, highly detailed, 16:9 aspect ratio, wide landscape, NO text, NO watermarks, NO signatures, pure clean painting` |
 | **gaixia_breakout.png** | **垓下突圍**<br>夜間騎兵突圍的場面，少數騎兵衝出重圍，火把零星，塵土飛揚，緊迫激烈。 | `realistic Chinese ink-wash painting, muted colors, desperate cavalry breakout at night, small group of horsemen charging through enemy lines, scattered torches, dust clouds, urgent and intense atmosphere, deep blue darkness, highly detailed, 16:9 aspect ratio, wide landscape, NO text, NO watermarks, NO signatures, pure clean painting` |
-
+| **xiang_manor.png** | **項府庭院**<br>吳中的古雅庭院，有兵器架與竹簡，項羽少時學書學劍之處。 | `realistic Chinese ink-wash painting, muted colors, ancient elegant courtyard in Wu, weapon racks and bamboo slips on tables, NO people, completely empty scene, devoid of characters, highly detailed, 16:9 aspect ratio, wide landscape, NO text, NO watermarks` |
+| **wu_uprising.png** | **會稽郡守府**<br>會稽郡守府內部或點將台，帶有肅殺之氣，項羽起兵之地。 | `realistic Chinese ink-wash painting, muted colors, interior of an ancient Chinese magistrate hall or muster ground, solemn and tense atmosphere, weapons, NO people, completely empty scene, devoid of characters, highly detailed, 16:9 aspect ratio, wide landscape, NO text, NO watermarks` |
+| **song_yi_tent.png** | **宋義大帳**<br>宋義飲酒作樂、奢華但軍紀渙散的營帳。 | `realistic Chinese ink-wash painting, muted colors, interior of an ancient Chinese general's tent, extremely luxurious but undisciplined, overturned wine cups, feast remnants, NO people, completely empty scene, devoid of characters, highly detailed, 16:9 aspect ratio, wide landscape, NO text` |
+| **xiang_yu_tent.png** | **項羽中軍大帳**<br>華貴且充滿兵器的霸王主帳，適合項羽私下對話與大怒的場景。 | `realistic Chinese ink-wash painting, muted colors, interior of an ancient Chinese warlord's main tent at night, flickering candlelight, grand and imposing, weapon stands, maps on a low table, dark oppressive shadows, NO people, completely empty scene, devoid of characters, highly detailed, 16:9 aspect ratio, wide landscape, NO text` |
+| **escape_route.png** | **隱蔽小道**<br>荒涼雜草叢生的小徑，劉邦藉口如廁後逃跑的場景。 | `realistic Chinese ink-wash painting, muted colors, desolate ancient small path through tall grass and wild bushes, gloomy, tense escape route, NO people, completely empty scene, devoid of characters, highly detailed, 16:9 aspect ratio, wide landscape, NO text` |
 ---
 
 ## 🧍 立繪 (Sprites) - 基準圖與差分編輯工作流
@@ -65,7 +69,11 @@
 | **bgm_gaixia.mp3** | 第十章(垓下) | 蒼涼的塤與二胡，四面楚歌的悲愴 |
 | **bgm_ending_tragic.mp3** | 烏江、帳中玦、血宴結局 | 悲壯輓歌 |
 | **bgm_ending_open.mp3** | 渡江結局 | 留白、開放式的琴音 |
-
+| **bgm_planning.mp3** | 范增與張良籌謀、密探進言 | 懸疑、深沉的謀畫音樂 |
+| **bgm_heroic.mp3** | 樊噲闖營、吃生彘肩 | 豪氣干雲、震撼的配樂 |
+| **bgm_hurry.mp3** | 項伯夜馳、劉邦遁逃 | 節奏快速、充滿危機感的音樂 |
+| **bgm_doubt.mp3** | 項羽猶豫、氣氛凝重 | 猜忌、不安的心理博弈音樂 |
+| **bgm_peaceful.mp3** | 劉邦示弱謝罪、日常對話 | 表面平靜、暗藏玄機的音樂 |
 ---
 
 ## 🔊 音效素材需求 (SE) - AI 音效生成指南
