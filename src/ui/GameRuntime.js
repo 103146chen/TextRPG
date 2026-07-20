@@ -14,6 +14,9 @@ import { ParticleLayer } from "./ParticleLayer.js";
 
 const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 
+// 對話呈現樣式：對應 main.css 的 .dlg-* class
+export const DIALOGUE_STYLES = ["box", "bar", "cinematic"];
+
 export class GameRuntime {
   /**
    * @param {object} opts
@@ -52,6 +55,9 @@ export class GameRuntime {
     this.audio = new AudioManager(storyPath, resolveAsset);
     this.effects = dom.screen ? new ScreenEffects(dom.screen) : null;
     this.uiHidden = false;
+    // 對話呈現樣式（持續狀態）：box 浮框／bar 貼底滿版／cinematic 電影字幕
+    this.dialogueStyle = "box";
+    this.setDialogueStyle(storyMeta?.dialogueStyle || "box");
     dom.screen?.classList.remove("ui-hidden");   // 預覽重建 runtime 時清掉殘留
 
     dom.screen?.querySelectorAll(".float-text").forEach((el) => el.remove());   // 殘留浮動文字
@@ -131,6 +137,7 @@ export class GameRuntime {
         speed: this.textBox.typingSpeed,
         fade: this.textBox.fadeMs,
         indicator: this.textBox.showIndicator,
+        style: this.dialogueStyle,
       },
       video: (this._videoEl && this._videoOpts?.loop && this._videoFile)
         ? { file: this._videoFile, volume: this._videoOpts.volume ?? undefined }
@@ -141,7 +148,10 @@ export class GameRuntime {
   /** 讀檔後套用視覺快照（一律瞬間完成）。舊存檔沒有快照就跳過。 */
   async applyVisualSnapshot(v) {
     if (!v) return;
-    if (v.textcfg) this.textBox.configure(v.textcfg);
+    if (v.textcfg) {
+      this.textBox.configure(v.textcfg);
+      this.setDialogueStyle(v.textcfg.style || "box");
+    }
     if (v.bg && this.backgroundLayer.current !== v.bg) {
       await this.backgroundLayer.change(v.bg, 0);
     }
@@ -267,6 +277,22 @@ export class GameRuntime {
       return null;
     }
     return v;
+  }
+
+  /**
+   * 對話呈現樣式（持續狀態）。只換 CSS class，文字內容與打字機邏輯完全不動——
+   * 樣式是「怎麼呈現」，不該影響「顯示什麼」。
+   *   box       目前的半透明浮框
+   *   bar       貼齊畫面底部的滿版條，上緣漸層淡出（不浮在空中）
+   *   cinematic 完全無底，置中白字加描邊，像電影字幕嵌在畫面裡
+   */
+  setDialogueStyle(name) {
+    const style = DIALOGUE_STYLES.includes(name) ? name : "box";
+    if (name && style !== name) console.warn(`未知的對話樣式「${name}」，改用 box`);
+    this.dialogueStyle = style;
+    const screen = this.dom.screen;
+    if (!screen) return;
+    for (const s of DIALOGUE_STYLES) screen.classList.toggle(`dlg-${s}`, s === style);
   }
 
   /** @ui hide/show：切換文字框與選項的可見性（持續狀態） */
@@ -443,6 +469,7 @@ export class GameRuntime {
       }
       case "textcfg": {
         // 文本參數（持續狀態）：只改有給的欄位；靜態求值也要套用
+        if (args.style != null) this.setDialogueStyle(String(args.style));
         const cfg = {};
         if (args.speed != null) cfg.speed = Number(args.speed);
         if (args.fade != null) cfg.fade = Number(args.fade);

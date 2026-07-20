@@ -642,6 +642,9 @@ export const DIRECTIVE_SCHEMAS = {
   textcfg: {
     title: "textcfg · 文字設定",
     fields: [
+      { key: "style", label: "對話樣式", type: "select", optional: true, emptyLabel: "（不變）",
+        options: [["box", "浮框"], ["bar", "貼底滿版"], ["cinematic", "電影字幕"]],
+        hint: "只改呈現方式，不影響文字內容" },
       { key: "speed", label: "打字速度", type: "number", min: 0, step: 5, hint: "每字毫秒，越小越快" },
       { key: "fade", label: "淡入", type: "number", min: 0, step: 50, suffix: "ms" },
       { key: "indicator", label: "續行指示", type: "select", optional: true, emptyLabel: "（預設 · 顯示）",

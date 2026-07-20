@@ -1030,3 +1030,91 @@ html, body {
   color: var(--gold);
   letter-spacing: 0.24em;
 }
+
+/* ===================== 對話呈現樣式（.dlg-*）=====================
+   只動「怎麼呈現」，不動文字內容與打字機邏輯。
+   預設 box 就是原本的浮框，所以沒有指定樣式的既有專案完全不受影響。 */
+
+/* ---- bar：貼齊底部的滿版條，上緣漸層淡出（不浮在空中）---- */
+.dlg-bar .text-container {
+  padding: 3.2rem 6% 1.6rem;
+  background: linear-gradient(to top,
+    rgba(0, 0, 0, 0.88) 0%,
+    rgba(0, 0, 0, 0.62) 55%,
+    rgba(0, 0, 0, 0) 100%);
+}
+.dlg-bar .text-box {
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+  min-height: 0;
+}
+.dlg-bar .text-box::before { display: none; }
+.dlg-bar .speaker-name {
+  background: none;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  margin: 0 0 0.35rem 0;
+  padding: 0;
+  min-width: 0;
+  text-align: left;
+  color: var(--gold);
+  font-size: 1rem;
+  letter-spacing: 0.15rem;
+}
+.dlg-bar .text-content { min-height: 2.6em; line-height: 1.9; }
+.dlg-bar .text-indicator { right: 0; bottom: -0.2rem; }
+
+/* ---- cinematic：完全無底，置中白字加描邊，像電影字幕嵌進畫面 ---- */
+.dlg-cinematic .text-container {
+  padding: 0 10% 5.5%;
+  background: none;
+}
+.dlg-cinematic .text-box {
+  background: none;
+  border: none;
+  border-radius: 0;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+  padding: 0;
+  min-height: 0;
+}
+.dlg-cinematic .text-box::before { display: none; }
+.dlg-cinematic .speaker-name {
+  display: block;
+  background: none;
+  border: none;
+  box-shadow: none;
+  border-radius: 0;
+  margin: 0 0 0.3rem 0;
+  padding: 0;
+  min-width: 0;
+  text-align: center;
+  color: var(--gold);
+  font-size: 0.95rem;
+  letter-spacing: 0.18rem;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.95);
+}
+.dlg-cinematic .text-content {
+  text-align: center;
+  min-height: 0;
+  color: #fff;
+  line-height: 1.75;
+  /* 多層陰影＝描邊效果，亮背景上也讀得到 */
+  text-shadow:
+    0 0 2px rgba(0, 0, 0, 0.95),
+    0 2px 5px rgba(0, 0, 0, 0.9),
+    0 0 16px rgba(0, 0, 0, 0.75);
+}
+.dlg-cinematic .text-indicator {
+  right: 50%;
+  transform: translateX(50%);
+  bottom: -1.6rem;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+}
