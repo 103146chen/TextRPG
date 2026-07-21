@@ -294,11 +294,19 @@ export class CharacterLayer {
 // ============================================
 
 export class BackgroundLayer {
-  constructor(layerEl, storyPath, resolveAsset = null) {
+  /** @param {Element} [echoEl] letterbox 模糊背景層，換背景時同步同一張圖 */
+  constructor(layerEl, storyPath, resolveAsset = null, echoEl = null) {
     this.layerEl = layerEl;
     this.storyPath = storyPath;
     this.resolveAsset = resolveAsset;
+    this.echoEl = echoEl;
     this.current = null;
+  }
+
+  /** 同時設定主背景與 letterbox 模糊層（是否顯示模糊由 CSS class 決定） */
+  #setImage(value) {
+    this.layerEl.style.backgroundImage = value;
+    if (this.echoEl) this.echoEl.style.backgroundImage = value;
   }
 
   async #assetUrl(kind, fileName) {
@@ -315,7 +323,7 @@ export class BackgroundLayer {
     this.current = null;
     this.layerEl.classList.add("fading");
     await this.#wait(fadeMs / 2);
-    this.layerEl.style.backgroundImage = "";
+    this.#setImage("");
     this.layerEl.classList.remove("fading");
   }
 
@@ -338,7 +346,7 @@ export class BackgroundLayer {
     });
 
     if (loaded && (img.naturalWidth > 0 || fileName.endsWith(".svg"))) {
-      this.layerEl.style.backgroundImage = `url("${url}")`;
+      this.#setImage(`url("${url}")`);
     } else {
       this.#applyPlaceholder(fileName);
     }
@@ -362,7 +370,7 @@ export class BackgroundLayer {
     } else {
       grad = "linear-gradient(180deg, #2a2621 0%, #1a1814 100%)";
     }
-    this.layerEl.style.backgroundImage = grad;
+    this.#setImage(grad);
   }
 
   #wait(ms) { return new Promise(r => setTimeout(r, ms)); }

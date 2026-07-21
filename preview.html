@@ -8,7 +8,8 @@
   <link rel="stylesheet" href="./src/styles/main.css" />
   <style>
     html, body { height: 100%; margin: 0; background: #000; overflow: hidden; }
-    #game-screen { position: absolute; inset: 0; }
+    /* #game-screen 的 letterbox 佈局由 main.css 統一提供，
+       這裡不再覆寫 inset，預覽窗才會和玩家端維持同一個固定比例（WYSIWYG）。 */
     /* 預覽提示條 */
     .preview-bar {
       position: fixed; top: 0; left: 0; right: 0; z-index: 50;
@@ -39,6 +40,9 @@
   </div>
 
   <div id="preview-empty" class="preview-empty">等待編輯器載入劇本…</div>
+
+  <!-- letterbox 黑邊區的模糊背景（story.json letterbox:"blur" 時才顯示） -->
+  <div id="letterbox-bg" class="letterbox-bg"></div>
 
   <!-- 遊戲畫面（與 index.html 結構一致，共用 main.css） -->
   <div id="game-screen" class="screen hidden">

@@ -4,6 +4,9 @@
    ============================================ */
 
 :root {
+  /* 設計畫布長寬比（GameRuntime 依 story.json aspectRatio 覆寫）。預設 16:9 */
+  --canvas-w: 16;
+  --canvas-h: 9;
   /* 主色調：墨色與櫻色的和風配色 */
   --ink-900: #1a1814;
   --ink-800: #2a2621;
@@ -197,6 +200,51 @@ html, body {
 #game-screen {
   background: #000;
   cursor: pointer;
+  /* 固定設計畫布：維持長寬比、置中，多出來的區域是 letterbox 黑邊。
+     所有 % 座標從此相對「固定比例的畫布」——玩家端不論螢幕多寬多高、
+     編輯器預覽窗，看到的相對版面都一致（真正的所見即所得）。
+     .screen 已提供 position:absolute; inset:0; width/height:100%，
+     再加 margin:auto + 兩個 max 就能等比縮放置中，純 CSS 不需 JS。 */
+  margin: auto;
+  max-width: calc(100vh * var(--canvas-w) / var(--canvas-h));
+  max-height: calc(100vw * var(--canvas-h) / var(--canvas-w));
+  z-index: 1;
+}
+
+/* letterbox 黑邊區的模糊背景（story.json letterbox:"blur" 時開啟）。
+   在 game-screen 之下、填滿整個視窗；預設 opacity:0 → 純黑邊。 */
+.letterbox-bg {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  background-color: #000;
+  background-size: cover;
+  background-position: center;
+  filter: blur(28px) brightness(0.45);
+  transform: scale(1.16);   /* 蓋掉 blur 的透明邊緣 */
+  opacity: 0;
+  transition: opacity 0.8s ease;
+  pointer-events: none;
+}
+.letterbox-bg.on { opacity: 1; }
+
+/* 直向提示：只在直立螢幕出現，轉橫自動消失（提示元素只放在 index.html） */
+.orient-hint {
+  display: none;
+  position: fixed;
+  left: 0; right: 0; bottom: 0;
+  z-index: 60;
+  padding: 10px 16px;
+  text-align: center;
+  background: rgba(10, 10, 14, 0.86);
+  color: #f5efe3;
+  font-family: system-ui, sans-serif;
+  font-size: 13px;
+  letter-spacing: 0.03em;
+  pointer-events: none;
+}
+@media (orientation: portrait) {
+  .orient-hint { display: block; }
 }
 
 .bg-layer {

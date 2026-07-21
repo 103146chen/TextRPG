@@ -17,6 +17,16 @@ const wait = (ms) => new Promise((r) => setTimeout(r, ms));
 // 對話呈現樣式：對應 main.css 的 .dlg-* class
 export const DIALOGUE_STYLES = ["box", "bar", "cinematic"];
 
+// "16:9" / "16/9" → {w,h}；無效值退回 16:9
+export function parseAspect(str) {
+  const m = String(str ?? "").match(/^\s*(\d+(?:\.\d+)?)\s*[:/]\s*(\d+(?:\.\d+)?)\s*$/);
+  if (m) {
+    const w = parseFloat(m[1]), h = parseFloat(m[2]);
+    if (w > 0 && h > 0) return { w, h };
+  }
+  return { w: 16, h: 9 };
+}
+
 export class GameRuntime {
   /**
    * @param {object} opts
@@ -51,13 +61,26 @@ export class GameRuntime {
       storyMeta.positions || null,
       storyMeta.spriteAdjust || null
     );
-    this.backgroundLayer = new BackgroundLayer(dom.backgroundLayer, storyPath, resolveAsset);
+    this.backgroundLayer = new BackgroundLayer(dom.backgroundLayer, storyPath, resolveAsset, dom.letterboxBg);
     this.audio = new AudioManager(storyPath, resolveAsset);
     this.effects = dom.screen ? new ScreenEffects(dom.screen) : null;
     this.uiHidden = false;
     // 對話呈現樣式（持續狀態）：box 浮框／bar 貼底滿版／cinematic 電影字幕
     this.dialogueStyle = "box";
     this.setDialogueStyle(storyMeta?.dialogueStyle || "box");
+
+    // 固定設計畫布：把長寬比寫進 CSS 變數，畫面就維持該比例、置中補黑邊。
+    // 所有 % 座標相對此固定畫布 → 玩家端與預覽端所見一致（WYSIWYG）。
+    const ar = parseAspect(storyMeta?.aspectRatio);
+    const rootEl = dom.screen?.ownerDocument?.documentElement;
+    if (rootEl) {
+      rootEl.style.setProperty("--canvas-w", String(ar.w));
+      rootEl.style.setProperty("--canvas-h", String(ar.h));
+    }
+    // letterbox 黑邊：純黑（預設）或當前背景的模糊放大
+    if (dom.letterboxBg) {
+      dom.letterboxBg.classList.toggle("on", storyMeta?.letterbox === "blur");
+    }
     dom.screen?.classList.remove("ui-hidden");   // 預覽重建 runtime 時清掉殘留
 
     dom.screen?.querySelectorAll(".float-text").forEach((el) => el.remove());   // 殘留浮動文字

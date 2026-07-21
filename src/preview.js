@@ -84,6 +84,7 @@ async function loadPreview(data) {
       choiceContainer: $("#choice-container"),
       characterLayer: $("#character-layer"),
       backgroundLayer: $("#background-layer"),
+      letterboxBg: $("#letterbox-bg"),
       screen: gameScreen,
     },
     storyMeta,
