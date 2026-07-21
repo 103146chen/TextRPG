@@ -185,7 +185,7 @@
     }
   },
   "theme": {
-    "font": "klee"
+    "font": "sans-tc"
   },
   "chapters": [
     {
@@ -257,7 +257,7 @@
     {
       "id": "ending_見拒",
       "title": "執事無罪，請回",
-      "description": "秦伯聽完了，很客氣。他讓人替你添了炭火，送你出帳，一路無人為難。\n你這才明白，說客最真實的失敗不是被推出轅門，是被人**有禮貌地請回去**。\n他沒有被你說動，因為你替他算的那筆帳，他早就算過一遍，而且算得比你細。\n天亮之前，你要走回那座城。這一次，繩子要往上拉。"
+      "description": "秦伯聽完了，很客氣。他讓人替你添了炭火，送你出帳，一路無人為難。\n你這才明白，說客最真實的失敗不是被推出轅門，是被人有禮貌地請回去。\n他沒有被你說動，因為你替他算的那筆帳，他早就算過一遍，而且算得比你細。\n天亮之前，你要走回那座城。這一次，繩子要往上拉。"
     },
     {
       "id": "ending_不出",
@@ -269,5 +269,64 @@
       "title": "左傳上的那一行",
       "description": "你贏了。秦師退，晉師退，鄭國保全。\n你被繩子拉回城牆的時候，天剛亮。鄭伯站在城樓上，說了兩個字：「有勞。」\n然後就沒有了。沒有封邑，沒有爵位，沒有一句「寡人之過」的後續。\n兩千年後，人們會背誦你那一夜說的每一個字，卻只知道你叫燭之武，是鄭國的一個大夫。\n——你替一座城換來了活路，替自己換來了一行字。"
     }
-  ]
+  ],
+  "spriteAdjust": {
+    "zhuzhiwu_normal.png": {
+      "scale": 2
+    },
+    "zhuzhiwu_bitter.png": {
+      "scale": 2
+    },
+    "zhuzhiwu_calm.png": {
+      "scale": 2
+    },
+    "zhengbo_normal.png": {
+      "scale": 2
+    },
+    "zhengbo_arrogant.png": {
+      "scale": 2
+    },
+    "zhengbo_humble.png": {
+      "scale": 2
+    },
+    "zhengbo_anxious.png": {
+      "scale": 2
+    },
+    "yizhihu_normal.png": {
+      "scale": 2
+    },
+    "yizhihu_urgent.png": {
+      "scale": 2
+    },
+    "jinhou_normal.png": {
+      "scale": 2
+    },
+    "jinhou_weary.png": {
+      "scale": 2
+    },
+    "zifan_normal.png": {
+      "scale": 2
+    },
+    "zifan_angry.png": {
+      "scale": 2
+    },
+    "qizi_normal.png": {
+      "scale": 2
+    },
+    "qinsentry_normal.png": {
+      "scale": 2
+    },
+    "qinbo_pleased.png": {
+      "dy": 17.57
+    },
+    "qinbo_thinking.png": {
+      "dy": 17.57
+    },
+    "qinbo_wary.png": {
+      "dy": 17.57
+    },
+    "qinbo_normal.png": {
+      "dy": 17.57
+    }
+  }
 }
